@@ -33,10 +33,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.content
-// Need these imports for Gemini content builder
-//import com.google.ai.client.generativeai.type.image
-//import com.google.ai.client.generativeai.type.text
+
 import kotlinx.coroutines.launch
 // import max.ohm.noai.NEBIUS_API_KEY // Unused import
 
@@ -108,25 +107,27 @@ class ChatBotViewModel : ViewModel() {
         isLoading = true
         errorMessage = null
 
+        // Capture the current messages list *before* launching the coroutine
+        val historyToSend = messages // Includes the latest user message
+
         viewModelScope.launch {
             try {
-                // Use the image from the message object
-                val content = if (userMessage.image != null) {
-                    content {
-                        image(userMessage.image) // Use the image from the message
-                        if (userMessage.text.isNotBlank()) {
-                            text(userMessage.text)
+                // Build the chat history for the API
+                val chatHistory = historyToSend.map { msg ->
+                    content(if (msg.isUser) "user" else "model") {
+                        // Add image if present
+                        msg.image?.let { img -> image(img) }
+                        // Add text if present
+                        if (msg.text.isNotBlank()) {
+                            text(msg.text)
                         }
-                    }
-                } else {
-                    content {
-                        text(userMessage.text)
                     }
                 }
 
                 // Ensure generativeModel is not null before using (already checked, but good practice)
-                val response = generativeModel!!.generateContent(content)
+                val response = generativeModel!!.generateContent(*chatHistory.toTypedArray()) // Pass history as varargs
                 val botMessage = Message(response.text ?: "No response from bot", false)
+                // Update messages list on the main thread
                 messages = messages + botMessage // Add bot response
 
             } catch (e: Exception) {
