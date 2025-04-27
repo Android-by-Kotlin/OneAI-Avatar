@@ -55,6 +55,9 @@ dependencies {
     // ViewModel Compose for lifecycle-aware coroutine scope
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    // Navigation Compose
+    implementation(libs.androidx.navigation.compose)
+
     // Retrofit & Gson for Networking
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
