@@ -65,6 +65,9 @@ dependencies {
     // Coil for Image Loading in Compose
     implementation(libs.coil.compose)
 
+    // Google AI Client
+    //implementation(libs.google.ai.client)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -73,5 +76,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
+    implementation("com.google.ai.client.generativeai:generativeai:0.1.2")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
 }

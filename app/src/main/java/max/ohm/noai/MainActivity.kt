@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import max.ohm.noai.chatbot.ChatBotScreen // Import the ChatBotScreen
 
 
 const val NEBIUS_API_KEY = "eyJhbGciOiJIUzI1NiIsImtpZCI6IlV6SXJWd1h0dnprLVRvdzlLZWstc0M1akptWXBvX1VaVkxUZlpnMDRlOFUiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJnb29nbGUtb2F1dGgyfDExNzMzMjc0NDkyMTc2NTUzNzU3NyIsInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIiwiaXNzIjoiYXBpX2tleV9pc3N1ZXIiLCJhdWQiOlsiaHR0cHM6Ly9uZWJpdXMtaW5mZXJlbmNlLmV1LmF1dGgwLmNvbS9hcGkvdjIvIl0sImV4cCI6MTkwMzQyNTY0OCwidXVpZCI6IjczMjQwMTAzLTgxOGEtNGZjZi1iNDkxLWIxOGI3NGNjMzgzZiIsIm5hbWUiOiJOb3RBaSIsImV4cGlyZXNfYXQiOiIyMDMwLTA0LTI2VDA5OjIwOjQ4KzAwMDAifQ.R_RBh9AdEQV8EHRtYXD364EevZV6HR8dCh2TKORTztE"
@@ -127,7 +128,10 @@ fun AppNavigation() {
         composable("imageGenerator") {
             ImageGeneratorScreen()
         }
-        // Add other destinations here (chatbot, translator)
+        composable("chatbot") { // Add chatbot destination
+            ChatBotScreen()
+        }
+        // Add other destinations here (translator)
     }
 }
 
@@ -158,7 +162,7 @@ fun HomeScreen(navController: NavController) {
         ) {
             // AI ChatBot Card
             ElevatedCard(
-                onClick = { /* TODO: Navigate to ChatBot */ },
+                onClick = { navController.navigate("chatbot") }, // Navigate to chatbot screen
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.elevatedCardColors(
