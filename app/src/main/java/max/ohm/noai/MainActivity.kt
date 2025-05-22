@@ -226,7 +226,7 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     // Placeholder for Translator image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-                    Text("Language Translator", style = MaterialTheme.typography.headlineSmall)
+                    Text("AI Music", style = MaterialTheme.typography.headlineSmall)
                     // Placeholder for Translator image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
