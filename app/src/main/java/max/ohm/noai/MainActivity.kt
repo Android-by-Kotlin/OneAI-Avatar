@@ -142,7 +142,7 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AI Assistant") },
+                title = { Text("OneAI") },
                 actions = {
                     // Settings icon placeholder
                     IconButton(onClick = { /* TODO: Navigate to settings */ }) {
@@ -202,7 +202,7 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     // Placeholder for Image Creator image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-                    Text("AI Image Creator", style = MaterialTheme.typography.headlineSmall)
+                    Text("AI Image", style = MaterialTheme.typography.headlineSmall)
                      // Placeholder for Image Creator image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }

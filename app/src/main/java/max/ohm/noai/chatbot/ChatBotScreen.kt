@@ -37,21 +37,21 @@ import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.content
 
 import kotlinx.coroutines.launch
-// import max.ohm.noai.NEBIUS_API_KEY // Unused import
+
 
 
 data class Message(val text: String, val isUser: Boolean, val image: Bitmap? = null)
 
 class ChatBotViewModel : ViewModel() {
     // Consider moving the API key outside the ViewModel or using a secure storage mechanism
-    private val API_KEY = "AIzaSyBllTUQBqy8vNW_XztRKncxlv9QoAbjoi8" // Replace with your Gemini API Key
+    private val API_KEY = "AIzaSyBllTUQBqy8vNW_XztRKncxlv9QoAbjoi8" //  Gemini API Key
     private var generativeModel: GenerativeModel? = null // Make nullable to handle init failure
 
     init {
         // Basic check, consider more robust validation
         if (API_KEY != "YOUR_NEBIUS_API_KEY_HERE" && API_KEY.isNotBlank()) {
              generativeModel = GenerativeModel(
-                // Use a stable model name, e.g., "gemini-1.5-flash" if available and suitable
+                // stable model name- "gemini-1.5-flash"
                 modelName = "gemini-1.5-flash", // Updated model name
                 apiKey = API_KEY
             )
@@ -182,7 +182,7 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gemini Chat Bot") },
+                title = { Text("OneAi Chat") },
                 actions = {
                     // Settings icon placeholder
                     IconButton(onClick = { /* TODO: Navigate to settings */ }) {
@@ -270,10 +270,7 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(8.dp)) // Add space between bubbles
             }
         }
-        // Removed the LinearProgressIndicator from here as it's now inside the button
-        // if (isLoading) {
-        //     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        // }
+
     }
 }
 
@@ -294,8 +291,7 @@ fun MessageBubble(message: Message) {
             ),
             colors = CardDefaults.cardColors(
                 containerColor = if (message.isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-                // Use theme colors
-                // containerColor = if (message.isUser) Color(0xFFD1C4E9) else Color(0xFFC8E6C9)
+
             )
         ) {
             Column(modifier = Modifier.padding(10.dp)) {
@@ -325,17 +321,3 @@ fun MessageBubble(message: Message) {
     }
 }
 
-// Preview (Requires fixing dependencies or providing a mock ViewModel)
-//@Preview(showBackground = true)
-//@Composable
-//fun ChatBotScreenPreview() {
-//    // Provide a mock ViewModel for preview
-//    val mockViewModel = ChatBotViewModel() // Basic mock, might need more setup
-//    // Wrap in Theme
-//    MaterialTheme {
-//        ChatBotScreen(viewModel = mockViewModel)
-//    }
-//}
-
-// Add Close icon import if not already present
-// import androidx.compose.material.icons.filled.Close // Already added above
