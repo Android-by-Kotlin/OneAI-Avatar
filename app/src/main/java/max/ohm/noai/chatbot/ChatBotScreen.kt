@@ -1,150 +1,50 @@
 package max.ohm.noai.chatbot
 
-import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-
-import androidx.compose.material.icons.filled.Close // Added for remove image button
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.compose.ui.unit.dp
-
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.Content
-import com.google.ai.client.generativeai.type.content
-
-import kotlinx.coroutines.launch
 
 
-
-data class Message(val text: String, val isUser: Boolean, val image: Bitmap? = null)
-
-class ChatBotViewModel : ViewModel() {
-    // Consider moving the API key outside the ViewModel or using a secure storage mechanism
-    private val API_KEY = "AIzaSyBllTUQBqy8vNW_XztRKncxlv9QoAbjoi8" //  Gemini API Key
-    private var generativeModel: GenerativeModel? = null // Make nullable to handle init failure
-
-    init {
-        // Basic check, consider more robust validation
-        if (API_KEY != "YOUR_NEBIUS_API_KEY_HERE" && API_KEY.isNotBlank()) {
-             generativeModel = GenerativeModel(
-                // stable model name- "gemini-1.5-flash"
-                modelName = "gemini-1.5-flash", // Updated model name
-                apiKey = API_KEY
-            )
-        } else {
-            // Handle the case where the API key is missing or invalid during init
-            // Maybe log an error or set a state to indicate the issue
-            println("Error: Gemini API Key is not configured correctly.") // Simple log
-        }
-    }
-
-
-    var messages by mutableStateOf(listOf<Message>())
-        private set
-
-    var inputText by mutableStateOf(TextFieldValue(""))
-        private set
-
-    // State to hold the image selected by the user before sending
-    var selectedImageBitmap by mutableStateOf<Bitmap?>(null)
-        private set
-
-    var isLoading by mutableStateOf(false)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
-
-    fun onInputTextChange(newText: TextFieldValue) {
-        inputText = newText
-    }
-
-    // Function to update the selected image state
-    fun onImageSelected(bitmap: Bitmap?) {
-        selectedImageBitmap = bitmap
-    }
-
-    fun sendMessage() { // Removed imageBitmap parameter
-        if (generativeModel == null) {
-            errorMessage = "Chatbot is not initialized. Check API Key."
-            return
-        }
-        // Use the state variable selectedImageBitmap
-        val imageToSend = selectedImageBitmap
-        // Allow sending if there's text OR an image selected
-        if (inputText.text.isBlank() && imageToSend == null) {
-            return // Don't send empty messages
-        }
-
-        val userMessage = Message(inputText.text, true, imageToSend)
-        messages = messages + userMessage // Add user message immediately
-        inputText = TextFieldValue("") // Clear input field
-        selectedImageBitmap = null // Clear selected image after adding to message list
-        isLoading = true
-        errorMessage = null
-
-        // Capture the current messages list *before* launching the coroutine
-        val historyToSend = messages // Includes the latest user message
-
-        viewModelScope.launch {
-            try {
-                // Build the chat history for the API
-                val chatHistory = historyToSend.map { msg ->
-                    content(if (msg.isUser) "user" else "model") {
-                        // Add image if present
-                        msg.image?.let { img -> image(img) }
-                        // Add text if present
-                        if (msg.text.isNotBlank()) {
-                            text(msg.text)
-                        }
-                    }
-                }
-
-                // Ensure generativeModel is not null before using (already checked, but good practice)
-                val response = generativeModel!!.generateContent(*chatHistory.toTypedArray()) // Pass history as varargs
-                val botMessage = Message(response.text ?: "No response from bot", false)
-                // Update messages list on the main thread
-                messages = messages + botMessage // Add bot response
-
-            } catch (e: Exception) {
-                errorMessage = "Error: ${e.localizedMessage}"
-                // Consider more specific error handling based on exception type
-                e.printStackTrace() // Keep logging for debugging
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    fun clearErrorMessage() {
-        errorMessage = null
-    }
-}
-
+// ChatBotScreen Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
@@ -271,53 +171,6 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
             }
         }
 
-    }
-}
-
-@Composable
-fun MessageBubble(message: Message) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
-    ) {
-        Card(
-            shape = RoundedCornerShape( // Consider different shapes for user/bot
-                topStart = if (!message.isUser) 4.dp else 12.dp,
-                topEnd = if (message.isUser) 4.dp else 12.dp,
-                bottomStart = 12.dp,
-                bottomEnd = 12.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (message.isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-
-            )
-        ) {
-            Column(modifier = Modifier.padding(10.dp)) {
-                if (message.image != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(message.image)
-                            .crossfade(true) // Add crossfade
-                            .build(),
-                        contentDescription = if (message.isUser) "User Image" else "Bot Image", // More specific description
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f) // Limit image width
-                            .aspectRatio(1f) // Maintain aspect ratio (adjust as needed)
-                            .padding(bottom = if (message.text.isNotBlank()) 8.dp else 0.dp) // Add padding only if text exists
-                            .align(if (message.isUser) Alignment.End else Alignment.Start) // Align image within the bubble
-                    )
-                }
-                // Only show Text composable if text is not blank
-                if (message.text.isNotBlank()) {
-                    Text(
-                        text = message.text,
-                        color = if (message.isUser) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-        }
     }
 }
 

@@ -1,3 +1,4 @@
+
 package max.ohm.noai.network
 
 import com.google.gson.annotations.SerializedName
