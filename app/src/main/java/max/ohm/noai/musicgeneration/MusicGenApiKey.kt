@@ -1,7 +1,7 @@
 package max.ohm.noai.musicgeneration
 
 // Replace with your actual Hugging Face API key
-const val HUGGINGFACE_API_KEY = "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"
+const val HUGGINGFACE_API_KEY = ""
 
 // Instructions:
 // 1. Go to https://huggingface.co/
