@@ -99,9 +99,9 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // Language Translator Card
+            // AI Music Generator Card (Reverted)
             ElevatedCard(
-                onClick = { /* TODO: Navigate to Translator */ },
+                onClick = { navController.navigate("aiMusic") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.elevatedCardColors(
@@ -115,13 +115,37 @@ fun HomeScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Placeholder for Translator image
+                    // Placeholder for Music image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                     Text("AI Music", style = MaterialTheme.typography.headlineSmall)
-                    // Placeholder for Translator image
+                    // Placeholder for Music image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
             }
+
+            // Flux Pro Image Generator Card (New)
+//            ElevatedCard(
+//                onClick = { navController.navigate("imageGenerator?model=flux.1.1-pro") },
+//                modifier = Modifier.fillMaxWidth(),
+//                shape = RoundedCornerShape(16.dp),
+//                colors = CardDefaults.elevatedCardColors(
+//                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
+//                )
+//            ) {
+//                Row(
+//                    modifier = Modifier
+//                        .padding(16.dp)
+//                        .fillMaxWidth(),
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.SpaceBetween
+//                ) {
+//                    // Placeholder for Flux Pro image
+//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+//                    Text("Flux Pro Image Gen", style = MaterialTheme.typography.headlineSmall)
+//                    // Placeholder for Flux Pro image
+//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+//                }
+//            }
         }
     }
 }

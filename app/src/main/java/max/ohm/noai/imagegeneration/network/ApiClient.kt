@@ -7,6 +7,7 @@ object ApiClient {
 
     private const val BASE_URL = "https://api.studio.nebius.com/v1/" // Base URL from task
 
+
     val instance: NebiusApiService by lazy {
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)

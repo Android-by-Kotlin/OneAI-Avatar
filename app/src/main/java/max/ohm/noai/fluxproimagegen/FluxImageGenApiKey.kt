@@ -1,0 +1,6 @@
+package max.ohm.noai.fluxproimagegen
+
+
+//    const val API_KEY = "ddc-a4f-2e9bee7f17d640d7bcba8fb26cf48d46"
+const val FLUXPRO_API_KEY = "ddc-a4f-2e9bee7f17d640d7bcba8fb26cf48d46"
+

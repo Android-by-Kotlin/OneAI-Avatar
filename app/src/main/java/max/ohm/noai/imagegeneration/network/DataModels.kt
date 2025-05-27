@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName
 // Request Body Structure task requirements
 data class ImageGenerationRequest(
     val model: String = "black-forest-labs/flux-schnell",
+   // val model: String = "provider-2/flux.1-schnell",
     val prompt: String,
     @SerializedName("response_format")
     val responseFormat: String = "b64_json", // Assuming base64 encoded image data

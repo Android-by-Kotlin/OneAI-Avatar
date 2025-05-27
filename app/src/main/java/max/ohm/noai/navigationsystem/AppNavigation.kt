@@ -8,7 +8,13 @@ import androidx.navigation.compose.rememberNavController
 import max.ohm.noai.chatbot.ChatBotScreen
 import max.ohm.noai.homescreen.HomeScreen
 import max.ohm.noai.imagegeneration.ImageGeneratorScreen
-import max.ohm.noai.imagegeneration.MainViewModel
+import max.ohm.noai.imagegeneration.UnifiedImageViewModel // Import the new ViewModel
+import max.ohm.noai.ai_music.AiMusicScreen
+import max.ohm.noai.ai_music.AiMusicViewModel
+import max.ohm.noai.musicgeneration.MusicGeneratorScreen
+import max.ohm.noai.musicgeneration.MusicViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 // --- Navigation ---
 @Composable
@@ -18,12 +24,26 @@ fun AppNavigation() {
         composable("home") {
             HomeScreen(navController = navController)
         }
-        composable("imageGenerator") {
-            val viewModel: MainViewModel = viewModel()
-            ImageGeneratorScreen(viewModel = viewModel)
+        composable(
+            "imageGenerator?model={modelType}",
+            arguments = listOf(navArgument("modelType") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = "flux.1-schnell" // Default to the original model
+            })
+        ) { backStackEntry ->
+            val modelType = backStackEntry.arguments?.getString("modelType")
+            val unifiedImageViewModel: UnifiedImageViewModel = viewModel() // Use UnifiedImageViewModel
+            ImageGeneratorScreen(unifiedImageViewModel = unifiedImageViewModel, initialModelType = modelType)
         }
         composable("chatbot") { // Add chatbot destination
             ChatBotScreen()
+        }
+        composable("aiMusic") { // Add AI music generator destination
+//            val aiMusicViewModel: AiMusicViewModel = AiMusicViewModel()
+//            AiMusicScreen(viewModel = aiMusicViewModel)
+            val musicViewModel: MusicViewModel = viewModel()
+            MusicGeneratorScreen(viewModel = musicViewModel)
         }
         // Add other destinations here (translator)
     }
