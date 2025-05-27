@@ -47,8 +47,8 @@ class MusicViewModel : ViewModel() {
     }
 
     fun generateMusic(context: Context) {
-        if (HUGGINGFACE_API_KEY == "YOUR_HUGGINGFACE_API_KEY_HERE") {
-            errorMessage = "Please replace 'YOUR_HUGGINGFACE_API_KEY_HERE' in MusicGenApiKey.kt"
+        if (MUSIC_API_KEY == "YOUR_MUSIC_API_KEY_HERE") {
+            errorMessage = "Please replace 'YOUR_MUSIC_API_KEY_HERE' in MusicGenApiKey.kt"
             return
         }
         if (prompt.text.isBlank()) {
@@ -64,7 +64,7 @@ class MusicViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val request = MusicGenerationRequest(inputs = prompt.text)
-                val apiKeyHeader = "Bearer $HUGGINGFACE_API_KEY"
+                val apiKeyHeader = "Bearer $MUSIC_API_KEY"
                 val response: Response<ByteArray> = MusicApiClient.instance.generateMusic(apiKeyHeader, request)
 
                 if (response.isSuccessful && response.body() != null) {
