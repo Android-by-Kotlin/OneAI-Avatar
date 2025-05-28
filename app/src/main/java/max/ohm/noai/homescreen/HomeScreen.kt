@@ -123,6 +123,30 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
+            // Llama Maverick Card
+            ElevatedCard(
+                onClick = { navController.navigate("llamaMaverick") }, // Navigate to Llama Maverick screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for Llama Maverick image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("Llama Maverick", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for Llama Maverick image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+
         }
     }
 }

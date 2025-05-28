@@ -37,7 +37,6 @@ fun MessageBubble(message: Message) {
             ),
             colors = CardDefaults.cardColors(
                 containerColor = if (message.isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-
             )
         ) {
             Column(modifier = Modifier.padding(10.dp)) {

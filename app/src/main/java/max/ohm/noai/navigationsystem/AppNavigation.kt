@@ -2,20 +2,20 @@ package max.ohm.noai.navigationsystem
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import max.ohm.noai.chatbot.ChatBotScreen
+import max.ohm.noai.chatbot.UnifiedChatBotViewModel
 import max.ohm.noai.homescreen.HomeScreen
 import max.ohm.noai.imagegeneration.ImageGeneratorScreen
-import max.ohm.noai.imagegeneration.UnifiedImageViewModel // Import the new ViewModel
-import max.ohm.noai.ai_music.AiMusicScreen
-import max.ohm.noai.ai_music.AiMusicViewModel
+import max.ohm.noai.imagegeneration.UnifiedImageViewModel
+import max.ohm.noai.llama4mavrick.LlamaMaverickChatScreen
+import max.ohm.noai.llama4mavrick.LlamaMaverickViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
-import max.ohm.noai.chatbot.UnifiedChatBotViewModel // Import the new UnifiedChatBotViewModel
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 
 // --- Navigation ---
 @Composable
@@ -54,6 +54,10 @@ fun AppNavigation() {
 //            AiMusicScreen(viewModel = aiMusicViewModel)
             val musicViewModel: MusicViewModel = viewModel()
             MusicGeneratorScreen(viewModel = musicViewModel)
+        }
+        composable("llamaMaverick") { // Add Llama Maverick destination
+            val llamaMaverickViewModel: LlamaMaverickViewModel = viewModel()
+            LlamaMaverickChatScreen(viewModel = llamaMaverickViewModel)
         }
         // Add other destinations here (translator)
     }
