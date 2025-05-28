@@ -30,7 +30,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "flux.1-schnell" // Default to the original model
+                defaultValue = "flux.1.1-pro" // Default to the original model
             })
         ) { backStackEntry ->
             val modelType = backStackEntry.arguments?.getString("modelType")
@@ -42,7 +42,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "gemini-1.5-pro" // Default to Gemini 1.5 Pro
+                defaultValue = "gemini-flash" // Default to Gemini Flash
             })
         ) { backStackEntry ->
             val modelType = backStackEntry.arguments?.getString("modelType")

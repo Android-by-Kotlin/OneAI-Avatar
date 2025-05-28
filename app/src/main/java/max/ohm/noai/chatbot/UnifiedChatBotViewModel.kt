@@ -14,6 +14,11 @@ import max.ohm.noai.a4f.A4FClient.A4F_API_KEY
 import max.ohm.noai.geminiflash.network.GeminiFlashApiClient
 import max.ohm.noai.geminiflash.network.GeminiFlashRequest
 import max.ohm.noai.geminiflash.network.Message as GeminiFlashMessage
+import max.ohm.noai.geminiflash.network.TextPart
+import max.ohm.noai.geminiflash.network.InlineDataPart
+import max.ohm.noai.geminiflash.network.InlineData
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 
 class UnifiedChatBotViewModel : ViewModel() {
 
@@ -34,7 +39,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var selectedModel by mutableStateOf("gemini-1.5-pro") // Default model
+    var selectedModel by mutableStateOf("gemini-flash") // Default model
 
     init {
         initializeGeminiProModel()
@@ -113,9 +118,20 @@ class UnifiedChatBotViewModel : ViewModel() {
                             return@launch
                         }
                         val chatHistoryForFlash = messages.map { msg ->
+                            val parts = mutableListOf<max.ohm.noai.geminiflash.network.Part>()
+                            msg.image?.let { imgBitmap ->
+                                val byteArrayOutputStream = ByteArrayOutputStream()
+                                imgBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
+                                val byteArray = byteArrayOutputStream.toByteArray()
+                                val base64Image = Base64.encodeToString(byteArray, Base64.DEFAULT)
+                                parts.add(InlineDataPart(InlineData("image/jpeg", base64Image)))
+                            }
+                            if (msg.text.isNotBlank()) {
+                                parts.add(TextPart(msg.text))
+                            }
                             GeminiFlashMessage(
                                 role = if (msg.isUser) "user" else "assistant",
-                                content = msg.text
+                                content = parts
                             )
                         }
                         val request = GeminiFlashRequest(

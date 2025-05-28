@@ -26,9 +26,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 
 
 // --- Image Generator Screen Composable ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageGeneratorScreen(
     unifiedImageViewModel: UnifiedImageViewModel = viewModel(),
@@ -56,86 +64,101 @@ fun ImageGeneratorScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Image Display Area
-        Box(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("AI Image Generator") },
+                actions = {
+                    // Settings icon placeholder
+                    IconButton(onClick = { /* TODO: Navigate to settings */ }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f) // Takes up available space
-                .padding(bottom = 16.dp),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues)
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (isLoading) {
-                CircularProgressIndicator()
-            } else if (generatedImageData != null) {
-                // Use Coil's AsyncImage to load the ByteArray
-                AsyncImage(
-                    model = generatedImageData,
-                    contentDescription = "Generated Image",
-                    modifier = Modifier.fillMaxSize(), // Fill the box
-                    contentScale = ContentScale.Fit // Fit within bounds, maintain aspect ratio
-                )
-            } else if (imageUrl != null) {
-                // Use Coil's AsyncImage to load the URL
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Generated Image",
-                    modifier = Modifier.fillMaxSize(), // Fill the box
-                    contentScale = ContentScale.Fit // Fit within bounds, maintain aspect ratio
-                )
-            } else {
-                // Placeholder or initial state text
-                Text("Enter a prompt and click Generate")
-            }
-        }
-
-        // Model Selection Bar
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedButton(
-                onClick = { unifiedImageViewModel.updateSelectedModel("flux.1-schnell") },
-                border = if (selectedModel == "flux.1-schnell") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+            // Image Display Area
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f) // Takes up available space
+                    .padding(bottom = 16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text("flux.1-schnell")
+                if (isLoading) {
+                    CircularProgressIndicator()
+                } else if (generatedImageData != null) {
+                    // Use Coil's AsyncImage to load the ByteArray
+                    AsyncImage(
+                        model = generatedImageData,
+                        contentDescription = "Generated Image",
+                        modifier = Modifier.fillMaxSize(), // Fill the box
+                        contentScale = ContentScale.Fit // Fit within bounds, maintain aspect ratio
+                    )
+                } else if (imageUrl != null) {
+                    // Use Coil's AsyncImage to load the URL
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Generated Image",
+                        modifier = Modifier.fillMaxSize(), // Fill the box
+                        contentScale = ContentScale.Fit // Fit within bounds, maintain aspect ratio
+                    )
+                } else {
+                    // Placeholder or initial state text
+                    Text("Enter a prompt and click Generate")
+                }
             }
 
-            OutlinedButton(
-                onClick = { unifiedImageViewModel.updateSelectedModel("flux.1.1-pro") },
-                border = if (selectedModel == "flux.1.1-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+            // Model Selection Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("flux.1.1-pro")
+                OutlinedButton(
+                    onClick = { unifiedImageViewModel.updateSelectedModel("flux.1-schnell") },
+                    border = if (selectedModel == "flux.1-schnell") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text("flux.1-schnell")
+                }
+
+                OutlinedButton(
+                    onClick = { unifiedImageViewModel.updateSelectedModel("flux.1.1-pro") },
+                    border = if (selectedModel == "flux.1.1-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text("flux.1.1-pro")
+                }
+
             }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+            // Input Field
+            OutlinedTextField(
+                value = prompt,
+                onValueChange = { unifiedImageViewModel.updatePrompt(it) },
+                label = { Text("Enter Prompt") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                enabled = !isLoading
+            )
 
-        // Input Field
-        OutlinedTextField(
-            value = prompt,
-            onValueChange = { unifiedImageViewModel.updatePrompt(it) },
-            label = { Text("Enter Prompt") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !isLoading
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Generate Button
-        Button(
-            onClick = { unifiedImageViewModel.generateImage() },
-            enabled = !isLoading && prompt.text.isNotBlank(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (isLoading) "Generating..." else "Generate")
+            // Generate Button
+            Button(
+                onClick = { unifiedImageViewModel.generateImage() },
+                enabled = !isLoading && prompt.text.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (isLoading) "Generating..." else "Generate")
+            }
         }
     }
 }

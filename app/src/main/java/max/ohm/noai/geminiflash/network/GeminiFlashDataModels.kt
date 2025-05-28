@@ -8,7 +8,18 @@ data class GeminiFlashRequest(
 
 data class Message(
     val role: String,
-    val content: String
+    val content: List<Part> // Change content to a list of parts
+)
+
+sealed class Part // Use sealed class for different types of content
+data class TextPart(val text: String) : Part()
+data class InlineDataPart(
+    val inline_data: InlineData // Use inline_data for image
+) : Part()
+
+data class InlineData(
+    val mime_type: String,
+    val data: String // Base64 encoded image data
 )
 
 data class GeminiFlashResponse(
