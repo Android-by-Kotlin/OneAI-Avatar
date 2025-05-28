@@ -39,7 +39,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     private fun initializeGeminiProModel() {
         if (GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" && GEMINI_API_KEY.isNotBlank()) {
             geminiProGenerativeModel = GenerativeModel(
-                modelName = "gemini-1.5-pro", // Use the Pro model
+                modelName = "models/gemini-2.0-flash", // Use the Pro model
                 apiKey = GEMINI_API_KEY
             )
         } else {
