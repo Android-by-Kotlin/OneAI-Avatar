@@ -13,6 +13,7 @@ import max.ohm.noai.ai_music.AiMusicScreen
 import max.ohm.noai.ai_music.AiMusicViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
+import max.ohm.noai.geminiflash.GeminiFlashScreen // Import GeminiFlashScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -44,6 +45,9 @@ fun AppNavigation() {
 //            AiMusicScreen(viewModel = aiMusicViewModel)
             val musicViewModel: MusicViewModel = viewModel()
             MusicGeneratorScreen(viewModel = musicViewModel)
+        }
+        composable("geminiFlash") { // Add Gemini Flash destination
+            GeminiFlashScreen()
         }
         // Add other destinations here (translator)
     }

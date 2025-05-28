@@ -1,6 +1,6 @@
 package max.ohm.noai.fluxproimagegen.network
 
-import com.google.gson.annotations.SerializedName
+
 
 data class FluxImageGenerationRequest(
     val model: String,
