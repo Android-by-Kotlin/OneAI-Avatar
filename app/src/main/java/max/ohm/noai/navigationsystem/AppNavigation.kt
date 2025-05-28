@@ -55,10 +55,13 @@ fun AppNavigation() {
             val musicViewModel: MusicViewModel = viewModel()
             MusicGeneratorScreen(viewModel = musicViewModel)
         }
-        composable("llamaMaverick") { // Add Llama Maverick destination
-            val llamaMaverickViewModel: LlamaMaverickViewModel = viewModel()
-            LlamaMaverickChatScreen(viewModel = llamaMaverickViewModel)
+         composable("llamaMaverick") { // Add Llama Maverick destination
+             val llamaMaverickViewModel: LlamaMaverickViewModel = viewModel()
+             LlamaMaverickChatScreen(viewModel = llamaMaverickViewModel)
         }
         // Add other destinations here (translator)
     }
-}
+    }
+
+
+

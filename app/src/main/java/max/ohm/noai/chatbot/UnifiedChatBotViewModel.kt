@@ -10,15 +10,6 @@ import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.launch
-import max.ohm.noai.a4f.A4FClient.A4F_API_KEY
-import max.ohm.noai.geminiflash.network.GeminiFlashApiClient
-import max.ohm.noai.geminiflash.network.GeminiFlashRequest
-import max.ohm.noai.geminiflash.network.Message as GeminiFlashMessage
-import max.ohm.noai.geminiflash.network.TextPart
-import max.ohm.noai.geminiflash.network.InlineDataPart
-import max.ohm.noai.geminiflash.network.InlineData
-import android.util.Base64
-import java.io.ByteArrayOutputStream
 
 class UnifiedChatBotViewModel : ViewModel() {
 
@@ -39,7 +30,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var selectedModel by mutableStateOf("gemini-flash") // Default model
+    var selectedModel by mutableStateOf("gemini-1.5-pro") // Default model
 
     init {
         initializeGeminiProModel()
@@ -110,47 +101,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                         val botMessage = Message(response.text ?: "No response from bot", false)
                         messages = messages + botMessage
                     }
-                    "gemini-flash" -> {
-//                       
-                        if (A4F_API_KEY == "YOUR_GEMINI_FLASH_API_KEY_HERE" ||A4F_API_KEY.isBlank()) {
-                            errorMessage = "Please set your Gemini Flash API Key in A4FClient"
-                            isLoading = false
-                            return@launch
-                        }
-                        val chatHistoryForFlash = messages.map { msg ->
-                            val parts = mutableListOf<max.ohm.noai.geminiflash.network.Part>()
-                            msg.image?.let { imgBitmap ->
-                                val byteArrayOutputStream = ByteArrayOutputStream()
-                                imgBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
-                                val byteArray = byteArrayOutputStream.toByteArray()
-                                val base64Image = Base64.encodeToString(byteArray, Base64.DEFAULT)
-                                parts.add(InlineDataPart(InlineData("image/jpeg", base64Image)))
-                            }
-                            if (msg.text.isNotBlank()) {
-                                parts.add(TextPart(msg.text))
-                            }
-                            GeminiFlashMessage(
-                                role = if (msg.isUser) "user" else "assistant",
-                                content = parts
-                            )
-                        }
-                        val request = GeminiFlashRequest(
-                            model = "provider-1/gemini-flash-2.0",
-                            messages = chatHistoryForFlash // Pass the entire chat history
-                        )
-                        val response = GeminiFlashApiClient.apiService.getChatCompletion(request)
-                        if (response.isSuccessful) {
-                            val aiResponse = response.body()?.choices?.firstOrNull()?.message?.content
-                            aiResponse?.let {
-                                messages = messages + Message(text = it, isUser = false)
-                            } ?: run {
-                                messages = messages + Message(text = "No response from Gemini Flash", isUser = false)
-                            }
-                        } else {
-                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            messages = messages + Message(text = "Gemini Flash API Error: ${response.code()} - ${errorBody}", isUser = false)
-                        }
-                    }
+
                     else -> {
                         errorMessage = "Invalid model selected."
                     }
