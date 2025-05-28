@@ -106,15 +106,21 @@ class UnifiedChatBotViewModel : ViewModel() {
                         messages = messages + botMessage
                     }
                     "gemini-flash" -> {
-//                        if (max.ohm.noai.geminiflash.GeminiFlashApiKey.API_KEY == "YOUR_GEMINI_FLASH_API_KEY_HERE" || max.ohm.noai.geminiflash.GeminiFlashApiKey.API_KEY.isBlank()) {
+//                       
                         if (A4F_API_KEY == "YOUR_GEMINI_FLASH_API_KEY_HERE" ||A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your Gemini Flash API Key in A4FClient"
                             isLoading = false
                             return@launch
                         }
+                        val chatHistoryForFlash = messages.map { msg ->
+                            GeminiFlashMessage(
+                                role = if (msg.isUser) "user" else "assistant",
+                                content = msg.text
+                            )
+                        }
                         val request = GeminiFlashRequest(
                             model = "provider-1/gemini-flash-2.0",
-                            messages = listOf(GeminiFlashMessage(role = "user", content = userMessage.text))
+                            messages = chatHistoryForFlash // Pass the entire chat history
                         )
                         val response = GeminiFlashApiClient.apiService.getChatCompletion(request)
                         if (response.isSuccessful) {
