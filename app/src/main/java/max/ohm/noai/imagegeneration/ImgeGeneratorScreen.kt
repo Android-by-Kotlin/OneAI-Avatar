@@ -101,17 +101,19 @@ fun ImageGeneratorScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
-                onClick = { unifiedImageViewModel.updateSelectedModel("flux.1.1-pro") },
-                border = if (selectedModel == "flux.1.1-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
-            ) {
-                Text("flux.1.1-pro")
-            }
-            OutlinedButton(
                 onClick = { unifiedImageViewModel.updateSelectedModel("flux.1-schnell") },
                 border = if (selectedModel == "flux.1-schnell") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
             ) {
                 Text("flux.1-schnell")
             }
+
+            OutlinedButton(
+                onClick = { unifiedImageViewModel.updateSelectedModel("flux.1.1-pro") },
+                border = if (selectedModel == "flux.1.1-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+            ) {
+                Text("flux.1.1-pro")
+            }
+
         }
         Spacer(modifier = Modifier.height(16.dp))
 

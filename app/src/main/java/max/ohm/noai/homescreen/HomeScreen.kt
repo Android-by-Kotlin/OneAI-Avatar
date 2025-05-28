@@ -123,53 +123,6 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // Flux Pro Image Generator Card (New)
-//            ElevatedCard(
-//                onClick = { navController.navigate("imageGenerator?model=flux.1.1-pro") },
-//                modifier = Modifier.fillMaxWidth(),
-//                shape = RoundedCornerShape(16.dp),
-//                colors = CardDefaults.elevatedCardColors(
-//                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
-//                )
-//            ) {
-//                Row(
-//                    modifier = Modifier
-//                        .padding(16.dp)
-//                        .fillMaxWidth(),
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    horizontalArrangement = Arrangement.SpaceBetween
-//                ) {
-//                    // Placeholder for Flux Pro image
-//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-//                    Text("Flux Pro Image Gen", style = MaterialTheme.typography.headlineSmall)
-//                    // Placeholder for Flux Pro image
-//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-//                }
-//            }
-
-            // Gemini Flash Card (New)
-            ElevatedCard(
-                onClick = { navController.navigate("geminiFlash") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Placeholder for Gemini Flash image
-                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-                    Text("Gemini Flash", style = MaterialTheme.typography.headlineSmall)
-                    // Placeholder for Gemini Flash image
-                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-                }
-            }
         }
     }
 }

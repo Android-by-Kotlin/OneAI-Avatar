@@ -37,32 +37,45 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 
 
 // ChatBotScreen Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
+fun ChatBotScreen(
+    unifiedChatBotViewModel: UnifiedChatBotViewModel = viewModel(),
+    initialModelType: String? = null
+) {
     val context = LocalContext.current
-    val messages = viewModel.messages
-    val inputText = viewModel.inputText
-    val isLoading = viewModel.isLoading
-    val errorMessage = viewModel.errorMessage
-    val selectedImage = viewModel.selectedImageBitmap // Get selected image state
+    val messages = unifiedChatBotViewModel.messages
+    val inputText = unifiedChatBotViewModel.inputText
+    val isLoading = unifiedChatBotViewModel.isLoading
+    val errorMessage = unifiedChatBotViewModel.errorMessage
+    val selectedImage = unifiedChatBotViewModel.selectedImageBitmap
+    val selectedModel = unifiedChatBotViewModel.selectedModel
+
+    LaunchedEffect(initialModelType) {
+        initialModelType?.let {
+            unifiedChatBotViewModel.updateSelectedModel(it)
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            try { // Add try-catch for potential bitmap loading errors
+            try {
                 val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                // Update the ViewModel state instead of sending immediately
-                viewModel.onImageSelected(bitmap)
+                unifiedChatBotViewModel.updateSelectedImage(bitmap)
             } catch (e: Exception) {
                 Toast.makeText(context, "Failed to load image", Toast.LENGTH_SHORT).show()
                 e.printStackTrace()
@@ -70,12 +83,11 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
         }
     }
 
-
     // Show Toast when errorMessage changes
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearErrorMessage() // Clear message after showing
+            unifiedChatBotViewModel.clearErrorMessage() // Clear message after showing
         }
     }
 
@@ -89,33 +101,53 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 }
-                // Consider adding colors = TopAppBarDefaults.smallTopAppBarColors(...) for theming
             )
         },
         bottomBar = {
-            // Column to potentially stack image preview above the input row
             Column(modifier = Modifier.padding(8.dp)) {
+                // Model Selection Bar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    OutlinedButton(
+                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-1.5-pro") },
+                        border = if (selectedModel == "gemini-1.5-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                    ) {
+                        Text("Gemini 1.5 Pro")
+                    }
+
+                    OutlinedButton(
+                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-flash") },
+                        border = if (selectedModel == "gemini-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                    ) {
+                        Text("Gemini Flash")
+                    }
+
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Optional: Show a preview of the selected image
                 if (selectedImage != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                         AsyncImage(
+                        AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(selectedImage)
-                                .crossfade(true) // Add crossfade for smoother loading
+                                .crossfade(true)
                                 .build(),
                             contentDescription = "Selected Image Preview",
                             modifier = Modifier
-                                .size(60.dp) // Smaller preview size
+                                .size(60.dp)
                                 .padding(end = 8.dp)
                         )
-                        // Add a button to remove the selected image
-                        IconButton(onClick = { viewModel.onImageSelected(null) }) {
-                            // Use a clear or close icon
+                        IconButton(onClick = { unifiedChatBotViewModel.updateSelectedImage(null) }) {
                             Icon(Icons.Filled.Close, contentDescription = "Remove Image")
                         }
-                        Spacer(modifier = Modifier.weight(1f)) // Push input field to the right
+                        Spacer(modifier = Modifier.weight(1f))
                     }
-                    Spacer(modifier = Modifier.height(4.dp)) // Space between preview and input
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 Row(
@@ -127,26 +159,24 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
                     }
                     OutlinedTextField(
                         value = inputText,
-                        onValueChange = { viewModel.onInputTextChange(it) },
+                        onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
                         label = { Text("Type a prompt") },
                         modifier = Modifier.weight(1f),
-                        singleLine = false, // Allow multi-line input if needed
-                        maxLines = 5, // Limit max lines
-                        enabled = !isLoading // Still disable while loading/sending
+                        singleLine = false,
+                        maxLines = 5,
+                        enabled = !isLoading
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { viewModel.sendMessage() },
-                        // Enable if not loading AND (text is not blank OR an image is selected)
+                        onClick = { unifiedChatBotViewModel.sendMessage() },
                         enabled = !isLoading && (inputText.text.isNotBlank() || selectedImage != null),
-                        shape = RoundedCornerShape(50), // Consider MaterialTheme shapes
+                        shape = RoundedCornerShape(50),
                         contentPadding = PaddingValues(12.dp)
                     ) {
-                        // Show progress indicator inside button when loading
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
-                                color = LocalContentColor.current, // Use button's content color
+                                color = LocalContentColor.current,
                                 strokeWidth = 2.dp
                             )
                         } else {
@@ -162,15 +192,12 @@ fun ChatBotScreen(viewModel: ChatBotViewModel = viewModel()) {
                 .padding(paddingValues)
                 .padding(horizontal = 8.dp)
                 .fillMaxSize(),
-            reverseLayout = true // To show latest messages at the bottom
+            reverseLayout = true
         ) {
-            // Add a key for better performance and state preservation
             items(messages.reversed(), key = { message -> message.hashCode() + message.text.hashCode() }) { message ->
                 MessageBubble(message = message)
-                Spacer(modifier = Modifier.height(8.dp)) // Add space between bubbles
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
-
     }
 }
-
