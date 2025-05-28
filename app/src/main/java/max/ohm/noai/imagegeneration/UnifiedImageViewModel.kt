@@ -8,7 +8,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import max.ohm.noai.fluxproimagegen.FLUXPRO_API_KEY
+import max.ohm.noai.a4f.A4FClient.A4F_API_KEY
 import max.ohm.noai.fluxproimagegen.network.FluxApiClient
 import max.ohm.noai.fluxproimagegen.network.FluxImageGenerationRequest
 import max.ohm.noai.network.ApiClient
@@ -86,9 +86,8 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                     }
                     "flux.1.1-pro" -> {
-//                        if (max.ohm.noai.fluxproimagegen.FluxImageGenApiKey.API_KEY == "ddc-a4f-2e9bee7f17d640d7bcba8fb26cf48d46" || max.ohm.noai.fluxproimagegen.FluxImageGenApiKey.API_KEY.isBlank()) {
-                        if (FLUXPRO_API_KEY == "YOUR_FLUXPRO_API_KEY_HERE" || FLUXPRO_API_KEY.isBlank()) {
-                            errorMessage = "Please set your Flux Pro API Key in FluxImageGenApiKey.kt"
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
