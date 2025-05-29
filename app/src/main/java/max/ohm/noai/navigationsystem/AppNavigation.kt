@@ -12,8 +12,6 @@ import max.ohm.noai.chatbot.UnifiedChatBotViewModel
 import max.ohm.noai.homescreen.HomeScreen
 import max.ohm.noai.imagegeneration.ImageGeneratorScreen
 import max.ohm.noai.imagegeneration.UnifiedImageViewModel
-import max.ohm.noai.llama4mavrick.LlamaMaverickChatScreen
-import max.ohm.noai.llama4mavrick.LlamaMaverickViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
 
@@ -50,15 +48,10 @@ fun AppNavigation() {
             ChatBotScreen(unifiedChatBotViewModel = unifiedChatBotViewModel, initialModelType = modelType)
         }
         composable("aiMusic") { // Add AI music generator destination
-//            val aiMusicViewModel: AiMusicViewModel = AiMusicViewModel()
-//            AiMusicScreen(viewModel = aiMusicViewModel)
             val musicViewModel: MusicViewModel = viewModel()
             MusicGeneratorScreen(viewModel = musicViewModel)
         }
-         composable("llamaMaverick") { // Add Llama Maverick destination
-             val llamaMaverickViewModel: LlamaMaverickViewModel = viewModel()
-             LlamaMaverickChatScreen(viewModel = llamaMaverickViewModel)
-        }
+
         // Add other destinations here (translator)
     }
     }
