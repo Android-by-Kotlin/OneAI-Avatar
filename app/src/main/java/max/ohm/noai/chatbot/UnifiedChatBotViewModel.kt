@@ -30,7 +30,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var selectedModel by mutableStateOf("gemini-1.5-pro") // Default model
+    var selectedModel by mutableStateOf("gemini-2.0-flash") // Default model
 
     init {
         initializeGeminiProModel()
@@ -40,10 +40,11 @@ class UnifiedChatBotViewModel : ViewModel() {
         if (GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" && GEMINI_API_KEY.isNotBlank()) {
             geminiProGenerativeModel = GenerativeModel(
                 modelName = "models/gemini-2.0-flash", // Use the Pro model
+                //modelName = "gemini-2.5-flash",
                 apiKey = GEMINI_API_KEY
             )
         } else {
-            println("Error: Gemini API Key for Gemini 1.5 Pro is not configured correctly.")
+            println("Error: Gemini API Key for gemini-2.0-flash is not configured correctly.")
         }
     }
 
@@ -83,9 +84,9 @@ class UnifiedChatBotViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 when (selectedModel) {
-                    "gemini-1.5-pro" -> {
+                    "gemini-2.0-flash" -> {
                         if (geminiProGenerativeModel == null) {
-                            errorMessage = "Gemini 1.5 Pro model not initialized. Check API Key."
+                            errorMessage = "gemini-2.0-flash model not initialized. Check API Key."
                             isLoading = false
                             return@launch
                         }

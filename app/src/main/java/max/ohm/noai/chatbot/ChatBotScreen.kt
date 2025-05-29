@@ -113,18 +113,13 @@ fun ChatBotScreen(
                 ) {
 
                     OutlinedButton(
-                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-1.5-pro") },
-                        border = if (selectedModel == "gemini-1.5-pro") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-2.0-flash") },
+                        border = if (selectedModel == "gemini-2.0-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
                     ) {
-                        Text("Gemini 1.5 Pro")
+                        Text("AdvancedAi")
                     }
 
-                    OutlinedButton(
-                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-flash") },
-                        border = if (selectedModel == "gemini-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
-                    ) {
-                        Text("Gemini Flash")
-                    }
+
 
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -157,15 +152,20 @@ fun ChatBotScreen(
                     IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                         Icon(Icons.Filled.Image, contentDescription = "Select Image")
                     }
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
-                        label = { Text("Type a prompt") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = false,
-                        maxLines = 5,
-                        enabled = !isLoading
-                    )
+                    Row {
+
+                        OutlinedTextField(
+
+                            value = inputText,
+                            onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
+                            label = { Text("Type a prompt") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = false,
+                            maxLines = 5,
+                            enabled = !isLoading
+                        )
+                    }
+
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { unifiedChatBotViewModel.sendMessage() },

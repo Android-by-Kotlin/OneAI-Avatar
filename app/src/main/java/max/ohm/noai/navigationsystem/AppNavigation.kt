@@ -42,7 +42,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "gemini-flash" // Default to Gemini Flash
+                defaultValue = "gemini-2.0-flash" // Default to Gemini Flash
             })
         ) { backStackEntry ->
             val modelType = backStackEntry.arguments?.getString("modelType")
