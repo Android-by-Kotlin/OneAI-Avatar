@@ -112,14 +112,6 @@ fun ChatBotScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    OutlinedButton(
-                        onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-2.0-flash") },
-                        border = if (selectedModel == "gemini-2.0-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
-                    ) {
-                        Text("AdvancedAi")
-                    }
-
-
 
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -152,20 +144,25 @@ fun ChatBotScreen(
                     IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                         Icon(Icons.Filled.Image, contentDescription = "Select Image")
                     }
-                    Row {
 
-                        OutlinedTextField(
-
-                            value = inputText,
-                            onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
-                            label = { Text("Type a prompt") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = false,
-                            maxLines = 5,
-                            enabled = !isLoading
-                        )
-                    }
-
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
+                        label = { Text("Type a prompt") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = false,
+                        maxLines = 5,
+                        enabled = !isLoading,
+                        trailingIcon = {
+                            OutlinedButton(
+                                onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-2.0-flash") },
+                                modifier = Modifier.padding(end = 6.dp), // Add right padding here
+                                border = if (selectedModel == "gemini-2.0-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
+                            ) {
+                                Text("AdvancedAi")
+                            }
+                        }
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = { unifiedChatBotViewModel.sendMessage() },
