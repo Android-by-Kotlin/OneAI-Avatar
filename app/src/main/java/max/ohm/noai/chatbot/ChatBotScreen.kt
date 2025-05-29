@@ -153,10 +153,11 @@ fun ChatBotScreen(
                         singleLine = false,
                         maxLines = 5,
                         enabled = !isLoading,
+                        shape = RoundedCornerShape(45.dp), // Make the text field round
                         trailingIcon = {
                             OutlinedButton(
                                 onClick = { unifiedChatBotViewModel.updateSelectedModel("gemini-2.0-flash") },
-                                modifier = Modifier.padding(end = 6.dp), // Add right padding here
+                                modifier = Modifier.padding(end = 9.dp), // Add right padding here
                                 border = if (selectedModel == "gemini-2.0-flash") BorderStroke(2.dp, Color.Blue) else BorderStroke(1.dp, Color.Gray)
                             ) {
                                 Text("AdvancedAi")
