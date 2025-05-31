@@ -7,6 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import max.ohm.noai.a4f.A4FClient.A4F_API_KEY
 import max.ohm.noai.fluxproimagegen.network.FluxApiClient
@@ -33,20 +37,45 @@ class UnifiedImageViewModel : ViewModel() {
 
     var selectedModel by mutableStateOf("flux.1-schnell") // Default model
 
+    private val _elapsedTimeInSeconds = MutableStateFlow(0L)
+    val elapsedTimeInSeconds: StateFlow<Long> = _elapsedTimeInSeconds
+
+    private val _totalGenerationTimeInSeconds = MutableStateFlow<Long?>(null)
+    val totalGenerationTimeInSeconds: StateFlow<Long?> = _totalGenerationTimeInSeconds
+
+    private var timerJob: Job? = null
+    private var generationStartTime: Long = 0L
+
     fun updatePrompt(newPrompt: TextFieldValue) {
         prompt = newPrompt
     }
 
     fun updateSelectedModel(model: String) {
         selectedModel = model
-        // Clear previous results when switching models
+        // Clear previous results and timer when switching models
         generatedImageData = null
         imageUrl = null
         errorMessage = null
+        _elapsedTimeInSeconds.value = 0L
+        _totalGenerationTimeInSeconds.value = null
+        timerJob?.cancel()
     }
 
     fun clearErrorMessage() {
         errorMessage = null
+    }
+
+    private fun startTimer() {
+        _elapsedTimeInSeconds.value = 0L
+        _totalGenerationTimeInSeconds.value = null
+        generationStartTime = System.currentTimeMillis()
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (isLoading) { // Loop while isLoading is true
+                _elapsedTimeInSeconds.value = (System.currentTimeMillis() - generationStartTime) / 1000
+                delay(1000)
+            }
+        }
     }
 
     fun generateImage() {
@@ -59,6 +88,7 @@ class UnifiedImageViewModel : ViewModel() {
         generatedImageData = null
         imageUrl = null
         errorMessage = null
+        startTimer() // Start the timer
 
         viewModelScope.launch {
             try {
@@ -107,15 +137,175 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Flux.1.1-pro API Error: ${response.code()} - ${errorBody}"
                         }
                     }
+                    "flux.ultra-pro" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/flux-1.1-pro-ultra",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux.ultra-pro API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-4/dall-e-3" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/dall-e-3",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-4/shuttle-3.1-aesthetic" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/shuttle-3.1-aesthetic",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Shuttle 3.1 Aesthetic API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-4/shuttle-3-diffusion" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/shuttle-3-diffusion",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Shuttle 3 Diffusion API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-4/shuttle-jaguar" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/shuttle-jaguar",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Shuttle Jaguar API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-4/flux-dev" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/flux-dev",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux Dev (Provider 4) API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-2/flux.1-dev" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-2/flux.1-dev",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux 1 Dev API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
                     else -> {
                         errorMessage = "Invalid model selected."
+                        isLoading = false // Ensure loading stops if model is invalid before try-finally
                     }
                 }
             } catch (e: Exception) {
                 errorMessage = "Network or other error: ${e.message}"
                 e.printStackTrace()
             } finally {
-                isLoading = false
+                isLoading = false // This will stop the timer loop in startTimer()
+                if (generationStartTime > 0) { // Calculate total time only if generation started
+                    _totalGenerationTimeInSeconds.value = (System.currentTimeMillis() - generationStartTime) / 1000
+                }
+                // No need to explicitly cancel timerJob here as isLoading=false handles it
+                // and startTimer() cancels previous job
             }
         }
     }
