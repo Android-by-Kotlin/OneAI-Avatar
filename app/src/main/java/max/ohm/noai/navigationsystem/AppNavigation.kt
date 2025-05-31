@@ -14,6 +14,9 @@ import max.ohm.noai.imagegeneration.ImageGeneratorScreen
 import max.ohm.noai.imagegeneration.UnifiedImageViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
+import max.ohm.noai.videogeneration.VideoGenerationScreen
+
+// Import the new screen
 
 // --- Navigation ---
 @Composable
@@ -51,10 +54,10 @@ fun AppNavigation() {
             val musicViewModel: MusicViewModel = viewModel()
             MusicGeneratorScreen(viewModel = musicViewModel)
         }
+        composable("videoGeneration") { // Add AI video generation destination
+            VideoGenerationScreen()
+        }
 
         // Add other destinations here (translator)
     }
-    }
-
-
-
+}

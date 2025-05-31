@@ -123,28 +123,29 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
-            // Llama Maverick Card
-//            ElevatedCard(
-//                onClick = { navController.navigate("llamaMaverick") },
-//                modifier = Modifier.fillMaxWidth(),
-//                shape = RoundedCornerShape(16.dp),
-//                colors = CardDefaults.elevatedCardColors(
-//                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
-//                )
-//            ) {
-//                Row(
-//                    modifier = Modifier
-//                        .padding(16.dp)
-//                        .fillMaxWidth(),
-//                    verticalAlignment = Alignment.CenterVertically,
-//                    horizontalArrangement = Arrangement.SpaceBetween
-//                ) {
-//
-//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-//                    Text("Ai Video", style = MaterialTheme.typography.headlineSmall)
-//                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
-//                }
-//            }
+            // AI Video Card
+            ElevatedCard(
+                onClick = { navController.navigate("videoGeneration") }, // Navigate to video generation screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for Video image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("AI Video", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for Video image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
 
         }
     }

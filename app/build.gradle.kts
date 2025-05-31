@@ -62,6 +62,8 @@ dependencies {
     // Retrofit & Gson for Networking
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
     // Coil for Image Loading in Compose
     implementation(libs.coil.compose)
