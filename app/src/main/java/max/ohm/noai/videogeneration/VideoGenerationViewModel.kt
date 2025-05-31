@@ -4,15 +4,12 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import max.ohm.noai.videogeneration.network.VideoApiClient
-import max.ohm.noai.videogeneration.network.VideoFileResponse
 import max.ohm.noai.videogeneration.network.VideoGenerationRequest
-import max.ohm.noai.videogeneration.network.VideoGenerationTaskResponse
 
 class VideoGenerationViewModel : ViewModel() {
 
@@ -28,20 +25,8 @@ class VideoGenerationViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    // StateFlows to hold raw API response strings
-    private val _generationResponseJson = MutableStateFlow<String?>(null)
-    val generationResponseJson: StateFlow<String?> = _generationResponseJson
-
-    private val _pollingResponseJson = MutableStateFlow<String?>(null)
-    val pollingResponseJson: StateFlow<String?> = _pollingResponseJson
-
-    private val _fileRetrievalResponseJson = MutableStateFlow<String?>(null)
-    val fileRetrievalResponseJson: StateFlow<String?> = _fileRetrievalResponseJson
-
-
     companion object {
         private const val TAG = "VideoGenViewModel"
-        private val gson = Gson() // For converting objects to JSON strings for display
     }
 
     fun setPrompt(newPrompt: String) {
@@ -53,10 +38,7 @@ class VideoGenerationViewModel : ViewModel() {
         _isLoading.value = true
         _error.value = null
         _videoUrl.value = null
-        _generationResponseJson.value = null
-        _pollingResponseJson.value = null
-        _fileRetrievalResponseJson.value = null
-        Log.d(TAG, "isLoading set to true, videoUrl and response JSONs set to null.")
+        Log.d(TAG, "isLoading set to true, videoUrl set to null.")
 
         if (!VideoGenApiKey.validateCredentials()) {
             _error.value = "Invalid API credentials. Please check your API key and Group ID."
@@ -71,16 +53,14 @@ class VideoGenerationViewModel : ViewModel() {
                 Log.d(TAG, "Sending video generation request with prompt: ${_prompt.value}")
                 
                 val response = VideoApiClient.apiService.generateVideo(authorization, request)
-                _generationResponseJson.value = try { gson.toJson(response.body()) ?: response.errorBody()?.string() } catch (e: Exception) { "Error serializing generation response" }
-
 
                 if (response.isSuccessful) {
-                    val responseBody = response.body() // Type VideoGenerationTaskResponse
+                    val responseBody = response.body()
                     if (responseBody?.taskId != null) {
                         Log.d(TAG, "Task ID received: ${responseBody.taskId}. Polling video status.")
                         pollVideoStatus(responseBody.taskId)
                     } else {
-                        Log.e(TAG, "Task ID not received. Full response: ${gson.toJson(responseBody)}")
+                        Log.e(TAG, "Task ID not received. Full response: ${response.body().toString()}")
                         _error.value = "Task ID not received from generation API."
                         _isLoading.value = false
                     }
@@ -102,16 +82,14 @@ class VideoGenerationViewModel : ViewModel() {
         Log.d(TAG, "pollVideoStatus called for taskId: $taskId")
         val authorization = "Bearer ${VideoGenApiKey.API_KEY}"
         var attempts = 0
-        val maxAttempts = 60 // 5 minutes total (60 * 5 seconds)
+        val maxAttempts = 60
 
         try {
             while (attempts < maxAttempts) {
                 val currentAttempt = attempts + 1
                 Log.d(TAG, "Polling attempt $currentAttempt/$maxAttempts for taskId: $taskId")
                 val response = VideoApiClient.apiService.queryVideoGenerationStatus(authorization, taskId)
-                val responseBody = response.body() // Type: VideoGenerationTaskResponse
-                _pollingResponseJson.value = try { gson.toJson(responseBody) ?: response.errorBody()?.string() } catch (e: Exception) { "Error serializing polling response" }
-
+                val responseBody = response.body()
 
                 if (response.isSuccessful && responseBody != null) {
                     Log.d(TAG, "Poll response: Status=${responseBody.status}, FileId=${responseBody.fileId}, BaseMsg=${responseBody.baseResp.statusMsg}")
@@ -120,41 +98,38 @@ class VideoGenerationViewModel : ViewModel() {
                         if (!responseBody.fileId.isNullOrEmpty()) {
                             Log.d(TAG, "Polling successful. File ID: ${responseBody.fileId}. Retrieving video file.")
                             retrieveVideoFile(responseBody.fileId)
-                            return // Exit polling
+                            return
                         } else {
-                            Log.e(TAG, "Polling status success, but file_id is missing. Response: ${gson.toJson(responseBody)}")
+                            Log.e(TAG, "Polling status success, but file_id is missing. Response: ${responseBody.toString()}")
                             _error.value = "Polling successful, but file ID is missing."
                             _isLoading.value = false
-                            return // Exit polling
+                            return
                         }
                     } else if (responseBody.status.equals("Processing", ignoreCase = true) || 
                                responseBody.status.equals("Pending", ignoreCase = true) || 
                                responseBody.status.equals("Preparing", ignoreCase = true) || 
                                responseBody.status.equals("Queueing", ignoreCase = true) ||
                                responseBody.baseResp.statusMsg.equals("processing", ignoreCase = true)) {
-                        // Continue polling
                         Log.d(TAG, "Video still processing/queueing. Status: ${responseBody.status}, BaseMsg: ${responseBody.baseResp.statusMsg}")
-                    } else { // Failed, error, or unexpected status
-                        Log.e(TAG, "Polling returned non-success/non-processing status: ${responseBody.status}, BaseMsg: ${responseBody.baseResp.statusMsg}. Full Response: ${gson.toJson(responseBody)}")
+                    } else { 
+                        Log.e(TAG, "Polling returned non-success/non-processing status: ${responseBody.status}, BaseMsg: ${responseBody.baseResp.statusMsg}. Full Response: ${responseBody.toString()}")
                         _error.value = "Video generation failed or encountered an error during polling: Status: ${responseBody.status}, Message: ${responseBody.baseResp.statusMsg}"
                         _isLoading.value = false
-                        return // Exit polling
+                        return 
                     }
-                } else { // HTTP error or empty body
+                } else { 
                     val errorBodyString = response.errorBody()?.string()
-                    Log.e(TAG, "Error polling status: HTTP ${response.code()}, Body: $errorBodyString. Full Response: ${gson.toJson(responseBody)}")
+                    Log.e(TAG, "Error polling status: HTTP ${response.code()}, Body: $errorBodyString. Full Response: ${responseBody?.toString()}")
                     _error.value = "Error polling status (HTTP ${response.code()}): $errorBodyString"
                     _isLoading.value = false
-                    return // Exit polling
+                    return
                 }
                 attempts++
                 if (attempts < maxAttempts) delay(5000)
             }
-
             Log.w(TAG, "Video generation timed out after $maxAttempts attempts for taskId: $taskId.")
             _error.value = "Video generation timed out."
             _isLoading.value = false
-
         } catch (e: Exception) {
             Log.e(TAG, "Network error during polling loop for taskId: $taskId: ${e.message}", e)
             _error.value = "Network error (polling): ${e.message}"
@@ -172,7 +147,6 @@ class VideoGenerationViewModel : ViewModel() {
                 
                 val response = VideoApiClient.apiService.retrieveVideoFile(authorization, groupId, fileId)
                 val responseBody = response.body()
-                _fileRetrievalResponseJson.value = try { gson.toJson(responseBody) ?: response.errorBody()?.string() } catch (e: Exception) { "Error serializing file retrieval response" }
 
                 if (response.isSuccessful && responseBody?.file != null && responseBody.baseResp.statusMsg == "success") {
                     val fileData = responseBody.file
@@ -188,15 +162,15 @@ class VideoGenerationViewModel : ViewModel() {
                         val decodedUrl = Uri.decode(rawUrl)
                         _videoUrl.value = decodedUrl
                         Log.i(TAG, "Video URL set after decoding: $decodedUrl")
-                        _error.value = null
+                        _error.value = null 
                     } else {
-                        Log.e(TAG, "Both downloadUrl and backupDownloadUrl are null or empty. Response: ${gson.toJson(responseBody)}")
+                        Log.e(TAG, "Both downloadUrl and backupDownloadUrl are null or empty. Response: ${responseBody.toString()}")
                         _error.value = "Failed to get a valid video download URL from API."
                     }
                 } else {
                     val errorBodyString = response.errorBody()?.string()
                     val baseRespMsg = responseBody?.baseResp?.statusMsg
-                    Log.e(TAG, "Error retrieving video file: HTTP ${response.code()}, BaseRespMsg: $baseRespMsg, ErrorBody: $errorBodyString. Full Response: ${gson.toJson(responseBody)}")
+                    Log.e(TAG, "Error retrieving video file: HTTP ${response.code()}, BaseRespMsg: $baseRespMsg, ErrorBody: $errorBodyString. Full Response: ${responseBody?.toString()}")
                     _error.value = "Error retrieving video file (HTTP ${response.code()}): ${baseRespMsg ?: errorBodyString ?: "Unknown error"}"
                 }
             } catch (e: Exception) {

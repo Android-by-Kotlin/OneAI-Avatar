@@ -1,6 +1,8 @@
 package max.ohm.noai.videogeneration
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
@@ -10,19 +12,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -52,6 +58,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,8 +66,16 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
+// Helper function to find an Activity from a Context
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
 
-// private const val PLACEHOLDER_VIDEO_URL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" // REMOVED
 private const val SCREEN_TAG = "VideoGenScreen"
 private const val APP_USER_AGENT = "NoAI Android App"
 
@@ -75,13 +90,6 @@ fun VideoGenerationScreen(
     val error by viewModel.error.collectAsState()
     val context = LocalContext.current
 
-    val generationResponseJson by viewModel.generationResponseJson.collectAsState()
-    val pollingResponseJson by viewModel.pollingResponseJson.collectAsState()
-    val fileRetrievalResponseJson by viewModel.fileRetrievalResponseJson.collectAsState()
-
-    // val currentVideoUrl = generatedVideoUrl ?: PLACEHOLDER_VIDEO_URL // REMOVED
-    // val shouldAutoplay = remember(generatedVideoUrl) { generatedVideoUrl != null } // SIMPLIFIED - autoplay if URL exists
-
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("AI Video Generation") })
@@ -91,49 +99,78 @@ fun VideoGenerationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp) // Horizontal padding for the whole screen
+                // Don't add vertical padding here for the whole column, manage it internally
         ) {
-            // Video Player Section (Top)
-            if (generatedVideoUrl != null) {
-                VideoPlayer(
-                    videoUrl = generatedVideoUrl!!, // Not null here
-                    autoplay = true, // Always try to autoplay a new generated video
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minHeight = 200.dp) // Ensure it has some min height
-                        .height(250.dp) // Fixed height, or use aspect ratio
-                        .background(Color.Black)
-                )
-            } else {
-                // Placeholder when no video is generated or loading
+            // Centered Content Area (Player and Error Message)
+            Column(
+                modifier = Modifier
+                    .weight(1f) // Takes up available space, pushing controls to bottom
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Video Player Section
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .background(Color.DarkGray), // Placeholder background
-                    contentAlignment = Alignment.Center
+                        .height(250.dp) 
+                        .background(Color.DarkGray)
                 ) {
-                    if (isLoading) {
-                        // This specific loading indicator is for when the player area itself is waiting
-                        // The main loading indicator for API calls is below in the scrollable section
-                        CircularProgressIndicator(color = Color.White)
-                        Text("Preparing video...", color = Color.White, modifier = Modifier.padding(top = 60.dp))
+                    if (generatedVideoUrl != null) {
+                        VideoPlayer(
+                            videoUrl = generatedVideoUrl!!,
+                            autoplay = true,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black)
+                        )
                     } else {
-                        Text("Generated video will appear here", color = Color.White)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isLoading && generatedVideoUrl == null) {
+                                CircularProgressIndicator(color = Color.White)
+                                Text("Preparing video...", color = Color.White, modifier = Modifier.padding(top = 70.dp))
+                            } else {
+                                Text("Generated video will appear here", color = Color.White)
+                            }
+                        }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Error display (if any) - below player, still in centered area
+                if (error != null) {
+                     Text(
+                        text = "Error: $error",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                } else {
+                    // Maintain space if no error, relative to where error would be
+                    Spacer(modifier = Modifier.height(MaterialTheme.typography.bodyLarge.lineHeight.value.dp * 2))
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Prompt, Generate Button, and Download Button Section
-            Column(modifier = Modifier.fillMaxWidth()) {
+            // Bottom Controls Section (Prompt and Buttons)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp), // Padding at the very bottom of the screen
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { viewModel.setPrompt(it) },
                     label = { Text("Enter video prompt") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(percent = 50)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
@@ -151,9 +188,8 @@ fun VideoGenerationScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            generatedVideoUrl?.let { url ->
-                            downloadVideo(context, url)
-                            } ?: Toast.makeText(context, "No generated video to download", Toast.LENGTH_SHORT).show()
+                            generatedVideoUrl?.let { url -> downloadVideo(context, url) }
+                                ?: Toast.makeText(context, "No video to download", Toast.LENGTH_SHORT).show()
                         },
                         enabled = generatedVideoUrl != null && !isLoading,
                         modifier = Modifier.weight(1f)
@@ -161,44 +197,6 @@ fun VideoGenerationScreen(
                         Text("Download Video")
                     }
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Loading, Error, and API Response Display Section (Scrollable)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f) 
-                    .verticalScroll(rememberScrollState())
-            ) {
-                // General loading indicator (if not shown in player area)
-                if (isLoading && generatedVideoUrl == null) { 
-                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                           CircularProgressIndicator()
-                           Spacer(modifier = Modifier.height(8.dp))
-                           Text("Processing API request...", style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-
-                error?.let {
-                    Text(
-                        text = "Error: $it",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-
-                if (generationResponseJson != null || pollingResponseJson != null || fileRetrievalResponseJson != null) {
-                    Text("API Responses:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
-                }
-
-                generationResponseJson?.let { ResponseSection("Generation API", it) }
-                pollingResponseJson?.let { ResponseSection("Polling API", it) }
-                fileRetrievalResponseJson?.let { ResponseSection("File Retrieval API", it) }
             }
         }
     }
@@ -225,7 +223,6 @@ fun ResponseSection(title: String, jsonString: String?) {
     }
 }
 
-
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
@@ -241,19 +238,16 @@ fun VideoPlayer(
 
     val exoPlayer = remember(videoUrl) {
         Log.d(SCREEN_TAG, "Creating new ExoPlayer instance for URL: $videoUrl")
-
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent(APP_USER_AGENT)
-            .setAllowCrossProtocolRedirects(true) // Good for handling redirects
-
+            .setAllowCrossProtocolRedirects(true)
         val mediaSourceFactory = ProgressiveMediaSource.Factory(httpDataSourceFactory)
-
         ExoPlayer.Builder(context)
-            .setMediaSourceFactory(mediaSourceFactory) // Set the custom media source factory
+            .setMediaSourceFactory(mediaSourceFactory)
             .build()
             .apply {
                 Log.d(SCREEN_TAG, "Setting media item: $videoUrl")
-                val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl)) // Ensure Uri.parse is used
+                val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
                 setMediaItem(mediaItem)
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -264,11 +258,7 @@ fun VideoPlayer(
                         }
                         Log.d(SCREEN_TAG, "ExoPlayer state changed: $playbackState, isBuffering: ${isBuffering.value}")
                     }
-
-                    override fun onIsPlayingChanged(isPlayingNow: Boolean) {
-                        Log.d(SCREEN_TAG, "ExoPlayer onIsPlayingChanged (actual): $isPlayingNow")
-                    }
-
+                    override fun onIsPlayingChanged(isPlayingNow: Boolean) { Log.d(SCREEN_TAG, "ExoPlayer onIsPlayingChanged (actual): $isPlayingNow") }
                     override fun onPlayerError(error: PlaybackException) {
                         Log.e(SCREEN_TAG, "ExoPlayer error for $videoUrl. Code: ${error.errorCodeName}, Message: ${error.message}", error)
                         playerErrorMessage.value = "Video Error: ${error.errorCodeName} (${error.errorCode})\nMessage: ${error.localizedMessage?.take(100)}"
@@ -294,7 +284,6 @@ fun VideoPlayer(
                 PlayerView(ctx).apply {
                     player = exoPlayer
                     useController = true
-                    setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -306,10 +295,7 @@ fun VideoPlayer(
 
         playerErrorMessage.value?.let { message ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)).padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(message, color = Color.White, style = MaterialTheme.typography.bodyLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -318,7 +304,7 @@ fun VideoPlayer(
     }
 }
 
-
+@OptIn(DelicateCoroutinesApi::class)
 fun downloadVideo(context: Context, videoUrl: String) {
     if (videoUrl.isEmpty()) {
         Toast.makeText(context, "Video URL is empty.", Toast.LENGTH_SHORT).show()
