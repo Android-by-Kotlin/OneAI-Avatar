@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,15 @@ class VideoGenerationViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _elapsedTimeInSeconds = MutableStateFlow(0L)
+    val elapsedTimeInSeconds: StateFlow<Long> = _elapsedTimeInSeconds
+
+    private val _totalGenerationTimeInSeconds = MutableStateFlow<Long?>(null)
+    val totalGenerationTimeInSeconds: StateFlow<Long?> = _totalGenerationTimeInSeconds
+
+    private var timerJob: Job? = null
+    private var generationStartTime: Long = 0L
+
     companion object {
         private const val TAG = "VideoGenViewModel"
     }
@@ -33,20 +43,46 @@ class VideoGenerationViewModel : ViewModel() {
         _prompt.value = newPrompt
     }
 
+    private fun startTimer() {
+        _elapsedTimeInSeconds.value = 0L
+        _totalGenerationTimeInSeconds.value = null
+        generationStartTime = System.currentTimeMillis()
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (_isLoading.value) {
+                _elapsedTimeInSeconds.value = (System.currentTimeMillis() - generationStartTime) / 1000
+                delay(1000) 
+            }
+        }
+    }
+
+    private fun stopTimerAndSetTotalTime(isSuccess: Boolean) {
+        timerJob?.cancel()
+        val endTime = System.currentTimeMillis()
+        val durationSeconds = (endTime - generationStartTime) / 1000
+        _elapsedTimeInSeconds.value = durationSeconds
+        if (isSuccess) {
+            _totalGenerationTimeInSeconds.value = durationSeconds
+        }
+        _isLoading.value = false
+    }
+
     fun generateVideo() {
         Log.d(TAG, "generateVideo called. Current prompt: ${_prompt.value}")
         _isLoading.value = true
         _error.value = null
         _videoUrl.value = null
-        Log.d(TAG, "isLoading set to true, videoUrl set to null.")
+        startTimer()
+        Log.d(TAG, "isLoading set to true, videoUrl set to null, timer started.")
 
         if (!VideoGenApiKey.validateCredentials()) {
             _error.value = "Invalid API credentials. Please check your API key and Group ID."
-            _isLoading.value = false
+            stopTimerAndSetTotalTime(false)
             return
         }
 
         viewModelScope.launch {
+            var success = false
             try {
                 val authorization = "Bearer ${VideoGenApiKey.API_KEY}"
                 val request = VideoGenerationRequest(model = "T2V-01-Director", prompt = _prompt.value)
@@ -59,21 +95,23 @@ class VideoGenerationViewModel : ViewModel() {
                     if (responseBody?.taskId != null) {
                         Log.d(TAG, "Task ID received: ${responseBody.taskId}. Polling video status.")
                         pollVideoStatus(responseBody.taskId)
+                        return@launch
                     } else {
                         Log.e(TAG, "Task ID not received. Full response: ${response.body().toString()}")
                         _error.value = "Task ID not received from generation API."
-                        _isLoading.value = false
                     }
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.e(TAG, "Error generating video: ${response.code()}, Body: $errorBody")
                     _error.value = "Error generating video (HTTP ${response.code()}): $errorBody"
-                    _isLoading.value = false
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Network error in generateVideo: ${e.message}", e)
                 _error.value = "Network error (generateVideo): ${e.message}"
-                _isLoading.value = false
+            } finally {
+                if (_isLoading.value) {
+                    stopTimerAndSetTotalTime(success)
+                }
             }
         }
     }
@@ -83,6 +121,7 @@ class VideoGenerationViewModel : ViewModel() {
         val authorization = "Bearer ${VideoGenApiKey.API_KEY}"
         var attempts = 0
         val maxAttempts = 60
+        var success = false
 
         try {
             while (attempts < maxAttempts) {
@@ -93,7 +132,6 @@ class VideoGenerationViewModel : ViewModel() {
 
                 if (response.isSuccessful && responseBody != null) {
                     Log.d(TAG, "Poll response: Status=${responseBody.status}, FileId=${responseBody.fileId}, BaseMsg=${responseBody.baseResp.statusMsg}")
-
                     if (responseBody.status == "Success" && responseBody.baseResp.statusMsg == "success") {
                         if (!responseBody.fileId.isNullOrEmpty()) {
                             Log.d(TAG, "Polling successful. File ID: ${responseBody.fileId}. Retrieving video file.")
@@ -102,8 +140,7 @@ class VideoGenerationViewModel : ViewModel() {
                         } else {
                             Log.e(TAG, "Polling status success, but file_id is missing. Response: ${responseBody.toString()}")
                             _error.value = "Polling successful, but file ID is missing."
-                            _isLoading.value = false
-                            return
+                            success = false; break
                         }
                     } else if (responseBody.status.equals("Processing", ignoreCase = true) || 
                                responseBody.status.equals("Pending", ignoreCase = true) || 
@@ -114,31 +151,35 @@ class VideoGenerationViewModel : ViewModel() {
                     } else { 
                         Log.e(TAG, "Polling returned non-success/non-processing status: ${responseBody.status}, BaseMsg: ${responseBody.baseResp.statusMsg}. Full Response: ${responseBody.toString()}")
                         _error.value = "Video generation failed or encountered an error during polling: Status: ${responseBody.status}, Message: ${responseBody.baseResp.statusMsg}"
-                        _isLoading.value = false
-                        return 
+                        success = false; break
                     }
                 } else { 
                     val errorBodyString = response.errorBody()?.string()
                     Log.e(TAG, "Error polling status: HTTP ${response.code()}, Body: $errorBodyString. Full Response: ${responseBody?.toString()}")
                     _error.value = "Error polling status (HTTP ${response.code()}): $errorBodyString"
-                    _isLoading.value = false
-                    return
+                    success = false; break
                 }
                 attempts++
                 if (attempts < maxAttempts) delay(5000)
             }
-            Log.w(TAG, "Video generation timed out after $maxAttempts attempts for taskId: $taskId.")
-            _error.value = "Video generation timed out."
-            _isLoading.value = false
+            if (attempts == maxAttempts && _isLoading.value) {
+                 Log.w(TAG, "Video generation timed out after $maxAttempts attempts for taskId: $taskId.")
+                _error.value = "Video generation timed out."
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Network error during polling loop for taskId: $taskId: ${e.message}", e)
             _error.value = "Network error (polling): ${e.message}"
-            _isLoading.value = false
+            success = false
+        } finally {
+            if (_isLoading.value) { 
+                stopTimerAndSetTotalTime(success)
+            }
         }
     }
 
     private fun retrieveVideoFile(fileId: String) {
         Log.d(TAG, "retrieveVideoFile called for fileId: $fileId")
+        var success = false
         viewModelScope.launch {
             try {
                 val authorization = "Bearer ${VideoGenApiKey.API_KEY}"
@@ -163,6 +204,7 @@ class VideoGenerationViewModel : ViewModel() {
                         _videoUrl.value = decodedUrl
                         Log.i(TAG, "Video URL set after decoding: $decodedUrl")
                         _error.value = null 
+                        success = true
                     } else {
                         Log.e(TAG, "Both downloadUrl and backupDownloadUrl are null or empty. Response: ${responseBody.toString()}")
                         _error.value = "Failed to get a valid video download URL from API."
@@ -177,8 +219,7 @@ class VideoGenerationViewModel : ViewModel() {
                 Log.e(TAG, "Network error retrieving file: ${e.message}", e)
                 _error.value = "Network error (retrieveVideoFile): ${e.message}"
             } finally {
-                Log.d(TAG, "retrieveVideoFile finished. Setting isLoading to false. Current URL: ${_videoUrl.value}")
-                _isLoading.value = false
+                stopTimerAndSetTotalTime(success)
             }
         }
     }

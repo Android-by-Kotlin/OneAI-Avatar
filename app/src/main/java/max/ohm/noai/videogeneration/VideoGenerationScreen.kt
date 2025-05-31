@@ -8,11 +8,13 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,15 +23,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -79,6 +78,13 @@ fun Context.findActivity(): Activity? {
 private const val SCREEN_TAG = "VideoGenScreen"
 private const val APP_USER_AGENT = "NoAI Android App"
 
+// Helper function to format seconds into MM:SS string
+fun formatSecondsToMMSS(seconds: Long): String {
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return String.format("%02d:%02d", minutes, remainingSeconds)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoGenerationScreen(
@@ -90,7 +96,61 @@ fun VideoGenerationScreen(
     val error by viewModel.error.collectAsState()
     val context = LocalContext.current
 
+    val elapsedTimeInSeconds by viewModel.elapsedTimeInSeconds.collectAsState()
+    val totalGenerationTimeInSeconds by viewModel.totalGenerationTimeInSeconds.collectAsState()
+
+    // Infinite transition for animations when loading
+    val infiniteTransition = rememberInfiniteTransition(label = "loading_transition")
+
+    val animatedScreenBackgroundColor by infiniteTransition.animateColor(
+        initialValue = MaterialTheme.colorScheme.background,
+        targetValue = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), // Subtle change
+        animationSpec = infiniteRepeatable(
+            tween(durationMillis = 1500, easing = LinearEasing),
+            RepeatMode.Reverse
+        ),
+        label = "screen_bg_color_anim"
+    )
+
+    val animatedButtonContainerColor by infiniteTransition.animateColor(
+        initialValue = MaterialTheme.colorScheme.primary,
+        targetValue = MaterialTheme.colorScheme.secondary,
+        animationSpec = infiniteRepeatable(
+            tween(durationMillis = 1000, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "button_container_color_anim"
+    )
+
+    val animatedButtonBorderColor by infiniteTransition.animateColor(
+        initialValue = MaterialTheme.colorScheme.primaryContainer, // Or another distinct color
+        targetValue = MaterialTheme.colorScheme.tertiary,      // Pulsate to this
+        animationSpec = infiniteRepeatable(
+            tween(durationMillis = 700, easing = LinearEasing),
+            RepeatMode.Reverse
+        ),
+        label = "button_border_color_anim"
+    )
+
+    val currentScreenBg = if (isLoading) animatedScreenBackgroundColor else MaterialTheme.colorScheme.background
+    
+    // Button colors and border for OutlinedButton
+    val generateButtonContainerColor = if (isLoading) animatedButtonContainerColor else MaterialTheme.colorScheme.primary
+    val generateButtonBorder = if (isLoading) {
+        BorderStroke(2.dp, animatedButtonBorderColor)
+    } else {
+        ButtonDefaults.outlinedButtonBorder // Default border when not loading
+    }
+    val generateButtonColors = ButtonDefaults.outlinedButtonColors(
+        containerColor = generateButtonContainerColor,
+        disabledContainerColor = ButtonDefaults.outlinedButtonColors().disabledContainerColor,
+        // Content color can be specified if needed, e.g., based on container animation
+        contentColor = if (isLoading) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary,
+        disabledContentColor = ButtonDefaults.outlinedButtonColors().disabledContentColor
+    )
+
     Scaffold(
+        containerColor = currentScreenBg, // Apply animated background to Scaffold
         topBar = {
             TopAppBar(title = { Text("AI Video Generation") })
         }
@@ -99,22 +159,19 @@ fun VideoGenerationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp) // Horizontal padding for the whole screen
-                // Don't add vertical padding here for the whole column, manage it internally
+                .padding(horizontal = 16.dp)
         ) {
-            // Centered Content Area (Player and Error Message)
             Column(
                 modifier = Modifier
-                    .weight(1f) // Takes up available space, pushing controls to bottom
+                    .weight(1f)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Video Player Section
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp) 
+                        .height(250.dp)
                         .background(Color.DarkGray)
                 ) {
                     if (generatedVideoUrl != null) {
@@ -130,9 +187,15 @@ fun VideoGenerationScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (isLoading && generatedVideoUrl == null) {
-                                CircularProgressIndicator(color = Color.White)
-                                Text("Preparing video...", color = Color.White, modifier = Modifier.padding(top = 70.dp))
+                            if (isLoading) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    CircularProgressIndicator(color = Color.White)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Generating video... (${formatSecondsToMMSS(elapsedTimeInSeconds)})",
+                                        color = Color.White
+                                    )
+                                }
                             } else {
                                 Text("Generated video will appear here", color = Color.White)
                             }
@@ -142,26 +205,30 @@ fun VideoGenerationScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Error display (if any) - below player, still in centered area
-                if (error != null) {
+                if (totalGenerationTimeInSeconds != null && error == null) {
+                    Text(
+                        text = "Video generated in ${formatSecondsToMMSS(totalGenerationTimeInSeconds!!)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                } else if (error != null) {
                      Text(
                         text = "Error: $error",
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(vertical=8.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 } else {
-                    // Maintain space if no error, relative to where error would be
-                    Spacer(modifier = Modifier.height(MaterialTheme.typography.bodyLarge.lineHeight.value.dp * 2))
+                    val textHeight = MaterialTheme.typography.bodyMedium.lineHeight.value.dp + 16.dp
+                    Spacer(modifier = Modifier.height(textHeight))
                 }
             }
 
-            // Bottom Controls Section (Prompt and Buttons)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp), // Padding at the very bottom of the screen
+                    .padding(bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 OutlinedTextField(
@@ -178,9 +245,11 @@ fun VideoGenerationScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
+                    OutlinedButton(
                         onClick = { viewModel.generateVideo() },
                         enabled = !isLoading && prompt.isNotBlank(),
+                        colors = generateButtonColors,
+                        border = generateButtonBorder,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(if (isLoading) "Generating..." else "Generate Video")
