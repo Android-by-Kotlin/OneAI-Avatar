@@ -15,6 +15,7 @@ import max.ohm.noai.imagegeneration.UnifiedImageViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
 import max.ohm.noai.videogeneration.VideoGenerationScreen
+import max.ohm.noai.aitalk.AiTalkScreen
 
 // Import the new screen
 
@@ -56,6 +57,9 @@ fun AppNavigation() {
         }
         composable("videoGeneration") { // Add AI video generation destination
             VideoGenerationScreen()
+        }
+        composable("aiTalk") { // Add AI Talk destination
+            AiTalkScreen()
         }
 
         // Add other destinations here (translator)

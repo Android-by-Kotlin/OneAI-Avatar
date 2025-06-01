@@ -147,6 +147,30 @@ fun HomeScreen(navController: NavController) {
                 }
             }
 
+            // AI Talk Card
+            ElevatedCard(
+                onClick = { navController.navigate("aiTalk") }, // Navigate to AI Talk screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for AI Talk image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("AI Talk", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for AI Talk image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+
         }
     }
 }
