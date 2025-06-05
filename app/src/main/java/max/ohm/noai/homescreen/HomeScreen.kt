@@ -197,6 +197,30 @@ fun HomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
             }
+            
+            // Text to Music Card (New)
+            ElevatedCard(
+                onClick = { navController.navigate("textToMusic") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer // Different color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for Text to Music image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("Text to Music", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for Text to Music image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
 
             // AI Video Card
             ElevatedCard(
@@ -224,11 +248,11 @@ fun HomeScreen(navController: NavController) {
 
             // AI Talk Card
             ElevatedCard(
-                onClick = { navController.navigate("aiTalk") }, // Navigate to AI Talk screen
+                onClick = { navController.navigate("aiTalk") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer // Light blue color
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer // Different color
                 )
             ) {
                 Row(
@@ -242,6 +266,30 @@ fun HomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                     Text("AI Talk", style = MaterialTheme.typography.headlineSmall)
                     // Placeholder for AI Talk image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+            
+            // Native Audio Dialog Card
+            ElevatedCard(
+                onClick = { navController.navigate("nativeAudio") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer // Distinct color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for Native Audio image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("Gemini 2.5 Voice", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for Native Audio image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
             }

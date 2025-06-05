@@ -22,6 +22,10 @@ import max.ohm.noai.imagegeneration.ImageGeneratorScreen
 import max.ohm.noai.imagegeneration.UnifiedImageViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
+import max.ohm.noai.nativeaudiodialog.NativeAudioScreen
+import max.ohm.noai.nativeaudiodialog.NativeAudioViewModel
+import max.ohm.noai.texttomusic.TextToMusicScreen
+import max.ohm.noai.texttomusic.TextToMusicViewModel
 import max.ohm.noai.videogeneration.VideoGenerationScreen
 
 // --- Navigation ---
@@ -86,6 +90,14 @@ fun AppNavigation() {
         composable("aiConversation") { // Add AI Conversation destination
             val aiConversationViewModel: AiConversationViewModel = viewModel()
             AiConversationScreen(aiConversationViewModel = aiConversationViewModel)
+        }
+        composable("nativeAudio") { // Add Native Audio Dialog destination
+            val nativeAudioViewModel: NativeAudioViewModel = viewModel()
+            NativeAudioScreen(nativeAudioViewModel = nativeAudioViewModel)
+        }
+        composable("textToMusic") { // Add Text-to-Music destination
+            val textToMusicViewModel: TextToMusicViewModel = viewModel()
+            TextToMusicScreen(textToMusicViewModel = textToMusicViewModel)
         }
 
         // Add other destinations here (translator)
