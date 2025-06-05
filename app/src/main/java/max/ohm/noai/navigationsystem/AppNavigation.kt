@@ -13,6 +13,8 @@ import max.ohm.noai.aiconversation.llm.OpenRouterScreen
 import max.ohm.noai.aiconversation.llm.OpenRouterViewModel
 import max.ohm.noai.aiconversation.tts.TtsScreen
 import max.ohm.noai.aiconversation.tts.TtsViewModel
+import max.ohm.noai.aitalk.AiTalkScreen
+import max.ohm.noai.aitalk.AiTalkViewModel
 import max.ohm.noai.chatbot.ChatBotScreen
 import max.ohm.noai.chatbot.UnifiedChatBotViewModel
 import max.ohm.noai.homescreen.HomeScreen
@@ -21,9 +23,6 @@ import max.ohm.noai.imagegeneration.UnifiedImageViewModel
 import max.ohm.noai.musicgeneration.MusicGeneratorScreen
 import max.ohm.noai.musicgeneration.MusicViewModel
 import max.ohm.noai.videogeneration.VideoGenerationScreen
-//import max.ohm.noai.aitalk.AiTalkScreen
-
-// Import the new screen
 
 // --- Navigation ---
 @Composable
@@ -62,7 +61,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "meta-llama/llama-3-70b-instruct:free" // Default model
+                defaultValue = "deepseek/deepseek-r1-0528:free" // Default model
             })
         ) { backStackEntry ->
             val modelType = backStackEntry.arguments?.getString("modelType")
@@ -77,7 +76,8 @@ fun AppNavigation() {
             VideoGenerationScreen()
         }
         composable("aiTalk") { // Add AI Talk destination
-           // AiTalkScreen()
+            val aiTalkViewModel: AiTalkViewModel = viewModel()
+            AiTalkScreen(aiTalkViewModel = aiTalkViewModel)
         }
         composable("tts") { // Add Text-to-Speech destination
             val ttsViewModel: TtsViewModel = viewModel()

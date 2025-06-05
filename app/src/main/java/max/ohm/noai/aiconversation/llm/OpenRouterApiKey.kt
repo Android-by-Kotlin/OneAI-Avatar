@@ -11,8 +11,8 @@ package max.ohm.noai.aiconversation.llm
  */
 
 // Replace with your actual OpenRouter API key
-internal const val OPENROUTER_API_KEY = "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"
+internal const val OPENROUTER_API_KEY = "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"
 
 // Your site URL and name for OpenRouter analytics (required by OpenRouter)
-internal const val SITE_URL = "https://yourapp.com" // Replace with your app's URL or package name
+internal const val SITE_URL = "https://noai.app" // Replace with your app's URL or package name
 internal const val SITE_NAME = "NoAi App" // Replace with your app's name 

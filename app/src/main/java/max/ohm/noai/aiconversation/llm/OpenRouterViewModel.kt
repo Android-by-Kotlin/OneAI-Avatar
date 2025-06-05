@@ -24,7 +24,7 @@ class OpenRouterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
     
-    var selectedModel by mutableStateOf("meta-llama/llama-3-70b-instruct:free") // Default model set to Llama 3
+    var selectedModel by mutableStateOf("deepseek/deepseek-r1-0528:free") // Default model set to Deepseek
     
     fun updateInputText(newText: TextFieldValue) {
         inputText = newText

@@ -116,6 +116,11 @@ class TtsViewModel : ViewModel() {
                 if (audioData != null && audioData.isNotEmpty()) {
                     Log.d(TAG, "Received audio data of size: ${audioData.size} bytes")
                     
+                    // Calculate estimated duration for logging
+                    val sampleRate = 24000 // Default sample rate for Gemini TTS
+                    val durationInSeconds = audioData.size / (sampleRate * 2.0)
+                    Log.d(TAG, "Estimated audio duration: $durationInSeconds seconds")
+                    
                     // Save the audio file first
                     val fileName = "tts_output_${System.currentTimeMillis()}.pcm"
                     val savedFile = ttsService.saveAudioToFile(context, audioData, fileName)
@@ -124,7 +129,7 @@ class TtsViewModel : ViewModel() {
                         Log.d(TAG, "Audio saved to file: ${savedFile.absolutePath}")
                     }
                     
-                    // Play the audio
+                    // Play the audio - this will block until playback is complete
                     ttsService.playAudio(context, audioData)
                 } else {
                     Log.e(TAG, "Failed to generate audio data")

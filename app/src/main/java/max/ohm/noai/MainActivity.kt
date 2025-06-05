@@ -41,7 +41,8 @@ class MainActivity : ComponentActivity() {
     private fun requestPermissions() {
         val permissions = mutableListOf(
             Manifest.permission.INTERNET,
-            Manifest.permission.MODIFY_AUDIO_SETTINGS
+            Manifest.permission.MODIFY_AUDIO_SETTINGS,
+            Manifest.permission.RECORD_AUDIO
         )
         
         // Add storage permissions based on Android version

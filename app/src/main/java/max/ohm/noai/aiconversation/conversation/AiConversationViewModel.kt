@@ -37,7 +37,7 @@ class AiConversationViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
     
-    var selectedLlmModel by mutableStateOf("meta-llama/llama-3-70b-instruct:free") // Default LLM model
+    var selectedLlmModel by mutableStateOf("deepseek/deepseek-r1-0528:free") // Default LLM model
         private set
     
     var selectedVoice by mutableStateOf("Kore") // Default TTS voice
@@ -48,10 +48,10 @@ class AiConversationViewModel : ViewModel() {
     
     // Available LLM models
     val availableLlmModels = listOf(
+        "deepseek/deepseek-r1-0528:free",
         "meta-llama/llama-3-70b-instruct:free",
         "google/gemini-1.5-pro:free",
-        "anthropic/claude-3-sonnet:free",
-        "deepseek/deepseek-r1-0528:free"
+        "anthropic/claude-3-sonnet:free"
     )
     
     // Available TTS voices
@@ -158,7 +158,12 @@ class AiConversationViewModel : ViewModel() {
                 if (audioData != null && audioData.isNotEmpty()) {
                     Log.d(TAG, "Received audio data of size: ${audioData.size} bytes")
                     
-                    // Play the audio
+                    // Calculate estimated duration for logging
+                    val sampleRate = 24000 // Default sample rate for Gemini TTS
+                    val durationInSeconds = audioData.size / (sampleRate * 2.0)
+                    Log.d(TAG, "Estimated audio duration: $durationInSeconds seconds")
+                    
+                    // Play the audio - this will block until playback is complete
                     ttsService.playAudio(context, audioData)
                 } else {
                     Log.e(TAG, "Failed to generate audio data")

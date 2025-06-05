@@ -1,5 +1,6 @@
 package max.ohm.noai.aiconversation.llm
 
+import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -7,13 +8,14 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 /**
  * Service class for interacting with OpenRouter API
  */
 class OpenRouterLLMService {
-    
+    private val TAG = "OpenRouterLLMService"
     private val client: OkHttpClient
     private val gson = Gson()
     
@@ -59,11 +61,34 @@ class OpenRouterLLMService {
                     .post(requestBody.toRequestBody("application/json".toMediaType()))
                     .build()
                 
+                Log.d(TAG, "Sending request to OpenRouter API with model: $modelId")
+                
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string() ?: return@withContext "No response from API"
                 
                 if (!response.isSuccessful) {
-                    return@withContext "Error: ${response.code} - $responseBody"
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    
+                    // Try to parse error message for more specific feedback
+                    return@withContext try {
+                        val errorJson = JSONObject(responseBody)
+                        val errorObj = errorJson.optJSONObject("error")
+                        if (errorObj != null) {
+                            val errorMessage = errorObj.optString("message", "Unknown error")
+                            val errorCode = errorObj.optInt("code", 0)
+                            
+                            when (errorCode) {
+                                401 -> "Authentication error: Please check your OpenRouter API key"
+                                429 -> "Rate limit exceeded: Please try again later"
+                                500 -> "OpenRouter server error: Please try again later"
+                                else -> "Error $errorCode: $errorMessage"
+                            }
+                        } else {
+                            "Error: ${response.code} - $responseBody"
+                        }
+                    } catch (e: Exception) {
+                        "Error: ${response.code} - $responseBody"
+                    }
                 }
                 
                 // Parse the response
@@ -75,7 +100,8 @@ class OpenRouterLLMService {
                 
                 content ?: "No response content"
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                Log.e(TAG, "Exception in getCompletion: ${e.message}", e)
+                "Error: ${e.message ?: "Unknown error"}"
             }
         }
     }
@@ -148,11 +174,34 @@ class OpenRouterLLMService {
                     .post(requestBody.toRequestBody("application/json".toMediaType()))
                     .build()
                 
+                Log.d(TAG, "Sending chat completion request to OpenRouter API with model: $modelId")
+                
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string() ?: return@withContext "No response from API"
                 
                 if (!response.isSuccessful) {
-                    return@withContext "Error: ${response.code} - $responseBody"
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    
+                    // Try to parse error message for more specific feedback
+                    return@withContext try {
+                        val errorJson = JSONObject(responseBody)
+                        val errorObj = errorJson.optJSONObject("error")
+                        if (errorObj != null) {
+                            val errorMessage = errorObj.optString("message", "Unknown error")
+                            val errorCode = errorObj.optInt("code", 0)
+                            
+                            when (errorCode) {
+                                401 -> "Authentication error: Please check your OpenRouter API key"
+                                429 -> "Rate limit exceeded: Please try again later"
+                                500 -> "OpenRouter server error: Please try again later"
+                                else -> "Error $errorCode: $errorMessage"
+                            }
+                        } else {
+                            "Error: ${response.code} - $responseBody"
+                        }
+                    } catch (e: Exception) {
+                        "Error: ${response.code} - $responseBody"
+                    }
                 }
                 
                 // Parse the response
@@ -164,7 +213,8 @@ class OpenRouterLLMService {
                 
                 content ?: "No response content"
             } catch (e: Exception) {
-                "Error: ${e.message}"
+                Log.e(TAG, "Exception in getChatCompletion: ${e.message}", e)
+                "Error: ${e.message ?: "Unknown error"}"
             }
         }
     }

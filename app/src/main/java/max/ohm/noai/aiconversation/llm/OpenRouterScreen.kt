@@ -64,10 +64,10 @@ fun OpenRouterScreen(
     var showModelDropdown by remember { mutableStateOf(false) }
     
     val availableModels = listOf(
+        "deepseek/deepseek-r1-0528:free",
         "meta-llama/llama-3-70b-instruct:free",
         "google/gemini-1.5-pro:free",
-        "anthropic/claude-3-sonnet:free",
-        "deepseek/deepseek-r1-0528:free"
+        "anthropic/claude-3-sonnet:free"
     )
     
     LaunchedEffect(initialModelType) {

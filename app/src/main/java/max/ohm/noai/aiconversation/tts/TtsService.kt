@@ -18,6 +18,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -285,22 +286,52 @@ class TtsService {
             Log.d(TAG, "AudioTrack.write result: $result")
             
             if (result > 0) {
-                // Set the notification marker position
-                audioTrack.setNotificationMarkerPosition(pcmData.size / 2)
+                // Calculate the total playback duration
+                val durationInSeconds = pcmData.size / (sampleRate * 2.0)
+                Log.d(TAG, "Expected audio duration: $durationInSeconds seconds")
+                
+                // Create a latch to wait for playback completion
+                val playbackCompleteLatch = CountDownLatch(1)
+                
+                // Set the notification marker position at the end of the audio
+                audioTrack.setNotificationMarkerPosition(pcmData.size)
+                
+                // Set up a listener to know when playback is complete
+                audioTrack.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
+                    override fun onMarkerReached(track: AudioTrack) {
+                        Log.d(TAG, "AudioTrack marker reached, playback complete")
+                        playbackCompleteLatch.countDown()
+                    }
+                    
+                    override fun onPeriodicNotification(track: AudioTrack) {
+                        // Not used
+                    }
+                })
                 
                 // Start playback
                 audioTrack.play()
-                
                 Log.d(TAG, "AudioTrack playback started")
                 
-                // Wait for playback to complete
-                Thread.sleep(5000)  // Give it some time to play
+                // Calculate a reasonable timeout in case the marker is never reached
+                // Add 3 seconds to the expected duration as a safety margin
+                val timeoutSeconds = durationInSeconds.toLong() + 3
                 
-                // Release resources
-                audioTrack.stop()
-                audioTrack.release()
-                
-                Log.d(TAG, "AudioTrack playback completed")
+                try {
+                    // Wait for playback to complete or timeout
+                    val completed = playbackCompleteLatch.await(timeoutSeconds, TimeUnit.SECONDS)
+                    if (!completed) {
+                        Log.w(TAG, "Playback timeout after $timeoutSeconds seconds")
+                    }
+                } catch (e: InterruptedException) {
+                    Log.e(TAG, "Playback wait interrupted", e)
+                } finally {
+                    // Release resources
+                    if (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                        audioTrack.stop()
+                    }
+                    audioTrack.release()
+                    Log.d(TAG, "AudioTrack playback completed and resources released")
+                }
             } else {
                 Log.e(TAG, "Failed to write audio data to AudioTrack")
             }
