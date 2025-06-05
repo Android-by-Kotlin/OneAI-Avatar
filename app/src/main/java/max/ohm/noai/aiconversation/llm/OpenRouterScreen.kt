@@ -64,6 +64,7 @@ fun OpenRouterScreen(
     var showModelDropdown by remember { mutableStateOf(false) }
     
     val availableModels = listOf(
+        "google/gemini-2.0-flash",
         "deepseek/deepseek-r1-0528:free",
         "meta-llama/llama-3-70b-instruct:free",
         "google/gemini-1.5-pro:free",

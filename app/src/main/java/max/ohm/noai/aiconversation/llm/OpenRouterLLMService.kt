@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import max.ohm.noai.chatbot.GEMINI_API_KEY
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,10 +33,15 @@ class OpenRouterLLMService {
      * Send a prompt to the OpenRouter API and get a response
      * 
      * @param prompt The user's prompt text
-     * @param modelId The model ID to use (default is deepseek-r1-0528:free)
+     * @param modelId The model ID to use (default is google/gemini-2.0-flash)
      * @return The generated response text
      */
-    suspend fun getCompletion(prompt: String, modelId: String = "deepseek/deepseek-r1-0528:free"): String {
+    suspend fun getCompletion(prompt: String, modelId: String = "google/gemini-2.0-flash"): String {
+        // Handle Gemini 2.0 Flash model which is not available via OpenRouter
+        if (modelId == "google/gemini-2.0-flash") {
+            return getGeminiCompletion(prompt)
+        }
+        
         return withContext(Dispatchers.IO) {
             try {
                 val requestBody = """
@@ -112,16 +118,188 @@ class OpenRouterLLMService {
     data class ChatMessage(val role: String, val content: String)
     
     /**
+     * Get completion from Gemini API
+     * 
+     * @param prompt The user's prompt text
+     * @return The generated response text
+     */
+    private suspend fun getGeminiCompletion(prompt: String): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                val requestBody = """
+                    {
+                        "contents": [
+                            {
+                                "parts": [
+                                    {
+                                        "text": "$prompt"
+                                    }
+                                ]
+                            }
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.7,
+                            "maxOutputTokens": 1000
+                        }
+                    }
+                """.trimIndent()
+                
+                val request = Request.Builder()
+                    .url("https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=$GEMINI_API_KEY")
+                    .addHeader("Content-Type", "application/json")
+                    .post(requestBody.toRequestBody("application/json".toMediaType()))
+                    .build()
+                
+                Log.d(TAG, "Sending request to Gemini API")
+                
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: return@withContext "No response from API"
+                
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    return@withContext "Error: ${response.code} - $responseBody"
+                }
+                
+                // Parse the response
+                val jsonResponse = JSONObject(responseBody)
+                val candidates = jsonResponse.getJSONArray("candidates")
+                if (candidates.length() > 0) {
+                    val content = candidates.getJSONObject(0).getJSONObject("content")
+                    val parts = content.getJSONArray("parts")
+                    if (parts.length() > 0) {
+                        val text = parts.getJSONObject(0).getString("text")
+                        return@withContext text
+                    }
+                }
+                
+                return@withContext "No response content from Gemini"
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception in getGeminiCompletion: ${e.message}", e)
+                return@withContext "Error: ${e.message ?: "Unknown error"}"
+            }
+        }
+    }
+    
+    /**
+     * Get chat completion from Gemini API
+     * 
+     * @param messages List of chat messages
+     * @return The generated response text
+     */
+    private suspend fun getGeminiChatCompletion(messages: List<Any>): String {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Convert messages to Gemini format
+                val geminiMessages = messages.map { msg ->
+                    when (msg) {
+                        is ChatMessage -> {
+                            val role = if (msg.role == "user") "user" else "model"
+                            """
+                                {
+                                    "role": "$role",
+                                    "parts": [
+                                        {
+                                            "text": "${msg.content}"
+                                        }
+                                    ]
+                                }
+                            """.trimIndent()
+                        }
+                        else -> {
+                            // Try to extract role and content
+                            val role = try {
+                                val roleMethod = msg.javaClass.getMethod("getRole")
+                                val roleObj = roleMethod.invoke(msg)
+                                if (roleObj.toString().contains("User", ignoreCase = true)) "user" else "model"
+                            } catch (e: Exception) {
+                                "user" // Default to user
+                            }
+                            
+                            val content = try {
+                                val contentMethod = msg.javaClass.getMethod("getContent")
+                                contentMethod.invoke(msg).toString()
+                            } catch (e: Exception) {
+                                msg.toString()
+                            }
+                            
+                            """
+                                {
+                                    "role": "$role",
+                                    "parts": [
+                                        {
+                                            "text": "$content"
+                                        }
+                                    ]
+                                }
+                            """.trimIndent()
+                        }
+                    }
+                }
+                
+                val requestBody = """
+                    {
+                        "contents": [
+                            ${geminiMessages.joinToString(",\n")}
+                        ],
+                        "generationConfig": {
+                            "temperature": 0.7,
+                            "maxOutputTokens": 1000
+                        }
+                    }
+                """.trimIndent()
+                
+                val request = Request.Builder()
+                    .url("https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=$GEMINI_API_KEY")
+                    .addHeader("Content-Type", "application/json")
+                    .post(requestBody.toRequestBody("application/json".toMediaType()))
+                    .build()
+                
+                Log.d(TAG, "Sending chat request to Gemini API")
+                
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: return@withContext "No response from API"
+                
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    return@withContext "Error: ${response.code} - $responseBody"
+                }
+                
+                // Parse the response
+                val jsonResponse = JSONObject(responseBody)
+                val candidates = jsonResponse.getJSONArray("candidates")
+                if (candidates.length() > 0) {
+                    val content = candidates.getJSONObject(0).getJSONObject("content")
+                    val parts = content.getJSONArray("parts")
+                    if (parts.length() > 0) {
+                        val text = parts.getJSONObject(0).getString("text")
+                        return@withContext text
+                    }
+                }
+                
+                return@withContext "No response content from Gemini"
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception in getGeminiChatCompletion: ${e.message}", e)
+                return@withContext "Error: ${e.message ?: "Unknown error"}"
+            }
+        }
+    }
+    
+    /**
      * Send a conversation history to the OpenRouter API and get a response
      * 
      * @param messages List of chat messages with roles and content
-     * @param modelId The model ID to use (default is deepseek-r1-0528:free)
+     * @param modelId The model ID to use (default is google/gemini-2.0-flash)
      * @return The generated response text
      */
     suspend fun getChatCompletion(
         messages: List<Any>,
-        modelId: String = "deepseek/deepseek-r1-0528:free"
+        modelId: String = "google/gemini-2.0-flash"
     ): String {
+        // Handle Gemini 2.0 Flash model which is not available via OpenRouter
+        if (modelId == "google/gemini-2.0-flash") {
+            return getGeminiChatCompletion(messages)
+        }
+        
         return withContext(Dispatchers.IO) {
             try {
                 // Convert messages to the format expected by the API

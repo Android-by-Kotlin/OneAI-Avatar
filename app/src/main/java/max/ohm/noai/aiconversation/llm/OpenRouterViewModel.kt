@@ -24,7 +24,7 @@ class OpenRouterViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
     
-    var selectedModel by mutableStateOf("deepseek/deepseek-r1-0528:free") // Default model set to Deepseek
+    var selectedModel by mutableStateOf("google/gemini-2.0-flash") // Default model set to Gemini 2.0 Flash
     
     fun updateInputText(newText: TextFieldValue) {
         inputText = newText

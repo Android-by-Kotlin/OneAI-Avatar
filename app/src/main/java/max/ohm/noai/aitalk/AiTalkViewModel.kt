@@ -54,7 +54,7 @@ class AiTalkViewModel : ViewModel() {
     var recognizedText by mutableStateOf("")
         private set
     
-    var selectedLlmModel by mutableStateOf("deepseek/deepseek-r1-0528:free") // Default LLM model
+    var selectedLlmModel by mutableStateOf("google/gemini-2.0-flash") // Default LLM model
         private set
     
     var selectedVoice by mutableStateOf("Kore") // Default TTS voice
@@ -66,9 +66,10 @@ class AiTalkViewModel : ViewModel() {
     
     // Available LLM models
     val availableLlmModels = listOf(
+        "google/gemini-2.0-flash",
         "deepseek/deepseek-r1-0528:free",
-        "meta-llama/llama-3-70b-instruct:free",
         "google/gemini-1.5-pro:free",
+        "meta-llama/llama-3-70b-instruct:free",
         "anthropic/claude-3-sonnet:free"
     )
     

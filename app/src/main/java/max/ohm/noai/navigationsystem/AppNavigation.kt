@@ -61,7 +61,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "deepseek/deepseek-r1-0528:free" // Default model
+                defaultValue = "google/gemini-2.0-flash" // Default model
             })
         ) { backStackEntry ->
             val modelType = backStackEntry.arguments?.getString("modelType")
