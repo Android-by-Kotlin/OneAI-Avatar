@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import max.ohm.noai.aiconversation.conversation.AiConversationScreen
+import max.ohm.noai.aiconversation.conversation.AiConversationViewModel
 import max.ohm.noai.aiconversation.llm.OpenRouterScreen
 import max.ohm.noai.aiconversation.llm.OpenRouterViewModel
 import max.ohm.noai.aiconversation.tts.TtsScreen
@@ -80,6 +82,10 @@ fun AppNavigation() {
         composable("tts") { // Add Text-to-Speech destination
             val ttsViewModel: TtsViewModel = viewModel()
             TtsScreen(ttsViewModel = ttsViewModel)
+        }
+        composable("aiConversation") { // Add AI Conversation destination
+            val aiConversationViewModel: AiConversationViewModel = viewModel()
+            AiConversationScreen(aiConversationViewModel = aiConversationViewModel)
         }
 
         // Add other destinations here (translator)

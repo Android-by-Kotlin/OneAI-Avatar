@@ -54,6 +54,30 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // AI Conversation Card (New)
+            ElevatedCard(
+                onClick = { navController.navigate("aiConversation") }, // Navigate to AI Conversation screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant // Distinct color
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for AI Conversation image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("AI Conversation", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for AI Conversation image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+            
             // AI ChatBot Card
             ElevatedCard(
                 onClick = { navController.navigate("chatbot") }, // Navigate to chatbot screen
