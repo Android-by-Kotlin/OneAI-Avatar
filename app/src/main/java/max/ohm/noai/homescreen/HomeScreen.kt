@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CardDefaults
@@ -47,7 +49,8 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -71,6 +74,54 @@ fun HomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                     Text("AI ChatBot", style = MaterialTheme.typography.headlineSmall)
                     // Placeholder for ChatBot image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+
+            // OpenRouter AI Card
+            ElevatedCard(
+                onClick = { navController.navigate("openRouter") }, // Navigate to OpenRouter screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer // Different color to distinguish
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for OpenRouter image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("OpenRouter AI", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for OpenRouter image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                }
+            }
+
+            // Text-to-Speech Card
+            ElevatedCard(
+                onClick = { navController.navigate("tts") }, // Navigate to TTS screen
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer // Different color for TTS
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for TTS image
+                    Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
+                    Text("Text to Speech", style = MaterialTheme.typography.headlineSmall)
+                    // Placeholder for TTS image
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
             }
@@ -170,7 +221,6 @@ fun HomeScreen(navController: NavController) {
                     Spacer(modifier = Modifier.size(64.dp)) // Placeholder size
                 }
             }
-
         }
     }
 }
