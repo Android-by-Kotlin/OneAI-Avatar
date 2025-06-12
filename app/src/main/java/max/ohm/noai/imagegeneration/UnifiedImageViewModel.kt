@@ -1,6 +1,7 @@
 package max.ohm.noai.imagegeneration
 
 import android.util.Base64
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -46,6 +47,12 @@ class UnifiedImageViewModel : ViewModel() {
     private var timerJob: Job? = null
     private var generationStartTime: Long = 0L
 
+    // Initialize the ViewModel with default model
+    init {
+        // Ensure the default model is properly set
+        selectedModel = "flux.1-schnell"
+    }
+
     fun updatePrompt(newPrompt: TextFieldValue) {
         prompt = newPrompt
     }
@@ -84,6 +91,16 @@ class UnifiedImageViewModel : ViewModel() {
             return
         }
 
+        // Log the current model for debugging
+        Log.d("ImageGeneration", "Selected model: $selectedModel")
+
+        // Ensure we have a valid model selected
+        if (selectedModel.isBlank()) {
+            // Set to default model if somehow blank
+            selectedModel = "flux.1-schnell"
+            Log.d("ImageGeneration", "Model was blank, set to default: $selectedModel")
+        }
+
         isLoading = true
         generatedImageData = null
         imageUrl = null
@@ -92,6 +109,9 @@ class UnifiedImageViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
+                // Log the model being used for the API call
+                Log.d("ImageGeneration", "Using model for API call: $selectedModel")
+                
                 when (selectedModel) {
                     "flux.1-schnell" -> {
                         if (NEBIUS_API_KEY == "YOUR_NEBIUS_API_KEY_HERE" || NEBIUS_API_KEY.isBlank()) {
@@ -115,14 +135,14 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "flux.1.1-pro" -> {
+                    "provider-1/FLUX.1.1-pro" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-2/flux.1.1-pro", // Use the pro model
+                            model = "provider-1/FLUX.1.1-pro", // Use the pro model
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -134,17 +154,17 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux.1.1-pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "flux.ultra-pro" -> {
+                    "provider-3/FLUX.1.1-pro-ultra" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/flux-1.1-pro-ultra",
+                            model = "provider-3/FLUX.1.1-pro-ultra",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -156,17 +176,17 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux.ultra-pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = "Flux Ultra Pro API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-4/dall-e-3" -> {
+                    "provider-3/dall-e-3" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/dall-e-3",
+                            model = "provider-3/dall-e-3",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -181,14 +201,14 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-4/shuttle-3.1-aesthetic" -> {
+                    "provider-3/shuttle-3.1-aesthetic" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/shuttle-3.1-aesthetic",
+                            model = "provider-3/shuttle-3.1-aesthetic",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -203,14 +223,14 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Shuttle 3.1 Aesthetic API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-4/shuttle-3-diffusion" -> {
+                    "provider-3/shuttle-3-diffusion" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/shuttle-3-diffusion",
+                            model = "provider-3/shuttle-3-diffusion",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -225,14 +245,14 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Shuttle 3 Diffusion API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-4/shuttle-jaguar" -> {
+                    "provider-3/shuttle-jaguar" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/shuttle-jaguar",
+                            model = "provider-3/shuttle-jaguar",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -247,14 +267,14 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Shuttle Jaguar API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-4/flux-dev" -> {
+                    "provider-3/FLUX.1-dev" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-4/flux-dev",
+                            model = "provider-3/FLUX.1-dev",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -266,17 +286,17 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Dev (Provider 4) API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = "Flux Dev API Error: ${response.code()} - ${errorBody}"
                         }
                     }
-                    "provider-2/flux.1-dev" -> {
+                    "provider-2/FLUX.1-kontext-max" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-2/flux.1-dev",
+                            model = "provider-2/FLUX.1-kontext-max",
                             prompt = prompt.text,
                             n = 1,
                             size = "1024x1024"
@@ -288,12 +308,66 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux 1 Dev API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = "FLUX Kontext Max API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+                    "provider-1/FLUX.1-kontext-pro" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-1/FLUX.1-kontext-pro",
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "FLUX Kontext Pro API Error: ${response.code()} - ${errorBody}"
                         }
                     }
                     else -> {
-                        errorMessage = "Invalid model selected."
-                        isLoading = false // Ensure loading stops if model is invalid before try-finally
+                        // Log the invalid model for debugging
+                        Log.e("ImageGeneration", "Invalid model selected: '$selectedModel'")
+                        
+                        // Try to use the default model as a fallback
+                        if (selectedModel != "flux.1-schnell") {
+                            Log.d("ImageGeneration", "Falling back to flux.1-schnell model")
+                            selectedModel = "flux.1-schnell"
+                            
+                            // Retry with the default model
+                            if (NEBIUS_API_KEY == "YOUR_NEBIUS_API_KEY_HERE" || NEBIUS_API_KEY.isBlank()) {
+                                errorMessage = "Please set your Nebius API Key in ImageGenApiKey.kt"
+                                isLoading = false
+                                return@launch
+                            }
+                            
+                            val request = ImageGenerationRequest(prompt = prompt.text)
+                            val response = ApiClient.instance.generateImage("Bearer $NEBIUS_API_KEY", request)
+
+                            if (response.isSuccessful && response.body() != null) {
+                                val responseBody = response.body()!!
+                                if (responseBody.data.isNotEmpty()) {
+                                    val base64String = responseBody.data[0].base64Json
+                                    generatedImageData = Base64.decode(base64String, Base64.DEFAULT)
+                                } else {
+                                    errorMessage = "API returned no image data for flux.1-schnell."
+                                }
+                            } else {
+                                val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                                errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
+                            }
+                        } else {
+                            errorMessage = "Invalid model selected: $selectedModel"
+                            isLoading = false // Ensure loading stops if model is invalid before try-finally
+                        }
                     }
                 }
             } catch (e: Exception) {

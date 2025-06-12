@@ -82,6 +82,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.width
+import android.util.Log
 
 // Helper function to format seconds into MM:SS string
 fun formatSecondsToMMSS(seconds: Long): String {
@@ -211,16 +212,30 @@ fun ImageGeneratorScreen(
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
         ModelChoice("Flux Schnell", "flux.1-schnell"),
-        ModelChoice("Flux Pro", "flux.1.1-pro"),
-        ModelChoice("Flux Ultra Pro", "flux.ultra-pro"),
-        ModelChoice("DALL-E 3", "provider-4/dall-e-3"),
-        ModelChoice("Shuttle 3.1 Aesthetic", "provider-4/shuttle-3.1-aesthetic"),
-        ModelChoice("Shuttle 3 Diffusion", "provider-4/shuttle-3-diffusion"),
-        ModelChoice("Shuttle Jaguar", "provider-4/shuttle-jaguar"),
-        ModelChoice("Flux Dev", "provider-4/flux-dev"),
-        ModelChoice("Flux 1 Dev", "provider-2/flux.1-dev")
+        ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
+        ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
+        ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
+        ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
+        ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
+        ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
+        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
+        ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar"),
+        ModelChoice("Flux Dev", "provider-3/FLUX.1-dev")
     )
-    val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName } ?: modelChoices.first()
+    // Always ensure we have a valid model choice, defaulting to Flux Schnell if not found
+    val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName } 
+        ?: modelChoices.find { it.internalName == "flux.1-schnell" } 
+        ?: modelChoices.first()
+
+    // Ensure the model is properly initialized when the screen is first displayed
+    LaunchedEffect(Unit) {
+        // Force initialize with the default model to ensure proper setup
+        val defaultModel = "flux.1-schnell"
+        Log.d("ImageGeneratorScreen", "Initializing with default model: $defaultModel, current model: ${unifiedImageViewModel.selectedModel}")
+        
+        // Always force the model to be set to the default on screen initialization
+        unifiedImageViewModel.updateSelectedModel(defaultModel)
+    }
 
     LaunchedEffect(initialModelType) {
         initialModelType?.let {
@@ -368,7 +383,14 @@ fun ImageGeneratorScreen(
 
             // Generate Button
             Button(
-                onClick = { unifiedImageViewModel.generateImage() },
+                onClick = { 
+                    // Ensure model is set correctly before generating
+                    if (unifiedImageViewModel.selectedModel.isBlank()) {
+                        Log.d("ImageGeneratorScreen", "Setting model before generating")
+                        unifiedImageViewModel.updateSelectedModel("flux.1-schnell")
+                    }
+                    unifiedImageViewModel.generateImage() 
+                },
                 enabled = !isLoading && prompt.text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
