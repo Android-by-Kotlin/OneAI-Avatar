@@ -41,11 +41,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
+import max.ohm.oneai.R
 
 // Define the color scheme to match ChatBotScreen
 private val DarkGreen = Color(0xFF10231c)
@@ -53,6 +56,8 @@ private val MediumGreen = Color(0xFF214a3c)
 private val LightGreen = Color(0xFF8ecdb7)
 private val AccentGreen = Color(0xFF019863)
 private val AccentRed = Color(0xFF023788)
+private val Purple = Color(0xFF2F0BB0)
+private val Red = Color(0xFFB70F46)
 
 // Keep track of messages that have already been animated
 private val animatedMessages = mutableSetOf<Long>()
@@ -60,6 +65,13 @@ private val animatedMessages = mutableSetOf<Long>()
 @Composable
 fun MessageBubble(message: Message) {
     val isBot = !message.isUser
+    val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
+    
+    // Get user profile info
+    val userPhotoUrl = remember { auth.currentUser?.photoUrl }
+    val userDisplayName = remember { auth.currentUser?.displayName ?: "You" }
+    val userInitial = remember { userDisplayName.firstOrNull()?.toString() ?: "Y" }
     
     // Generate a unique identifier for this message
     val messageId = remember { message.id }
@@ -126,71 +138,143 @@ fun MessageBubble(message: Message) {
         label = "dot3"
     )
     
-    // Use Box instead of Row to match ChatBotScreen style
-    Box(
+    Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (message.isUser) AccentGreen else AccentRed)
-            .padding(16.dp)
-            .widthIn(max = 280.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
-        Column {
-            // Display image if present
-            if (message.image != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(message.image)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = if (message.isUser) "User Image" else "Bot Image",
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .padding(bottom = if (message.text.isNotBlank()) 8.dp else 0.dp)
+        // Bot avatar (only shown for bot messages)
+        if (!message.isUser) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Red),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "One",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
-            
-            // Show typing indicator or text
-            if (isBot && isTyping && displayedText.isEmpty()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .alpha(dotAlpha1)
-                            .background(Color.White, CircleShape)
+
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        
+        // Message bubble
+        Box(
+            modifier = Modifier
+                .widthIn(max = 280.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (message.isUser) 16.dp else 16.dp,
+                        bottomEnd = if (message.isUser) 16.dp else 16.dp
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Box(
+                )
+                .background(if (message.isUser) AccentGreen else AccentRed)
+                .padding(12.dp)
+        ) {
+            Column {
+                // Display image if present
+                if (message.image != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(message.image)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = if (message.isUser) "User Image" else "Bot Image",
+                        contentScale = ContentScale.FillWidth,
                         modifier = Modifier
-                            .size(6.dp)
-                            .alpha(dotAlpha2)
-                            .background(Color.White, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .alpha(dotAlpha3)
-                            .background(Color.White, CircleShape)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .padding(bottom = if (message.text.isNotBlank()) 8.dp else 0.dp)
                     )
                 }
-            } else if (message.text.isNotBlank()) {
-                Text(
-                    text = if (isBot) displayedText else message.text,
-                    color = Color.White,
-                    style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
-                )
                 
-                // Show blinking cursor at the end while typing
-                if (isBot && isTyping) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .height(14.dp)
-                            .width(2.dp)
-                            .alpha(dotAlpha1)
-                            .background(Color.White)
+                // Show typing indicator or text
+                if (isBot && isTyping && displayedText.isEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .alpha(dotAlpha1)
+                                .background(Color.White, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .alpha(dotAlpha2)
+                                .background(Color.White, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .alpha(dotAlpha3)
+                                .background(Color.White, CircleShape)
+                        )
+                    }
+                } else if (message.text.isNotBlank()) {
+                    Text(
+                        text = if (isBot) displayedText else message.text,
+                        color = Color.White,
+                        style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
+                    )
+                    
+                    // Show blinking cursor at the end while typing
+                    if (isBot && isTyping) {
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .height(14.dp)
+                                .width(2.dp)
+                                .alpha(dotAlpha1)
+                                .background(Color.White)
+                        )
+                    }
+                }
+            }
+        }
+        
+        // User avatar (only shown for user messages)
+        if (message.isUser) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // User profile image
+            if (userPhotoUrl != null) {
+                // If user has a profile image, display it
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(userPhotoUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "User Profile",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                )
+            } else {
+                // Otherwise show a placeholder with initial
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Purple),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = userInitial,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

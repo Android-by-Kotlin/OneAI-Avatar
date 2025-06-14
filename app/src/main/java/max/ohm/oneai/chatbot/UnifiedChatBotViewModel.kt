@@ -43,6 +43,10 @@ class UnifiedChatBotViewModel : ViewModel() {
     // Current chat ID
     var currentChatId by mutableStateOf<String?>(null)
         private set
+        
+    // Current chat title
+    var currentChatTitle by mutableStateOf("New Conversation")
+        private set
 
     // List of available chats
     private val _chats = MutableStateFlow<List<Chat>>(emptyList())
@@ -50,6 +54,10 @@ class UnifiedChatBotViewModel : ViewModel() {
 
     // Loading state for chats
     var isLoadingChats by mutableStateOf(false)
+        private set
+        
+    // State for showing chat drawer
+    var showChatDrawer by mutableStateOf(false)
         private set
 
     init {
@@ -125,6 +133,10 @@ class UnifiedChatBotViewModel : ViewModel() {
     fun clearErrorMessage() {
         errorMessage = null
     }
+    
+    fun toggleChatDrawer() {
+        showChatDrawer = !showChatDrawer
+    }
 
     fun loadChats() {
         if (auth.currentUser == null) {
@@ -157,7 +169,7 @@ class UnifiedChatBotViewModel : ViewModel() {
         }
     }
 
-    fun createNewChat(title: String = "New Chat") {
+    fun createNewChat(title: String = "New Conversation") {
         if (auth.currentUser == null) {
             errorMessage = "You need to be logged in to create a chat."
             return
@@ -174,6 +186,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                     onSuccess = { chatId ->
                         Log.d(TAG, "Successfully created chat with ID: $chatId")
                         currentChatId = chatId
+                        currentChatTitle = title
                         messages = emptyList()
                         loadChats() // Refresh the chat list
                     },
@@ -204,6 +217,18 @@ class UnifiedChatBotViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
+                // Load chat metadata
+                val chatResult = chatRepository.getChat(chatId)
+                chatResult.fold(
+                    onSuccess = { chat ->
+                        currentChatTitle = chat.title
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to load chat metadata", error)
+                    }
+                )
+                
+                // Load messages
                 Log.d(TAG, "Loading chat with ID: $chatId")
                 val result = chatRepository.getMessages(chatId)
                 result.fold(
@@ -221,6 +246,92 @@ class UnifiedChatBotViewModel : ViewModel() {
                 errorMessage = "Error loading messages: ${e.message}"
             } finally {
                 isLoading = false
+            }
+        }
+    }
+    
+    fun deleteChat(chatId: String) {
+        if (auth.currentUser == null) {
+            errorMessage = "You need to be logged in to delete a chat."
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.deleteChat(chatId)
+                result.fold(
+                    onSuccess = {
+                        Log.d(TAG, "Successfully deleted chat with ID: $chatId")
+                        
+                        // If we deleted the current chat, create a new one
+                        if (currentChatId == chatId) {
+                            currentChatId = null
+                            currentChatTitle = "New Conversation"
+                            messages = emptyList()
+                            createNewChat("New Conversation")
+                        }
+                        
+                        loadChats() // Refresh the chat list
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to delete chat", error)
+                        errorMessage = "Failed to delete chat: ${error.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting chat", e)
+                errorMessage = "Error deleting chat: ${e.message}"
+            }
+        }
+    }
+    
+    private fun generateChatTitle(userMessage: String) {
+        if (currentChatTitle != "New Conversation") {
+            return // Only auto-generate title for new conversations
+        }
+        
+        viewModelScope.launch {
+            try {
+                if (geminiProGenerativeModel == null) {
+                    Log.w(TAG, "Cannot generate title: Gemini model not initialized")
+                    return@launch
+                }
+                
+                // Extract a meaningful title from the user's message
+                val titleText = when {
+                    userMessage.length <= 20 -> userMessage // Use the entire message if it's short
+                    else -> {
+                        // Try to extract the main topic from longer messages
+                        val prompt = "Generate a very short title (3-5 words) that summarizes this message: \"$userMessage\". " +
+                                     "Return ONLY the title, nothing else. The title should be descriptive of the task or problem."
+                        
+                        try {
+                            val response = geminiProGenerativeModel!!.generateContent(prompt)
+                            response.text?.trim() ?: userMessage.take(20) + "..."
+                        } catch (e: Exception) {
+                            // Fallback if AI title generation fails
+                            Log.e(TAG, "Error in AI title generation", e)
+                            userMessage.take(20) + "..."
+                        }
+                    }
+                }
+                
+                // Update the chat title in Firestore
+                currentChatId?.let { chatId ->
+                    val result = chatRepository.updateChatTitle(chatId, titleText)
+                    result.fold(
+                        onSuccess = {
+                            Log.d(TAG, "Successfully updated chat title to: $titleText")
+                            currentChatTitle = titleText
+                            loadChats() // Refresh the chat list
+                        },
+                        onFailure = { error ->
+                            Log.e(TAG, "Failed to update chat title", error)
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error generating chat title", e)
             }
         }
     }
@@ -253,6 +364,11 @@ class UnifiedChatBotViewModel : ViewModel() {
                 if (currentChatId != null) {
                     // Now send the pending message
                     directSendMessage(pendingMessage)
+                    
+                    // Generate title based on first message
+                    if (messageText.isNotBlank()) {
+                        generateChatTitle(messageText)
+                    }
                 } else {
                     errorMessage = "Failed to create chat. Please try again."
                 }
@@ -262,6 +378,11 @@ class UnifiedChatBotViewModel : ViewModel() {
 
         val userMessage = Message(messageText, true, selectedImageBitmap)
         directSendMessage(userMessage)
+        
+        // Generate title based on first message if this is the first user message
+        if (messages.count { it.isUser } <= 1 && messageText.isNotBlank() && currentChatTitle == "New Conversation") {
+            generateChatTitle(messageText)
+        }
     }
     
     // Simplified direct message sending without permission checks

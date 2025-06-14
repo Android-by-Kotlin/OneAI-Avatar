@@ -130,6 +130,83 @@ class ChatRepository {
         }
     }
     
+    suspend fun updateChatTitle(chatId: String, newTitle: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // First ensure the user document exists
+                val userResult = ensureUserDocumentExists()
+                if (userResult.isFailure) {
+                    return@withContext Result.failure(userResult.exceptionOrNull() ?: Exception("Failed to ensure user document exists"))
+                }
+                
+                val userId = userResult.getOrThrow()
+                
+                // Update the chat title
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("chats")
+                    .document(chatId)
+                    .update("title", newTitle)
+                    .await()
+                
+                Log.d(TAG, "Updated chat title for chat ID: $chatId to: $newTitle")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating chat title", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun deleteChat(chatId: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // First ensure the user document exists
+                val userResult = ensureUserDocumentExists()
+                if (userResult.isFailure) {
+                    return@withContext Result.failure(userResult.exceptionOrNull() ?: Exception("Failed to ensure user document exists"))
+                }
+                
+                val userId = userResult.getOrThrow()
+                
+                // Delete all messages in the chat
+                val messagesSnapshot = firestore.collection("users")
+                    .document(userId)
+                    .collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .get()
+                    .await()
+                
+                // Delete each message document
+                messagesSnapshot.documents.forEach { doc ->
+                    firestore.collection("users")
+                        .document(userId)
+                        .collection("chats")
+                        .document(chatId)
+                        .collection("messages")
+                        .document(doc.id)
+                        .delete()
+                        .await()
+                }
+                
+                // Delete the chat document
+                firestore.collection("users")
+                    .document(userId)
+                    .collection("chats")
+                    .document(chatId)
+                    .delete()
+                    .await()
+                
+                Log.d(TAG, "Deleted chat with ID: $chatId")
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting chat", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
     suspend fun saveMessage(chatId: String, message: Message): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -240,6 +317,39 @@ class ChatRepository {
                 Result.success(messages)
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting messages", e)
+                Result.failure(e)
+            }
+        }
+    }
+    
+    suspend fun getChat(chatId: String): Result<Chat> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // First ensure the user document exists
+                val userResult = ensureUserDocumentExists()
+                if (userResult.isFailure) {
+                    return@withContext Result.failure(userResult.exceptionOrNull() ?: Exception("Failed to ensure user document exists"))
+                }
+                
+                val userId = userResult.getOrThrow()
+                
+                val docSnapshot = firestore.collection("users")
+                    .document(userId)
+                    .collection("chats")
+                    .document(chatId)
+                    .get()
+                    .await()
+                
+                if (!docSnapshot.exists()) {
+                    return@withContext Result.failure(Exception("Chat not found"))
+                }
+                
+                val chat = docSnapshot.toObject(Chat::class.java)
+                    ?: return@withContext Result.failure(Exception("Failed to convert document to Chat"))
+                
+                Result.success(chat.copy(id = chatId))
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting chat", e)
                 Result.failure(e)
             }
         }

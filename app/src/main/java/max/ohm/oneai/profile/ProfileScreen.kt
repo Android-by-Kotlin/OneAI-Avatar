@@ -13,12 +13,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.google.firebase.auth.FirebaseAuth
 import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
 
@@ -87,12 +92,31 @@ fun ProfileScreen(
                     .background(Color(0xFF6200EE)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = Color.White,
-                    modifier = Modifier.size(64.dp)
-                )
+                val auth = FirebaseAuth.getInstance()
+                val userPhotoUrl = remember { auth.currentUser?.photoUrl }
+                val userName = remember { user?.name ?: auth.currentUser?.displayName ?: "User" }
+                val userInitial = remember { userName.firstOrNull()?.toString() ?: "U" }
+                
+                if (userPhotoUrl != null) {
+                    // If user has a profile image, display it
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(userPhotoUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    // Otherwise show a placeholder with initial
+                    Text(
+                        text = userInitial,
+                        color = Color.White,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
