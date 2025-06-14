@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "max.ohm.noai"
+    namespace = "max.ohm.oneai"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "max.ohm.noai"
+        applicationId = "max.ohm.oneai"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -52,6 +52,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    
+    // Splash screen API
+    implementation("androidx.core:core-splashscreen:1.1.0-alpha02")
 
     // ViewModel Compose for lifecycle-aware coroutine scope
     implementation(libs.androidx.lifecycle.viewmodel.compose)

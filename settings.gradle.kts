@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NoAI"
+rootProject.name = "OneAI"
 include(":app")
