@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Outer circle with gradient -->
+    <path
+        android:pathData="M60,60m-60,0a60,60 0,1 1,120 0a60,60 0,1 1,-120 0"
+        android:fillColor="#1A1A1A"/>
+    
+    <!-- Inner circle with gradient -->
+    <path
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+        android:fillColor="#2A2A2A"/>
+    
+    <!-- Brain icon -->
+    <path
+        android:pathData="M60,30C43.43,30 30,43.43 30,60C30,76.57 43.43,90 60,90C76.57,90 90,76.57 90,60C90,43.43 76.57,30 60,30ZM78,55C78,53.34 76.66,52 75,52C73.34,52 72,53.34 72,55C72,56.66 73.34,58 75,58C76.66,58 78,56.66 78,55ZM60,80C54.48,80 50,75.52 50,70C50,64.48 54.48,60 60,60C65.52,60 70,64.48 70,70C70,75.52 65.52,80 60,80ZM42,55C42,53.34 43.34,52 45,52C46.66,52 48,53.34 48,55C48,56.66 46.66,58 45,58C43.34,58 42,56.66 42,55ZM60,40C62.76,40 65,42.24 65,45C65,47.76 62.76,50 60,50C57.24,50 55,47.76 55,45C55,42.24 57.24,40 60,40Z"
+        android:fillColor="#9C27B0"/>
+    
+    <!-- Glowing effect around the brain -->
+    <path
+        android:pathData="M60,35C46.19,35 35,46.19 35,60C35,73.81 46.19,85 60,85C73.81,85 85,73.81 85,60C85,46.19 73.81,35 60,35ZM60,80C49.06,80 40,70.94 40,60C40,49.06 49.06,40 60,40C70.94,40 80,49.06 80,60C80,70.94 70.94,80 60,80Z"
+        android:fillColor="#7B1FA2"/>
+    
+    <!-- Circuit lines -->
+    <path
+        android:pathData="M60,30L60,40M30,60L40,60M60,80L60,90M80,60L90,60M39.39,39.39L46.46,46.46M80.61,39.39L73.54,46.46M39.39,80.61L46.46,73.54M80.61,80.61L73.54,73.54"
+        android:strokeWidth="2"
+        android:strokeColor="#5E35B1"
+        android:strokeLineCap="round"/>
+</vector> 
