@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "827202302425",
+    "project_id": "oneai-747a7",
+    "storage_bucket": "oneai-747a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827202302425:android:5903f76527a3320b92e9c8",
+        "android_client_info": {
+          "package_name": "max.ohm.oneai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "827202302425-jucmestg7t1atub5ngmq1gscus6oaj6i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "max.ohm.oneai",
+            "certificate_hash": "32498128fa4cfabaabb1dee22f3b49bfe3f55fa7"
+          }
+        },
+        {
+          "client_id": "827202302425-gg2s8plq4p37oknuno1r6ch614grna5m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCY4X9YsdJ1rAcALTW_biRti7Yd3hBNneU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "827202302425-gg2s8plq4p37oknuno1r6ch614grna5m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

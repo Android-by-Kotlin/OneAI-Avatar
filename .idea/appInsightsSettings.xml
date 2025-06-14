@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="max.ohm.oneai" />
+                  <option name="mobileSdkAppId" value="1:827202302425:android:5903f76527a3320b92e9c8" />
+                  <option name="projectId" value="oneai-747a7" />
+                  <option name="projectNumber" value="827202302425" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

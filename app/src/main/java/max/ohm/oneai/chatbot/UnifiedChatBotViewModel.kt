@@ -1,6 +1,7 @@
 package max.ohm.oneai.chatbot
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,11 +10,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import max.ohm.oneai.data.model.Chat
+import max.ohm.oneai.data.repository.ChatRepository
 
 class UnifiedChatBotViewModel : ViewModel() {
-
+    private val TAG = "UnifiedChatBotViewModel"
     private var geminiProGenerativeModel: GenerativeModel? = null
+    private val chatRepository = ChatRepository()
+    private val auth = FirebaseAuth.getInstance()
 
     var messages by mutableStateOf(listOf<Message>())
         private set
@@ -28,23 +36,72 @@ class UnifiedChatBotViewModel : ViewModel() {
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
-        private set
+        internal set
 
     var selectedModel by mutableStateOf("gemini-2.0-flash") // Default model
 
+    // Current chat ID
+    var currentChatId by mutableStateOf<String?>(null)
+        private set
+
+    // List of available chats
+    private val _chats = MutableStateFlow<List<Chat>>(emptyList())
+    val chats: StateFlow<List<Chat>> = _chats
+
+    // Loading state for chats
+    var isLoadingChats by mutableStateOf(false)
+        private set
+
     init {
         initializeGeminiProModel()
+        createInitialChatIfNeeded()
     }
 
     private fun initializeGeminiProModel() {
-        if (GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" && GEMINI_API_KEY.isNotBlank()) {
-            geminiProGenerativeModel = GenerativeModel(
-                modelName = "models/gemini-2.0-flash", // Use the Pro model
-                //modelName = "gemini-2.5-flash",
-                apiKey = GEMINI_API_KEY
-            )
-        } else {
-            println("Error: Gemini API Key for gemini-2.0-flash is not configured correctly.")
+        try {
+            if (GEMINI_API_KEY.isNotBlank() && GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE") {
+                geminiProGenerativeModel = GenerativeModel(
+                    modelName = "models/gemini-2.0-flash",
+                    apiKey = GEMINI_API_KEY
+                )
+                Log.d(TAG, "Gemini Pro model initialized successfully")
+            } else {
+                Log.w(TAG, "Gemini API Key is not configured correctly")
+                errorMessage = "AI model API key is not configured correctly."
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing Gemini Pro model", e)
+            errorMessage = "Failed to initialize AI model: ${e.message}"
+        }
+    }
+    
+    private fun createInitialChatIfNeeded() {
+        if (auth.currentUser == null) {
+            Log.w(TAG, "User not authenticated, skipping initial chat creation")
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                // First load existing chats
+                loadChats()
+                
+                // If no chats exist and no current chat is set, create a new one
+                if (_chats.value.isEmpty() && currentChatId == null) {
+                    Log.d(TAG, "No existing chats found, creating initial chat")
+                    createNewChat("New Conversation")
+                } else if (_chats.value.isNotEmpty() && currentChatId == null) {
+                    // Load the most recent chat if one exists
+                    val mostRecentChat = _chats.value.firstOrNull()
+                    mostRecentChat?.let {
+                        Log.d(TAG, "Loading most recent chat: ${it.id}")
+                        loadChat(it.id)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating initial chat", e)
+                errorMessage = "Failed to initialize chat: ${e.message}"
+            }
         }
     }
 
@@ -69,55 +126,252 @@ class UnifiedChatBotViewModel : ViewModel() {
         errorMessage = null
     }
 
+    fun loadChats() {
+        if (auth.currentUser == null) {
+            errorMessage = "You need to be logged in to load chats."
+            return
+        }
+        
+        isLoadingChats = true
+        errorMessage = null
+        
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.getAllChats()
+                result.fold(
+                    onSuccess = { chatList ->
+                        _chats.value = chatList
+                        Log.d(TAG, "Successfully loaded ${chatList.size} chats")
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to load chats", error)
+                        errorMessage = "Failed to load chats: ${error.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading chats", e)
+                errorMessage = "Error loading chats: ${e.message}"
+            } finally {
+                isLoadingChats = false
+            }
+        }
+    }
+
+    fun createNewChat(title: String = "New Chat") {
+        if (auth.currentUser == null) {
+            errorMessage = "You need to be logged in to create a chat."
+            return
+        }
+        
+        isLoading = true
+        errorMessage = null
+        
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Creating new chat with title: $title")
+                val result = chatRepository.createChat(title)
+                result.fold(
+                    onSuccess = { chatId ->
+                        Log.d(TAG, "Successfully created chat with ID: $chatId")
+                        currentChatId = chatId
+                        messages = emptyList()
+                        loadChats() // Refresh the chat list
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to create chat", error)
+                        errorMessage = "Failed to create chat: ${error.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating chat", e)
+                errorMessage = "Error creating chat: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun loadChat(chatId: String) {
+        if (auth.currentUser == null) {
+            errorMessage = "You need to be logged in to load a chat."
+            return
+        }
+        
+        currentChatId = chatId
+        isLoading = true
+        errorMessage = null
+        messages = emptyList()
+        
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Loading chat with ID: $chatId")
+                val result = chatRepository.getMessages(chatId)
+                result.fold(
+                    onSuccess = { messageList ->
+                        Log.d(TAG, "Successfully loaded ${messageList.size} messages")
+                        messages = messageList
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Failed to load messages", error)
+                        errorMessage = "Failed to load messages: ${error.message}"
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading messages", e)
+                errorMessage = "Error loading messages: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
     fun sendMessage() {
-        if (inputText.text.isBlank() && selectedImageBitmap == null) {
+        if (auth.currentUser == null) {
+            errorMessage = "You need to be logged in to send messages."
+            return
+        }
+        
+        val messageText = inputText.text.trim()
+        if (messageText.isBlank() && selectedImageBitmap == null) {
             return // Don't send empty messages
         }
 
-        val userMessage = Message(inputText.text, true, selectedImageBitmap)
+        // Create a new chat if none exists
+        if (currentChatId == null) {
+            Log.d(TAG, "No current chat, creating new one before sending message")
+            createNewChat("New Conversation")
+            // Store the message to send after chat creation
+            val pendingMessage = Message(messageText, true, selectedImageBitmap)
+            viewModelScope.launch {
+                // Wait for chat creation with a timeout
+                var attempts = 0
+                while (currentChatId == null && attempts < 10) {
+                    kotlinx.coroutines.delay(300)
+                    attempts++
+                }
+                
+                if (currentChatId != null) {
+                    // Now send the pending message
+                    directSendMessage(pendingMessage)
+                } else {
+                    errorMessage = "Failed to create chat. Please try again."
+                }
+            }
+            return
+        }
+
+        val userMessage = Message(messageText, true, selectedImageBitmap)
+        directSendMessage(userMessage)
+    }
+    
+    // Simplified direct message sending without permission checks
+    private fun directSendMessage(userMessage: Message) {
+        // Add message to UI immediately
         messages = messages + userMessage
+        
+        // Clear input
         inputText = TextFieldValue("")
         selectedImageBitmap = null
         isLoading = true
         errorMessage = null
-
+        
+        // Save the user message to Firebase
         viewModelScope.launch {
             try {
-                when (selectedModel) {
-                    "gemini-2.0-flash" -> {
-                        if (geminiProGenerativeModel == null) {
-                            errorMessage = "gemini-2.0-flash model not initialized. Check API Key."
-                            isLoading = false
-                            return@launch
+                Log.d(TAG, "Saving user message to chat: $currentChatId")
+                val saveResult = chatRepository.saveMessage(currentChatId!!, userMessage)
+                if (saveResult.isFailure) {
+                    val exception = saveResult.exceptionOrNull()
+                    Log.e(TAG, "Failed to save user message", exception)
+                    errorMessage = "Failed to save message: ${exception?.message}"
+                    isLoading = false
+                    return@launch
+                }
+                
+                // Generate AI response
+                generateAIResponse()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving message", e)
+                errorMessage = "Failed to save message: ${e.message}"
+                isLoading = false
+            }
+        }
+    }
+    
+    private suspend fun generateAIResponse() {
+        try {
+            when (selectedModel) {
+                "gemini-2.0-flash" -> {
+                    if (geminiProGenerativeModel == null) {
+                        try {
+                            // Try to reinitialize the model
+                            initializeGeminiProModel()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to reinitialize Gemini model", e)
                         }
-                        val chatHistory = messages.map { msg ->
-                            content(if (msg.isUser) "user" else "model") {
-                                msg.image?.let { img -> image(img) }
-                                if (msg.text.isNotBlank()) {
-                                    text(msg.text)
-                                }
+                        
+                        if (geminiProGenerativeModel == null) {
+                            errorMessage = "AI model not initialized. Check API Key."
+                            isLoading = false
+                            return
+                        }
+                    }
+                    
+                    Log.d(TAG, "Generating response with Gemini model")
+                    val chatHistory = messages.map { msg ->
+                        content(if (msg.isUser) "user" else "model") {
+                            msg.image?.let { img -> image(img) }
+                            if (msg.text.isNotBlank()) {
+                                text(msg.text)
                             }
                         }
+                    }
+                    
+                    try {
                         val response = geminiProGenerativeModel!!.generateContent(*chatHistory.toTypedArray())
+                        val responseText = response.text ?: "No response from bot"
+                        Log.d(TAG, "Received AI response: ${responseText.take(50)}...")
+                        
                         val botMessage = Message(
-                            text = response.text ?: "No response from bot", 
+                            text = responseText, 
                             isUser = false,
                             image = null,
                             id = System.currentTimeMillis() // Add unique timestamp as ID
                         )
+                        
+                        // Add message to UI
                         messages = messages + botMessage
-                    }
-
-                    else -> {
-                        errorMessage = "Invalid model selected."
+                        
+                        // Save the bot response to Firebase
+                        val saveResult = chatRepository.saveMessage(currentChatId!!, botMessage)
+                        if (saveResult.isFailure) {
+                            Log.e(TAG, "Failed to save bot message", saveResult.exceptionOrNull())
+                            errorMessage = "Failed to save AI response: ${saveResult.exceptionOrNull()?.message}"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error generating AI response", e)
+                        errorMessage = "Error generating AI response: ${e.message}"
+                        
+                        // Add error message to chat
+                        val errorBotMessage = Message(
+                            text = "Sorry, I encountered an error while generating a response. Please try again.",
+                            isUser = false,
+                            id = System.currentTimeMillis()
+                        )
+                        messages = messages + errorBotMessage
                     }
                 }
-            } catch (e: Exception) {
-                errorMessage = "Network or other error: ${e.message}"
-                e.printStackTrace()
-            } finally {
-                isLoading = false
+
+                else -> {
+                    errorMessage = "Invalid model selected."
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Network or other error", e)
+            errorMessage = "Network or other error: ${e.message}"
+            e.printStackTrace()
+        } finally {
+            isLoading = false
         }
     }
 }

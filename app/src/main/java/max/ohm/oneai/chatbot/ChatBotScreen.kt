@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.*
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -43,6 +45,7 @@ private val LightGreen = Color(0xFF8ecdb7)
 private val AccentGreen = Color(0xFF019863)
 private val Black= Color(0xFF000000)
 private val AccentRed = Color(0xFF023788)
+private val ErrorRed = Color(0xFFFF5252)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +67,9 @@ fun ChatBotScreen(
     
     // State for managing model selection dropdown
     var showModelSelector by remember { mutableStateOf(false) }
+    
+    // Check if user is authenticated
+    val isAuthenticated = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
     
     // Available model options
     val modelOptions = listOf(
@@ -92,6 +98,25 @@ fun ChatBotScreen(
             // When loading completes (message is received), scroll to the bottom
             delay(100) // Short delay for smoother experience
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+    
+    // Check authentication status when the screen loads
+    LaunchedEffect(Unit) {
+        isAuthenticated.value = FirebaseAuth.getInstance().currentUser != null
+        if (!isAuthenticated.value) {
+            unifiedChatBotViewModel.errorMessage = "You must be logged in to use the chat. Please log in."
+        }
+    }
+    
+    // Update authentication status when it changes
+    DisposableEffect(Unit) {
+        val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            isAuthenticated.value = firebaseAuth.currentUser != null
+        }
+        FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
+        onDispose {
+            FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
         }
     }
 
@@ -154,6 +179,28 @@ fun ChatBotScreen(
                     contentDescription = "Toggle Theme",
                     tint = Color.White
                 )
+            }
+        }
+        
+        // Authentication warning banner
+        if (!isAuthenticated.value) {
+            Surface(
+                color = ErrorRed,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "You must be logged in to use the chat. Please log in.",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
         
@@ -416,7 +463,8 @@ fun ChatBotScreen(
                         Row {
                             // Image Upload Button
                             IconButton(
-                                onClick = { imagePickerLauncher.launch("image/*") }
+                                onClick = { imagePickerLauncher.launch("image/*") },
+                                enabled = isAuthenticated.value && !isLoading
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Image,
@@ -425,14 +473,12 @@ fun ChatBotScreen(
                                 )
                             }
                             
-                            // Send Button (visible on wider screens)
+                            // Send Button
                             Button(
                                 onClick = {
-                                    if (inputText.text.isNotEmpty() || selectedImage != null) {
-                                        unifiedChatBotViewModel.sendMessage()
-                                    }
+                                    unifiedChatBotViewModel.sendMessage()
                                 },
-                                enabled = !isLoading && (inputText.text.isNotEmpty() || selectedImage != null),
+                                enabled = isAuthenticated.value && !isLoading && (inputText.text.isNotEmpty() || selectedImage != null),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = AccentGreen,
                                     disabledContainerColor = AccentGreen.copy(alpha = 0.5f)
@@ -442,7 +488,6 @@ fun ChatBotScreen(
                                     .padding(end = 10.dp, top = 6.dp)
                                     .height(36.dp)
                             ) {
-//                                Text("Send", fontSize = 14.sp)
                                 Text(
                                     text = "Send",
                                     fontSize = 14.sp,
@@ -451,7 +496,8 @@ fun ChatBotScreen(
                             }
                         }
                     },
-                    singleLine = true
+                    singleLine = true,
+                    enabled = isAuthenticated.value && !isLoading
                 )
             }
             

@@ -1,5 +1,9 @@
 package max.ohm.oneai.login
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -19,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -27,17 +32,70 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
 import max.ohm.oneai.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginSignupScreen(navController: NavController) {
+fun LoginSignupScreen(
+    navController: NavController,
+    loginViewModel: LoginViewModel = viewModel()
+) {
     var showRegistration by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
+    
+    // Loading state
+    var isLoading by remember { mutableStateOf(false) }
+    
+    // Error state
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    // Context for Google Sign-In
+    val context = LocalContext.current
+    
+    // Google Sign-In launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            loginViewModel.handleGoogleSignInResult(task)
+        }
+    }
+    
+    // Collect login state
+    val loginState by loginViewModel.loginState.collectAsState()
+    
+    // Handle login state changes
+    LaunchedEffect(loginState) {
+        when (loginState) {
+            is LoginState.Loading -> {
+                isLoading = true
+                errorMessage = null
+            }
+            is LoginState.Success -> {
+                isLoading = false
+                errorMessage = null
+                // Navigate to home screen
+                navController.navigate("home") {
+                    popUpTo("login") { inclusive = true }
+                }
+            }
+            is LoginState.Error -> {
+                isLoading = false
+                errorMessage = (loginState as LoginState.Error).message
+            }
+            else -> {
+                isLoading = false
+            }
+        }
+    }
     
     Box(
         modifier = Modifier
@@ -78,6 +136,17 @@ fun LoginSignupScreen(navController: NavController) {
                     fontSize = 16.sp,
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
+                
+                // Error message
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
                 
                 // Email field
                 OutlinedTextField(
@@ -146,9 +215,10 @@ fun LoginSignupScreen(navController: NavController) {
                 // Login Button
                 Button(
                     onClick = {
-                        // Navigate to home screen
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                        if (email.isNotBlank() && password.isNotBlank()) {
+                            loginViewModel.loginWithEmail(email, password)
+                        } else {
+                            errorMessage = "Please fill in all fields"
                         }
                     },
                     modifier = Modifier
@@ -160,13 +230,21 @@ fun LoginSignupScreen(navController: NavController) {
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp
-                    )
+                    ),
+                    enabled = !isLoading
                 ) {
-                    Text(
-                        text = "Login",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Login",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -189,7 +267,10 @@ fun LoginSignupScreen(navController: NavController) {
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF1A1A1A))
-                            .clickable { /* Handle Google login */ },
+                            .clickable {
+                                val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -234,11 +315,10 @@ fun LoginSignupScreen(navController: NavController) {
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Register Button
+                // Sign Up Link
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = "Don't have an account? ",
@@ -246,14 +326,15 @@ fun LoginSignupScreen(navController: NavController) {
                         fontSize = 14.sp
                     )
                     
-                    TextButton(onClick = { showRegistration = true }) {
-                        Text(
-                            text = "Register",
-                            color = Color(0xFF9C27B0),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "Sign Up",
+                        color = Color(0xFF9C27B0),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable {
+                            showRegistration = true
+                        }
+                    )
                 }
             }
         }
@@ -278,27 +359,38 @@ fun LoginSignupScreen(navController: NavController) {
                     )
                     .padding(32.dp)
             ) {
-                // Registration Title
+                // App Logo/Title
                 Text(
-                    text = "Create Account",
+                    text = "OneAI",
                     color = Color.White,
-                    fontSize = 32.sp,
+                    fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
                 Text(
-                    text = "Join our community today",
+                    text = "Create account",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 16.sp,
                     modifier = Modifier.padding(bottom = 32.dp)
                 )
                 
+                // Error message
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color.Red,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+                
                 // Name field
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Full Name") },
+                    label = { Text("Name") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next
@@ -396,12 +488,17 @@ fun LoginSignupScreen(navController: NavController) {
                         .padding(bottom = 24.dp)
                 )
                 
-                // Register Button
+                // Sign Up Button
                 Button(
                     onClick = {
-                        // Navigate to home screen
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                        if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
+                            if (password == confirmPassword) {
+                                loginViewModel.signUpWithEmail(email, password, name)
+                            } else {
+                                errorMessage = "Passwords do not match"
+                            }
+                        } else {
+                            errorMessage = "Please fill in all fields"
                         }
                     },
                     modifier = Modifier
@@ -413,22 +510,29 @@ fun LoginSignupScreen(navController: NavController) {
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 6.dp
-                    )
+                    ),
+                    enabled = !isLoading
                 ) {
-                    Text(
-                        text = "Create Account",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "Sign Up",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Back to Login Button
+                // Login Link
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = "Already have an account? ",
@@ -436,14 +540,15 @@ fun LoginSignupScreen(navController: NavController) {
                         fontSize = 14.sp
                     )
                     
-                    TextButton(onClick = { showRegistration = false }) {
-                        Text(
-                            text = "Login",
-                            color = Color(0xFF9C27B0),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "Login",
+                        color = Color(0xFF9C27B0),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable {
+                            showRegistration = false
+                        }
+                    )
                 }
             }
         }

@@ -1,6 +1,9 @@
 package max.ohm.oneai.navigationsystem
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,7 +24,9 @@ import max.ohm.oneai.homescreen.SimpleHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.UnifiedImageViewModel
 import max.ohm.oneai.login.LoginSignupScreen
+import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
+import max.ohm.oneai.profile.ProfileScreen
 import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
 
@@ -32,16 +37,36 @@ fun AppNavigation() {
     
     // Create a shared LoginViewModel instance to prevent recreation during navigation
     val loginViewModel: LoginViewModel = viewModel()
+    val loginState by loginViewModel.loginState.collectAsState()
     
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(navController = navController)
         }
         composable("login") {
-            LoginSignupScreen(navController = navController)
+            LoginSignupScreen(navController = navController, loginViewModel = loginViewModel)
         }
         composable("home") {
-            SimpleHomeScreen(navController = navController)
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            SimpleHomeScreen(navController = navController, loginViewModel = loginViewModel)
+        }
+        composable("profile") {
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            ProfileScreen(navController = navController, loginViewModel = loginViewModel)
         }
         composable(
             "imageGenerator?model={modelType}",
@@ -51,6 +76,14 @@ fun AppNavigation() {
                 defaultValue = "flux.1.1-pro" // Default to the original model
             })
         ) { backStackEntry ->
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedImageViewModel: UnifiedImageViewModel = viewModel()
             ImageGeneratorScreen(unifiedImageViewModel = unifiedImageViewModel, initialModelType = modelType)
@@ -63,6 +96,14 @@ fun AppNavigation() {
                 defaultValue = "gemini-2.0-flash" // Default to Gemini Flash
             })
         ) { backStackEntry ->
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedChatBotViewModel: UnifiedChatBotViewModel = viewModel() // Use UnifiedChatBotViewModel
             ChatBotScreen(unifiedChatBotViewModel = unifiedChatBotViewModel, initialModelType = modelType)
@@ -75,22 +116,62 @@ fun AppNavigation() {
                 defaultValue = "google/gemini-2.0-flash" // Default model
             })
         ) { backStackEntry ->
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val openRouterViewModel: OpenRouterViewModel = viewModel()
             OpenRouterScreen(openRouterViewModel = openRouterViewModel, initialModelType = modelType)
         }
         composable("videoGeneration") { // Add AI video generation destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             VideoGenerationScreen()
         }
         composable("aiTalk") { // Add AI Talk destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val aiTalkViewModel: AiTalkViewModel = viewModel()
             AiTalkScreen(aiTalkViewModel = aiTalkViewModel)
         }
         composable("tts") { // Add Text-to-Speech destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val ttsViewModel: TtsViewModel = viewModel()
             TtsScreen(ttsViewModel = ttsViewModel)
         }
         composable("aiConversation") { // Add AI Conversation destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
             val aiConversationViewModel: AiConversationViewModel = viewModel()
             AiConversationScreen(aiConversationViewModel = aiConversationViewModel)
         }

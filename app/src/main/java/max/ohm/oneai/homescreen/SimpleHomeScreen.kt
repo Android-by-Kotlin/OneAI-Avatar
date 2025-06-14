@@ -1,16 +1,19 @@
 package max.ohm.oneai.homescreen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -18,10 +21,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import max.ohm.oneai.login.LoginState
+import max.ohm.oneai.login.LoginViewModel
 
 @Composable
-fun SimpleHomeScreen(navController: NavController) {
+fun SimpleHomeScreen(
+    navController: NavController,
+    loginViewModel: LoginViewModel = viewModel()
+) {
+    val loginState by loginViewModel.loginState.collectAsState()
+    
+    // Check if user is logged in
+    LaunchedEffect(loginState) {
+        if (loginState !is LoginState.Success) {
+            navController.navigate("login") {
+                popUpTo("home") { inclusive = true }
+            }
+        }
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -40,14 +60,39 @@ fun SimpleHomeScreen(navController: NavController) {
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
-            Text(
-                text = "OneAI",
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 24.dp)
-            )
+            // Header with profile icon
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "OneAI",
+                    color = Color.White,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                // Profile Icon
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF6200EE))
+                        .clickable { navController.navigate("profile") }
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
             
             // Welcome message
             Card(
@@ -62,8 +107,9 @@ fun SimpleHomeScreen(navController: NavController) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
+                    val user = (loginState as? LoginState.Success)?.user
                     Text(
-                        text = "Welcome to OneAI",
+                        text = "Welcome ${user?.name ?: "to OneAI"}",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
