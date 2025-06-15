@@ -208,16 +208,16 @@ fun ChatBotScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Menu button
-                    IconButton(
-                        onClick = { unifiedChatBotViewModel.toggleChatDrawer() },
-                        modifier = Modifier.size(48.dp).padding(top = 25.dp),
-                    ) {
+//                    IconButton(
+//                        onClick = { unifiedChatBotViewModel.toggleChatDrawer() },
+//                        modifier = Modifier.size(48.dp).padding(top = 25.dp),
+//                    ) {
 //                        Icon(
 //                            imageVector = Icons.Default.Menu,
 //                            contentDescription = "Open Conversations",
 //                            tint = Color.White
 //                        )
-                    }
+//                    }
                     
                     // Title
                     Text(
@@ -232,16 +232,16 @@ fun ChatBotScreen(
                     )
                     
                     // New chat button
-                    IconButton(
-                        onClick = { unifiedChatBotViewModel.createNewChat() },
-                        modifier = Modifier.size(48.dp).padding(top = 25.dp),
-                    ) {
+//                    IconButton(
+//                        onClick = { unifiedChatBotViewModel.createNewChat() },
+//                        modifier = Modifier.size(48.dp).padding(top = 25.dp),
+//                    ) {
 //                        Icon(
 //                            imageVector = Icons.Default.Add,
 //                            contentDescription = "New Conversation",
 //                            tint = Color.White
 //                        )
-                    }
+//                    }
                 }
                 
                 // Authentication warning banner
@@ -346,13 +346,20 @@ fun ChatBotScreen(
                                 fontSize = 18.sp,
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Let,s Start a Conversation",
-                                color = Color.White.copy(alpha = 0.5f),
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Center
-                            )
+//                            Spacer(modifier = Modifier.height(8.dp))
+//                            Text(
+//                                text = "Type a message below to start a new conversation",
+//                                color = Color.White.copy(alpha = 0.5f),
+//                                fontSize = 14.sp,
+//                                textAlign = TextAlign.Center
+//                            )
+//                            Spacer(modifier = Modifier.height(8.dp))
+//                            Text(
+//                                text = "or click the + icon to create a new chat",
+//                                color = Color.White.copy(alpha = 0.5f),
+//                                fontSize = 14.sp,
+//                                textAlign = TextAlign.Center
+//                            )
                         }
                     } else {
                         LazyColumn(
@@ -495,7 +502,7 @@ fun ChatBotScreen(
                                         imageVector = Icons.Default.Send,
                                         contentDescription = "Send Message",
                                         tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(15.dp)
                                     )
                                 }
                             }

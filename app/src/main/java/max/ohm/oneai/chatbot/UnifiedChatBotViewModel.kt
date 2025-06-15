@@ -91,14 +91,11 @@ class UnifiedChatBotViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                // First load existing chats
+                // Load existing chats
                 loadChats()
                 
-                // If no chats exist and no current chat is set, create a new one
-                if (_chats.value.isEmpty() && currentChatId == null) {
-                    Log.d(TAG, "No existing chats found, creating initial chat")
-                    createNewChat("New Conversation")
-                } else if (_chats.value.isNotEmpty() && currentChatId == null) {
+                // If there are existing chats, load the most recent one
+                if (_chats.value.isNotEmpty() && currentChatId == null) {
                     // Load the most recent chat if one exists
                     val mostRecentChat = _chats.value.firstOrNull()
                     mostRecentChat?.let {
@@ -106,9 +103,11 @@ class UnifiedChatBotViewModel : ViewModel() {
                         loadChat(it.id)
                     }
                 }
+                // Don't automatically create a new chat if none exist
+                // Let the user create one manually by clicking the plus icon
             } catch (e: Exception) {
-                Log.e(TAG, "Error creating initial chat", e)
-                errorMessage = "Failed to initialize chat: ${e.message}"
+                Log.e(TAG, "Error loading chats", e)
+                errorMessage = "Failed to load chats: ${e.message}"
             }
         }
     }
@@ -347,7 +346,7 @@ class UnifiedChatBotViewModel : ViewModel() {
             return // Don't send empty messages
         }
 
-        // Create a new chat if none exists
+        // Create a new chat if none exists when sending a message
         if (currentChatId == null) {
             Log.d(TAG, "No current chat, creating new one before sending message")
             createNewChat("New Conversation")
