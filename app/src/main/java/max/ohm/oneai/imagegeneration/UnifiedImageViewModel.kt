@@ -135,6 +135,55 @@ class UnifiedImageViewModel : ViewModel() {
                             errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
                         }
                     }
+                    "provider-5/gpt-image-1" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-5/gpt-image-1", // Use the pro model
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1536"  //chatgpt app size
+                            //size = "720x1280"
+                           // size = "1080x2340"
+                            //size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
+
+
+                    "provider-3/FLUX.1.1-pro-ultra-raw" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-3/FLUX.1.1-pro-ultra-raw", // Use the pro model
+                            prompt = prompt.text,
+                            n = 1,
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                        }
+                    }
                     "provider-1/FLUX.1.1-pro" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"

@@ -21,9 +21,9 @@ object FluxApiClient {
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(240, TimeUnit.SECONDS)
+        .readTimeout(240, TimeUnit.SECONDS)
+        .writeTimeout(240, TimeUnit.SECONDS)
         .build()
 
     val apiService: FluxApiService by lazy {
