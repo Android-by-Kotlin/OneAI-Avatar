@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import max.ohm.oneai.data.model.Chat
 import max.ohm.oneai.data.repository.ChatRepository
+import max.ohm.oneai.a4f.A4FChatService
+import org.json.JSONObject
 
 class UnifiedChatBotViewModel : ViewModel() {
     private val TAG = "UnifiedChatBotViewModel"
@@ -59,6 +61,9 @@ class UnifiedChatBotViewModel : ViewModel() {
     // State for showing chat drawer
     var showChatDrawer by mutableStateOf(false)
         private set
+
+    // Add a4f service instance
+    private val a4fChatService = A4FChatService()
 
     init {
         initializeGeminiProModel()
@@ -481,7 +486,102 @@ class UnifiedChatBotViewModel : ViewModel() {
                         messages = messages + errorBotMessage
                     }
                 }
-
+                "a4f-gpt-4.1-nano" -> {
+                    Log.d(TAG, "Generating response with A4F GPT-4.1-Nano model")
+                    val userPrompt = messages.lastOrNull { it.isUser }?.text ?: ""
+                    try {
+                        val responseText = a4fChatService.getCompletion(userPrompt, "provider-3/gpt-4.1-nano")
+                        // Check if responseText is a function_call JSON
+                        if (responseText.trim().startsWith("{") && responseText.contains("function_call")) {
+                            val messageJson = JSONObject(responseText)
+                            val functionCall = messageJson.getJSONObject("function_call")
+                            val functionName = functionCall.getString("name")
+                            if (functionName == "get_current_weather") {
+                                val arguments = functionCall.getString("arguments")
+                                val argsJson = JSONObject(arguments)
+                                val location = argsJson.optString("location", "Unknown")
+                                val units = argsJson.optString("units", "metric")
+                                val language = argsJson.optString("language", "en")
+                                // Simulate weather result as JSON
+                                val weatherResultJson = JSONObject()
+                                weatherResultJson.put("location", location)
+                                weatherResultJson.put("temperature", if (units == "imperial") 77 else 25)
+                                weatherResultJson.put("humidity", 60)
+                                weatherResultJson.put("description", "Partly cloudy")
+                                weatherResultJson.put("wind_speed", 10)
+                                weatherResultJson.put("units", units)
+                                weatherResultJson.put("language", language)
+                                val weatherResult = weatherResultJson.toString()
+                                // Add function response as a 'function' message
+                                val functionMessage = Message(
+                                    text = weatherResult,
+                                    isUser = false,
+                                    image = null,
+                                    id = System.currentTimeMillis()
+                                )
+                                messages = messages + functionMessage
+                                // Save the function response to Firebase
+                                val saveResult = chatRepository.saveMessage(currentChatId!!, functionMessage)
+                                if (saveResult.isFailure) {
+                                    Log.e(TAG, "Failed to save function message", saveResult.exceptionOrNull())
+                                    errorMessage = "Failed to save function response: ${saveResult.exceptionOrNull()?.message}"
+                                }
+                                // Build the full message history for the next model call
+                                val systemMessage = JSONObject()
+                                systemMessage.put("role", "system")
+                                systemMessage.put("content", "If the user asks about the weather, always use the get_current_weather function.")
+                                val userMessage = JSONObject()
+                                userMessage.put("role", "user")
+                                userMessage.put("content", userPrompt)
+                                val functionResponseMessage = JSONObject()
+                                functionResponseMessage.put("role", "function")
+                                functionResponseMessage.put("name", "get_current_weather")
+                                functionResponseMessage.put("content", weatherResult)
+                                val messagesArray = org.json.JSONArray()
+                                messagesArray.put(systemMessage)
+                                messagesArray.put(userMessage)
+                                messagesArray.put(functionResponseMessage)
+                                // Call the model again with the full history (no manual assistant message)
+                                val followupResponse = a4fChatService.getCompletionWithMessages(messagesArray, "provider-3/gpt-4.1-nano")
+                                val botMessage = Message(
+                                    text = followupResponse,
+                                    isUser = false,
+                                    image = null,
+                                    id = System.currentTimeMillis()
+                                )
+                                messages = messages + botMessage
+                                val saveResult2 = chatRepository.saveMessage(currentChatId!!, botMessage)
+                                if (saveResult2.isFailure) {
+                                    Log.e(TAG, "Failed to save bot message", saveResult2.exceptionOrNull())
+                                    errorMessage = "Failed to save AI response: ${saveResult2.exceptionOrNull()?.message}"
+                                }
+                                return
+                            }
+                        }
+                        // Normal text response
+                        val botMessage = Message(
+                            text = responseText,
+                            isUser = false,
+                            image = null,
+                            id = System.currentTimeMillis()
+                        )
+                        messages = messages + botMessage
+                        val saveResult = chatRepository.saveMessage(currentChatId!!, botMessage)
+                        if (saveResult.isFailure) {
+                            Log.e(TAG, "Failed to save bot message", saveResult.exceptionOrNull())
+                            errorMessage = "Failed to save AI response: ${saveResult.exceptionOrNull()?.message}"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error generating AI response", e)
+                        errorMessage = "Error generating AI response: ${e.message}"
+                        val errorBotMessage = Message(
+                            text = "Sorry, I encountered an error while generating a response. Please try again.",
+                            isUser = false,
+                            id = System.currentTimeMillis()
+                        )
+                        messages = messages + errorBotMessage
+                    }
+                }
                 else -> {
                     errorMessage = "Invalid model selected."
                 }

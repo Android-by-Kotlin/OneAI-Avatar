@@ -185,5 +185,4 @@ class AiConversationViewModel : ViewModel() {
     fun clearMessages() {
         messages = emptyList()
     }
-} 
-
+}

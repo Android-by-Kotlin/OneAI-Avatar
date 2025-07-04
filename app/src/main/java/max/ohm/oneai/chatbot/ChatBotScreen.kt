@@ -83,7 +83,8 @@ fun ChatBotScreen(
     val modelOptions = listOf(
         "gemini-2.0-flash" to "Gemini Flash",
         "gemini-2.0-pro" to "Gemini Pro",
-        "gpt-4" to "GPT-4"
+        "gpt-4" to "GPT-4",
+        "a4f-gpt-4.1-nano" to "A4F GPT-4.1-Nano"
     )
 
     LaunchedEffect(initialModelType) {
@@ -267,63 +268,63 @@ fun ChatBotScreen(
                 }
                 
                 // Model selector
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(MediumGreen)
-//                        .padding(8.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    Text(
-//                        text = "Model:",
-//                        color = Color.White,
-//                        fontSize = 14.sp,
-//                        modifier = Modifier.padding(end = 8.dp)
-//                    )
-//
-//                    Box {
-//                        Row(
-//                            modifier = Modifier
-//                                .clip(RoundedCornerShape(4.dp))
-//                                .background(DarkGreen)
-//                                .clickable { showModelSelector = !showModelSelector }
-//                                .padding(8.dp),
-//                            verticalAlignment = Alignment.CenterVertically
-//                        ) {
-//                            Text(
-//                                text = modelOptions.find { it.first == selectedModel }?.second ?: selectedModel,
-//                                color = Color.White,
-//                                fontSize = 14.sp,
-//                                modifier = Modifier.padding(end = 4.dp)
-//                            )
-//                            Icon(
-//                                imageVector = Icons.Default.ArrowDropDown,
-//                                contentDescription = "Select Model",
-//                                tint = Color.White,
-//                                modifier = Modifier.size(20.dp)
-//                            )
-//                        }
-//
-//                        DropdownMenu(
-//                            expanded = showModelSelector,
-//                            onDismissRequest = { showModelSelector = false },
-//                            modifier = Modifier.background(DarkGreen)
-//                        ) {
-//                            modelOptions.forEach { (modelId, modelName) ->
-//                                DropdownMenuItem(
-//                                    text = { Text(modelName, color = Color.White) },
-//                                    onClick = {
-//                                        unifiedChatBotViewModel.updateSelectedModel(modelId)
-//                                        showModelSelector = false
-//                                    },
-//                                    colors = MenuDefaults.itemColors(
-//                                        textColor = Color.White
-//                                    )
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MediumGreen)
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Model:",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+
+                    Box {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(DarkGreen)
+                                .clickable { showModelSelector = !showModelSelector }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = modelOptions.find { it.first == selectedModel }?.second ?: selectedModel,
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Select Model",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showModelSelector,
+                            onDismissRequest = { showModelSelector = false },
+                            modifier = Modifier.background(DarkGreen)
+                        ) {
+                            modelOptions.forEach { (modelId, modelName) ->
+                                DropdownMenuItem(
+                                    text = { Text(modelName, color = Color.White) },
+                                    onClick = {
+                                        unifiedChatBotViewModel.updateSelectedModel(modelId)
+                                        showModelSelector = false
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
                 
                 // Chat messages
                 Box(
