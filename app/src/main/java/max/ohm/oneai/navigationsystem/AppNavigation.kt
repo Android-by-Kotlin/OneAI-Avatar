@@ -107,7 +107,13 @@ fun AppNavigation() {
             }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedChatBotViewModel: UnifiedChatBotViewModel = viewModel() // Use UnifiedChatBotViewModel
-            ChatBotScreen(unifiedChatBotViewModel = unifiedChatBotViewModel, initialModelType = modelType)
+            // Set the initial model type in the view model
+            LaunchedEffect(modelType) {
+                modelType?.let {
+                    unifiedChatBotViewModel.updateSelectedModel(it)
+                }
+            }
+            ChatBotScreen(unifiedChatBotViewModel = unifiedChatBotViewModel)
         }
         composable(
             "openRouter?model={modelType}", // Route for OpenRouter screen

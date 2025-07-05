@@ -39,6 +39,11 @@ private val AccentBlue = Color(0xFF2196F3)
 private val AccentOrange = Color(0xFFFF9800)
 private val CheckmarkGreen = Color(0xFF00C853)
 
+// JARVIS-style colors
+private val JarvisBlue = Color(0xFF00B4D8)
+private val JarvisLightBlue = Color(0xFF48CAE4)
+private val JarvisDarkBlue = Color(0xFF023E8A)
+
 data class ResponseSection(
     val type: SectionType,
     val content: String,
@@ -91,9 +96,10 @@ fun FormattedBotResponse(
 private fun TitleSection(title: String) {
     Text(
         text = title,
-        color = TextPrimary,
+        color = JarvisLightBlue,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Monospace,
         modifier = Modifier.padding(vertical = 4.dp)
     )
 }
@@ -102,9 +108,10 @@ private fun TitleSection(title: String) {
 private fun ParagraphSection(text: String) {
     Text(
         text = text,
-        color = TextPrimary,
+        color = JarvisLightBlue.copy(alpha = 0.9f),
         fontSize = 15.sp,
         lineHeight = 22.sp,
+        fontFamily = FontFamily.Monospace,
         modifier = Modifier.padding(vertical = 2.dp)
     )
 }
