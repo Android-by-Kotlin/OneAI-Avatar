@@ -36,6 +36,9 @@ class UnifiedChatBotViewModel : ViewModel() {
 
     var isLoading by mutableStateOf(false)
         private set
+        
+    var isLoadingFromHistory by mutableStateOf(false)
+        private set
 
     var errorMessage by mutableStateOf<String?>(null)
         internal set
@@ -216,6 +219,7 @@ class UnifiedChatBotViewModel : ViewModel() {
         
         currentChatId = chatId
         isLoading = true
+        isLoadingFromHistory = true
         errorMessage = null
         messages = emptyList()
         
@@ -250,6 +254,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                 errorMessage = "Error loading messages: ${e.message}"
             } finally {
                 isLoading = false
+                isLoadingFromHistory = false
             }
         }
     }

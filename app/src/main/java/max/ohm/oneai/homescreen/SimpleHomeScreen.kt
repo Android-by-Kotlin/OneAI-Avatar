@@ -301,6 +301,46 @@ fun SimpleHomeScreen(
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+            
+            // Debug/Test section (for development)
+            Text(
+                text = "Development Tools",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Button(
+                onClick = { navController.navigate("responsiveTest") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF333333)
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhoneAndroid,
+                        contentDescription = "Responsive Test",
+                        tint = Color.White.copy(alpha = 0.7f)
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Text(
+                        text = "Test Chat Bubbles Responsiveness",
+                        fontSize = 14.sp,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

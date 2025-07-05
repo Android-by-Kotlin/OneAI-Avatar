@@ -97,6 +97,7 @@ fun ChatBotScreen(
     val selectedModel = unifiedChatBotViewModel.selectedModel
     val currentChatTitle = unifiedChatBotViewModel.currentChatTitle
     val showChatDrawer = unifiedChatBotViewModel.showChatDrawer
+    val isLoadingFromHistory = unifiedChatBotViewModel.isLoadingFromHistory
     val chats by unifiedChatBotViewModel.chats.collectAsState()
     
     // State for tracking scroll position
@@ -357,8 +358,15 @@ fun ChatBotScreen(
                                 .padding(8.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(messages) { message ->
-                                MessageBubble(message = message)
+                            items(messages.size) { index ->
+                                val message = messages[index]
+                                val isLastMessage = index == messages.size - 1
+                                val isRecentMessage = !isLoadingFromHistory && isLastMessage && !message.isUser
+                                
+                                MessageBubble(
+                                    message = message,
+                                    isNewMessage = isRecentMessage
+                                )
                             }
                             
                             // Add a spacer at the bottom for better UX

@@ -19,6 +19,7 @@ import max.ohm.oneai.aiconversation.tts.TtsViewModel
 import max.ohm.oneai.aitalk.AiTalkScreen
 import max.ohm.oneai.aitalk.AiTalkViewModel
 import max.ohm.oneai.chatbot.ChatBotScreen
+import max.ohm.oneai.chatbot.ResponsiveTestScreen
 import max.ohm.oneai.chatbot.UnifiedChatBotViewModel
 import max.ohm.oneai.homescreen.SimpleHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
@@ -174,6 +175,17 @@ fun AppNavigation() {
             }
             val aiConversationViewModel: AiConversationViewModel = viewModel()
             AiConversationScreen(aiConversationViewModel = aiConversationViewModel)
+        }
+        composable("responsiveTest") { // Add Responsive Test destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            ResponsiveTestScreen()
         }
 
         // Add other destinations here (translator)
