@@ -30,6 +30,8 @@ import kotlinx.coroutines.delay
 import max.ohm.oneai.R
 import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
+import max.ohm.oneai.animation.LetterDropAnimation
+import androidx.compose.ui.text.TextStyle
 
 @Composable
 fun SplashScreen(
@@ -75,17 +77,32 @@ fun SplashScreen(
                     .size(200.dp)
             )
 
-            Text(
+            // Use letter drop animation for the title
+            LetterDropAnimation(
                 text = "O N E A I",
-                color = Color.White,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold
+                textStyle = TextStyle(
+                    color = Color.White,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold
+                ),
+                dropHeight = 400f,
+                staggerDelay = 80,
+                animationDuration = 1000
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Use letter drop animation for the subtitle with delay
+            LetterDropAnimation(
                 text = "One New Era of AI",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 20.sp
+                textStyle = TextStyle(
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Light
+                ),
+                dropHeight = 200f,
+                staggerDelay = 40,
+                animationDuration = 800
             )
         }
     }

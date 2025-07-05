@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +68,9 @@ fun MessageBubble(message: Message) {
     val isBot = !message.isUser
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    
+    // Calculate responsive bubble width (88% of screen width)
+    val maxBubbleWidth = (LocalConfiguration.current.screenWidthDp * 0.88).dp
     
     // Get user profile info
     val userPhotoUrl = remember { auth.currentUser?.photoUrl }
@@ -141,7 +145,14 @@ fun MessageBubble(message: Message) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(
+                horizontal = 8.dp, 
+                vertical = 4.dp
+            )
+            .padding(
+                start = if (message.isUser) 0.dp else 4.dp,
+                end = if (message.isUser) 4.dp else 0.dp
+            ),
         horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start,
         verticalAlignment = Alignment.Bottom
     ) {
@@ -168,7 +179,7 @@ fun MessageBubble(message: Message) {
         // Message bubble
         Box(
             modifier = Modifier
-                .widthIn(max = 280.dp)
+                .widthIn(max = maxBubbleWidth)
                 .clip(
                     RoundedCornerShape(
                         topStart = 16.dp,
@@ -222,22 +233,39 @@ fun MessageBubble(message: Message) {
                         )
                     }
                 } else if (message.text.isNotBlank()) {
-                    Text(
-                        text = if (isBot) displayedText else message.text,
-                        color = Color.White,
-                        style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
-                    )
-                    
-                    // Show blinking cursor at the end while typing
-                    if (isBot && isTyping) {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 4.dp)
-                                .height(14.dp)
-                                .width(2.dp)
-                                .alpha(dotAlpha1)
-                                .background(Color.White)
+                    if (isBot && !isTyping) {
+                        // Parse and display formatted response for bot messages
+                        val sections = ResponseParser.parseResponse(displayedText)
+                        if (sections.isNotEmpty() && sections.any { it.type != SectionType.PARAGRAPH }) {
+                            // Use formatted response
+                            FormattedBotResponse(sections = sections)
+                        } else {
+                            // Fallback to plain text for simple messages
+                            Text(
+                                text = displayedText,
+                                color = Color.White,
+                                style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
+                            )
+                        }
+                    } else {
+                        // User messages and typing animation
+                        Text(
+                            text = if (isBot) displayedText else message.text,
+                            color = Color.White,
+                            style = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
                         )
+                        
+                        // Show blinking cursor at the end while typing
+                        if (isBot && isTyping) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .height(14.dp)
+                                    .width(2.dp)
+                                    .alpha(dotAlpha1)
+                                    .background(Color.White)
+                            )
+                        }
                     }
                 }
             }
