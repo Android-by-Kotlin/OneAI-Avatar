@@ -57,6 +57,20 @@ dependencies {
     // Splash screen API
     implementation("androidx.core:core-splashscreen:1.1.0-alpha02")
 
+
+
+    // WebRTC permissions
+    implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+
+    // LiveKit dependencies
+    implementation("io.livekit:livekit-android:2.5.0")
+
+
     // ViewModel Compose for lifecycle-aware coroutine scope
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 

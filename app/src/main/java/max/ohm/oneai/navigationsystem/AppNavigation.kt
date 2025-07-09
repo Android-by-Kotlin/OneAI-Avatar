@@ -30,6 +30,8 @@ import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.profile.ProfileScreen
 import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
+import max.ohm.oneai.liveavatar.ui.StreamingScreen
+import max.ohm.oneai.liveavatar.ui.StreamingViewModel
 
 // --- Navigation ---
 @Composable
@@ -192,6 +194,19 @@ fun AppNavigation() {
                 }
             }
             ResponsiveTestScreen()
+        }
+        
+        composable("liveAvatar") { // Add Live Avatar destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val streamingViewModel: StreamingViewModel = viewModel()
+            StreamingScreen(viewModel = streamingViewModel)
         }
 
         // Add other destinations here (translator)

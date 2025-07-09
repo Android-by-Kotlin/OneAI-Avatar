@@ -259,6 +259,27 @@ fun SimpleHomeScreen(
                 )
             }
             
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Fifth row with Live Avatar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                FeatureButton(
+                    icon = Icons.Default.VideoCall,
+                    title = "Live Avatar",
+                    description = "Interactive AI avatar",
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("liveAvatar") }
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Empty space for alignment - you can add another feature here later
+                Box(modifier = Modifier.weight(1f))
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Advanced Models section
