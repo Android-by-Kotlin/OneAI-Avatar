@@ -1,5 +1,6 @@
 package max.ohm.oneai.homescreen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -261,7 +263,7 @@ fun SimpleHomeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Fifth row with Live Avatar
+            // Fifth row with Live Avatar and Face Gen
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -276,8 +278,90 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                // Empty space for alignment - you can add another feature here later
-                Box(modifier = Modifier.weight(1f))
+                FeatureButton(
+                    icon = Icons.Default.Face,
+                    title = "Face Gen",
+                    description = "Generate faces",
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("faceGen") }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Enhanced Features row
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .clickable { navController.navigate("enhancedImageGenerator") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF6366F1).copy(alpha = 0.15f)
+                ),
+                border = BorderStroke(
+                    width = 2.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF6366F1),
+                            Color(0xFFEC4899)
+                        )
+                    )
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = "Enhanced Image Gen",
+                                tint = Color(0xFF6366F1),
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = "Enhanced",
+                                color = Color(0xFFEC4899),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "AI Image Studio Pro",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = "Gallery • History • Zoom • Share",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
+                    
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))

@@ -60,7 +60,7 @@ private val LightGreen = Color(0xFF8ecdb7)
 private val AccentGreen = Color(0xFF019863)
 
 // Helper function to format seconds into MM:SS string
-fun formatSecondsToMMSS(seconds: Long): String {
+internal fun formatSecondsToMMSS(seconds: Long): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return String.format("%02d:%02d", minutes, remainingSeconds)

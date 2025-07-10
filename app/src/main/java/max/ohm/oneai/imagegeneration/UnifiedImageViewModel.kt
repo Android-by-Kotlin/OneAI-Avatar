@@ -134,6 +134,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-5/gpt-image-1" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -159,6 +160,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
 
                     "provider-4/imagen-4" -> {
@@ -186,6 +188,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
 
                     "provider-4/imagen-3" -> {
@@ -213,6 +216,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
 
 
@@ -235,8 +239,9 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = "Flux Pro Ultra Raw API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-1/FLUX.1.1-pro" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -259,6 +264,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/FLUX.1.1-pro-ultra" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -281,6 +287,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Ultra Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/dall-e-3" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -303,6 +310,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/shuttle-3.1-aesthetic" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -325,6 +333,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Shuttle 3.1 Aesthetic API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/shuttle-3-diffusion" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -347,6 +356,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Shuttle 3 Diffusion API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/shuttle-jaguar" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -369,6 +379,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Shuttle Jaguar API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-3/FLUX.1-dev" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -391,6 +402,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "Flux Dev API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-2/FLUX.1-kontext-max" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -413,6 +425,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "FLUX Kontext Max API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     "provider-1/FLUX.1-kontext-pro" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -435,6 +448,7 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             errorMessage = "FLUX Kontext Pro API Error: ${response.code()} - ${errorBody}"
                         }
+                        isLoading = false
                     }
                     else -> {
                         // Log the invalid model for debugging
@@ -467,6 +481,7 @@ class UnifiedImageViewModel : ViewModel() {
                                 val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                                 errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
                             }
+                            isLoading = false
                         } else {
                             errorMessage = "Invalid model selected: $selectedModel"
                             isLoading = false // Ensure loading stops if model is invalid before try-finally

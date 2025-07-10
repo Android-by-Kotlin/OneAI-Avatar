@@ -23,6 +23,7 @@ import max.ohm.oneai.chatbot.ResponsiveTestScreen
 import max.ohm.oneai.chatbot.UnifiedChatBotViewModel
 import max.ohm.oneai.homescreen.SimpleHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
+import max.ohm.oneai.imagegeneration.EnhancedImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.UnifiedImageViewModel
 import max.ohm.oneai.login.LoginSignupScreen
 import max.ohm.oneai.login.LoginState
@@ -32,6 +33,8 @@ import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
 import max.ohm.oneai.liveavatar.ui.StreamingScreen
 import max.ohm.oneai.liveavatar.ui.StreamingViewModel
+import max.ohm.oneai.imageediting.FaceGenScreen
+import max.ohm.oneai.imageediting.FaceGenViewModel
 
 // --- Navigation ---
 @Composable
@@ -90,6 +93,26 @@ fun AppNavigation() {
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedImageViewModel: UnifiedImageViewModel = viewModel()
             ImageGeneratorScreen(unifiedImageViewModel = unifiedImageViewModel, initialModelType = modelType)
+        }
+        composable(
+            "enhancedImageGenerator?model={modelType}",
+            arguments = listOf(navArgument("modelType") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = "flux.1-schnell"
+            })
+        ) { backStackEntry ->
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val modelType = backStackEntry.arguments?.getString("modelType")
+            val unifiedImageViewModel: UnifiedImageViewModel = viewModel()
+            EnhancedImageGeneratorScreen(unifiedImageViewModel = unifiedImageViewModel, initialModelType = modelType)
         }
         composable(
             "chatbot?model={modelType}", // Updated route to accept modelType
@@ -207,6 +230,19 @@ fun AppNavigation() {
             }
             val streamingViewModel: StreamingViewModel = viewModel()
             StreamingScreen(viewModel = streamingViewModel)
+        }
+        
+        composable("faceGen") { // Add Face Gen destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val faceGenViewModel: FaceGenViewModel = viewModel()
+            FaceGenScreen(faceGenViewModel = faceGenViewModel)
         }
 
         // Add other destinations here (translator)
