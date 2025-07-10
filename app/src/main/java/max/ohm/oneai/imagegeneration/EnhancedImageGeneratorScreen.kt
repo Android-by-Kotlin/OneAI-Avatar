@@ -61,6 +61,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.collectAsState
+import android.util.Log
 
 // Enhanced color scheme
 private val DarkBackground = Color(0xFF0A0E27)
@@ -94,7 +96,11 @@ fun EnhancedImageGeneratorScreen(
     val errorMessage = unifiedImageViewModel.errorMessage
     val selectedModelInternalName = unifiedImageViewModel.selectedModel
     
-    // History of generated images
+    // Initialize persistent storage
+    val imageHistoryStore = remember { ImageHistoryDataStore(context) }
+    
+    // History of generated images from persistent storage
+    val persistedHistory by imageHistoryStore.imageHistory.collectAsState(initial = emptyList())
     var imageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
     var showGallery by remember { mutableStateOf(false) }
     var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
@@ -151,15 +157,43 @@ fun EnhancedImageGeneratorScreen(
         }
     }
     
-    // Add generated image to history
+    // Load persisted history
+    LaunchedEffect(persistedHistory) {
+        Log.d("EnhancedImageGenerator", "Loading ${persistedHistory.size} images from history")
+        imageHistory = persistedHistory.mapNotNull { item ->
+            val imageData = imageHistoryStore.getImageData(item)
+            if (imageData != null) {
+                GeneratedImage(
+                    id = item.id,
+                    prompt = item.prompt,
+                    imageData = imageData,
+                    timestamp = item.timestamp,
+                    model = item.model
+                )
+            } else {
+                Log.e("EnhancedImageGenerator", "Failed to load image data for id: ${item.id}")
+                null
+            }
+        }
+        Log.d("EnhancedImageGenerator", "Successfully loaded ${imageHistory.size} images")
+    }
+    
+    // Add generated image to history and persist it
     LaunchedEffect(generatedImageData, imageUrl) {
         if (generatedImageData != null || imageUrl != null) {
-            val newImage = GeneratedImage(
-                prompt = prompt.text,
-                imageData = generatedImageData ?: imageUrl,
-                model = currentSelectedModelChoice.displayName
-            )
-            imageHistory = listOf(newImage) + imageHistory.take(19) // Keep last 20 images
+            coroutineScope.launch {
+                val savedItem = imageHistoryStore.saveImage(
+                    prompt = prompt.text,
+                    imageData = generatedImageData ?: imageUrl,
+                    model = currentSelectedModelChoice.displayName
+                )
+                if (savedItem != null) {
+                    Log.d("EnhancedImageGenerator", "Image saved successfully with id: ${savedItem.id}")
+                } else {
+                    Log.e("EnhancedImageGenerator", "Failed to save image")
+                    Toast.makeText(context, "Failed to save image to gallery", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
     
@@ -408,6 +442,11 @@ fun EnhancedImageGeneratorScreen(
                     selectedImage = image
                     showImageDetail = true
                     showGallery = false
+                },
+                onDeleteImage = { image ->
+                    coroutineScope.launch {
+                        imageHistoryStore.deleteImage(image.id)
+                    }
                 }
             )
         }
@@ -891,7 +930,8 @@ private fun GenerateButton(
 private fun GalleryOverlay(
     images: List<GeneratedImage>,
     onDismiss: () -> Unit,
-    onImageClick: (GeneratedImage) -> Unit
+    onImageClick: (GeneratedImage) -> Unit,
+    onDeleteImage: (GeneratedImage) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -961,7 +1001,8 @@ private fun GalleryOverlay(
                     items(images) { image ->
                         GalleryItem(
                             image = image,
-                            onClick = { onImageClick(image) }
+                            onClick = { onImageClick(image) },
+                            onDelete = { onDeleteImage(image) }
                         )
                     }
                 }
@@ -973,8 +1014,11 @@ private fun GalleryOverlay(
 @Composable
 private fun GalleryItem(
     image: GeneratedImage,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1027,7 +1071,53 @@ private fun GalleryItem(
                     fontSize = 10.sp
                 )
             }
+            
+            // Delete button
+            IconButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(36.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
+    }
+    
+    // Delete confirmation dialog
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Image?", color = TextPrimary) },
+            text = { Text("This action cannot be undone.", color = TextSecondary) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        showDeleteConfirm = false
+                    }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            },
+            containerColor = CardBackground,
+            tonalElevation = 8.dp
+        )
     }
 }
 
