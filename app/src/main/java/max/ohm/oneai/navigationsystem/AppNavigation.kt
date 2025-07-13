@@ -35,6 +35,8 @@ import max.ohm.oneai.liveavatar.ui.StreamingScreen
 import max.ohm.oneai.liveavatar.ui.StreamingViewModel
 import max.ohm.oneai.imageediting.FaceGenScreen
 import max.ohm.oneai.imageediting.FaceGenViewModel
+import max.ohm.oneai.ImagetoImage.ui.ImageToImageScreen
+import max.ohm.oneai.ImagetoImage.viewmodel.ImageToImageViewModel
 
 // --- Navigation ---
 @Composable
@@ -243,6 +245,19 @@ fun AppNavigation() {
             }
             val faceGenViewModel: FaceGenViewModel = viewModel()
             FaceGenScreen(faceGenViewModel = faceGenViewModel)
+        }
+        
+        composable("imageToImage") { // Add Image to Image destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val imageToImageViewModel: ImageToImageViewModel = viewModel()
+            ImageToImageScreen(viewModel = imageToImageViewModel)
         }
 
         // Add other destinations here (translator)

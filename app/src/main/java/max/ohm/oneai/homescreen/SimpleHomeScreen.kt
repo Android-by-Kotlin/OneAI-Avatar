@@ -289,6 +289,27 @@ fun SimpleHomeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
+            // Sixth row with Image to Image
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                FeatureButton(
+                    icon = Icons.Default.Transform,
+                    title = "Image to Image",
+                    description = "Transform images",
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("imageToImage") }
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Empty space for alignment
+                Spacer(modifier = Modifier.weight(1f))
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
             // Enhanced Features row
             Card(
                 modifier = Modifier
