@@ -35,8 +35,8 @@ import max.ohm.oneai.liveavatar.ui.StreamingScreen
 import max.ohm.oneai.liveavatar.ui.StreamingViewModel
 import max.ohm.oneai.imageediting.FaceGenScreen
 import max.ohm.oneai.imageediting.FaceGenViewModel
-import max.ohm.oneai.ImagetoImage.ui.ImageToImageScreen
-import max.ohm.oneai.ImagetoImage.viewmodel.ImageToImageViewModel
+import max.ohm.oneai.imagetoimage.ImageToImageScreen
+import max.ohm.oneai.imagetoimage.ImageToImageViewModel
 
 // --- Navigation ---
 @Composable
