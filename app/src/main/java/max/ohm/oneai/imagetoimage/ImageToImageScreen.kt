@@ -924,16 +924,18 @@ fun ImageToImageScreen(
                 }
             }
             
-            // Generate Button
-            Box(
+            // Generate Buttons Row
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Transform Button
                 Button(
                     onClick = { viewModel.generateImage() },
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
                         .height(60.dp)
                         .shadow(
                             elevation = if (!viewModel.isLoading) 8.dp else 0.dp,
@@ -962,13 +964,13 @@ fun ImageToImageScreen(
                             ) {
                                 CircularProgressIndicator(
                                     color = Color.White,
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(20.dp),
                                     strokeWidth = 2.dp
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Transforming...",
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -980,12 +982,96 @@ fun ImageToImageScreen(
                                 Icon(
                                     Icons.Outlined.AutoAwesome,
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    "Transform Image",
-                                    fontSize = 18.sp,
+                                    "Transform",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Ghibli Style Button
+                Button(
+                    onClick = { viewModel.generateGhibliStyle() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(60.dp)
+                        .shadow(
+                            elevation = if (!viewModel.isLoading) 8.dp else 0.dp,
+                            shape = RoundedCornerShape(16.dp),
+                            ambientColor = Color(0xFF10B981).copy(alpha = 0.4f),
+                            spotColor = Color(0xFF10B981).copy(alpha = 0.4f)
+                        ),
+                    enabled = !viewModel.isLoading && viewModel.selectedImage != null,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF10B981),
+                        disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    AnimatedContent(
+                        targetState = viewModel.isLoading && viewModel.isGeneratingGhibli,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(300)) togetherWith
+                                fadeOut(animationSpec = tween(300))
+                        }
+                    ) { isLoadingGhibli ->
+                        if (isLoadingGhibli) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = Color.White,
+                                        modifier = Modifier.size(16.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        "Generating...",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                                if (viewModel.loadingMessage.isNotEmpty()) {
+                                    Text(
+                                        viewModel.loadingMessage,
+                                        fontSize = 10.sp,
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        "Please wait",
+                                        fontSize = 10.sp,
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Palette,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Ghibli Style",
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }

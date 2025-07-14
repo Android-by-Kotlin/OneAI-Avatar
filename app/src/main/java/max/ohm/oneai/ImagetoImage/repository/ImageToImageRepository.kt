@@ -20,9 +20,9 @@ object ImageToImageRepository {
     }
 
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(600, TimeUnit.SECONDS)  // Increased to 10 minutes
+        .readTimeout(600, TimeUnit.SECONDS)     // Increased to 10 minutes
+        .writeTimeout(600, TimeUnit.SECONDS)    // Increased to 10 minutes
         .addInterceptor(loggingInterceptor)
         .build()
 
