@@ -17,9 +17,17 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import max.ohm.oneai.imagetoimage.data.GeneratedImage
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ImageToImageViewModel : ViewModel() {
+    
+    // Gallery State
+    private val _galleryImages = MutableStateFlow<List<GeneratedImage>>(emptyList())
+    val galleryImages: StateFlow<List<GeneratedImage>> = _galleryImages.asStateFlow()
     
     // UI States
     var selectedImage by mutableStateOf<Bitmap?>(null)
@@ -50,7 +58,7 @@ class ImageToImageViewModel : ViewModel() {
     var steps by mutableStateOf(20)
     
     // ModelsLab API configuration
-    private val MODELSLAB_API_KEY = "p01IjawyYiXSDsVkTcRKFmePv3YBnwSBOy811TVfcdSncYtdClS7RBtfCWk5"
+    private val MODELSLAB_API_KEY = "LPncDkDfVPSeOfVqrA9jPLGAOiMXobFgYVUVq81BUjatgcmR0wCOFOhgvWqr"
     private val IMG2IMG_URL = "https://modelslab.com/api/v4/dreambooth/img2img"
     
     private val client = OkHttpClient.Builder()
@@ -219,9 +227,55 @@ class ImageToImageViewModel : ViewModel() {
             null
         }
     }
+
+    fun saveImageToGallery() {
+        val image = GeneratedImage(
+            originalBitmap = selectedImage,
+            generatedBitmap = generatedImageBitmap,
+            generatedUrl = generatedImageUrl,
+            prompt = prompt,
+            negativePrompt = negativePrompt,
+            strength = strength,
+            guidanceScale = guidanceScale,
+            steps = steps
+        )
+        viewModelScope.launch {
+            // Persist to local storage or database (not implemented here)
+            Log.d("ImageToImageViewModel", "Image saved to gallery: $image")
+        }
+    }
+
+    fun shareImage() {
+        // Implement share functionality (not implemented here)
+        Log.d("ImageToImageViewModel", "Sharing image")
+    }
     
     fun clearError() {
         errorMessage = null
+    }
+    
+    fun addToGallery() {
+        if (generatedImageBitmap != null || generatedImageUrl != null) {
+            val newImage = GeneratedImage(
+                originalBitmap = selectedImage,
+                generatedBitmap = generatedImageBitmap,
+                generatedUrl = generatedImageUrl,
+                prompt = prompt,
+                negativePrompt = negativePrompt,
+                strength = strength,
+                guidanceScale = guidanceScale,
+                steps = steps
+            )
+            _galleryImages.value = _galleryImages.value + newImage
+            Log.d("ImageToImageViewModel", "Added image to gallery. Total: ${_galleryImages.value.size}")
+            Log.d("ImageToImageViewModel", "Gallery contents: ${_galleryImages.value.map { it.id }}")
+        } else {
+            Log.e("ImageToImageViewModel", "Cannot add to gallery - no generated image available")
+        }
+    }
+    
+    fun removeFromGallery(imageId: String) {
+        _galleryImages.value = _galleryImages.value.filter { it.id != imageId }
     }
     
     fun reset() {

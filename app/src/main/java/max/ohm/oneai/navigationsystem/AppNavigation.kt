@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -37,6 +38,8 @@ import max.ohm.oneai.imageediting.FaceGenScreen
 import max.ohm.oneai.imageediting.FaceGenViewModel
 import max.ohm.oneai.imagetoimage.ImageToImageScreen
 import max.ohm.oneai.imagetoimage.ImageToImageViewModel
+import max.ohm.oneai.imagetoimage.GalleryScreen
+import androidx.navigation.NavBackStackEntry
 
 // --- Navigation ---
 @Composable
@@ -247,7 +250,7 @@ fun AppNavigation() {
             FaceGenScreen(faceGenViewModel = faceGenViewModel)
         }
         
-        composable("imageToImage") { // Add Image to Image destination
+        composable("imageToImage") { backStackEntry ->
             // Check if user is logged in
             LaunchedEffect(loginState) {
                 if (loginState !is LoginState.Success) {
@@ -256,8 +259,39 @@ fun AppNavigation() {
                     }
                 }
             }
-            val imageToImageViewModel: ImageToImageViewModel = viewModel()
-            ImageToImageScreen(viewModel = imageToImageViewModel)
+            // Get parent entry to share ViewModel
+            val parentEntry = remember(backStackEntry) {
+                navController.getBackStackEntry("imageToImage")
+            }
+            val imageToImageViewModel: ImageToImageViewModel = viewModel(parentEntry)
+            ImageToImageScreen(
+                viewModel = imageToImageViewModel,
+                onNavigateToGallery = {
+                    navController.navigate("imageToImageGallery")
+                }
+            )
+        }
+        
+        composable("imageToImageGallery") { // Add Gallery destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            // Get parent entry to share ViewModel
+            val parentEntry = remember {
+                navController.getBackStackEntry("imageToImage")
+            }
+            val imageToImageViewModel: ImageToImageViewModel = viewModel(parentEntry)
+            GalleryScreen(
+                viewModel = imageToImageViewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         // Add other destinations here (translator)
