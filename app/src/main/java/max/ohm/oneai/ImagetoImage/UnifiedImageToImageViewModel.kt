@@ -486,7 +486,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
             put("key", MODELSLAB_API_KEY)
             put("init_image", base64Image)
             put("face_enhance", true)  // default its off
-            put("scale", 2)
+            put("scale", 3)
             put("model_id", "ultra_resolution")
             put("webhook", null)
             put("track_id", null)
