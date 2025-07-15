@@ -37,7 +37,7 @@ import max.ohm.oneai.liveavatar.ui.StreamingViewModel
 import max.ohm.oneai.imageediting.FaceGenScreen
 import max.ohm.oneai.imageediting.FaceGenViewModel
 import max.ohm.oneai.imagetoimage.ImageToImageScreen
-import max.ohm.oneai.imagetoimage.ImageToImageViewModel
+import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import max.ohm.oneai.imagetoimage.GalleryScreen
 import androidx.navigation.NavBackStackEntry
 
@@ -263,7 +263,7 @@ fun AppNavigation() {
             val parentEntry = remember(backStackEntry) {
                 navController.getBackStackEntry("imageToImage")
             }
-            val imageToImageViewModel: ImageToImageViewModel = viewModel(parentEntry)
+            val imageToImageViewModel: UnifiedImageToImageViewModel = viewModel(parentEntry)
             ImageToImageScreen(
                 viewModel = imageToImageViewModel,
                 onNavigateToGallery = {
@@ -285,7 +285,7 @@ fun AppNavigation() {
             val parentEntry = remember {
                 navController.getBackStackEntry("imageToImage")
             }
-            val imageToImageViewModel: ImageToImageViewModel = viewModel(parentEntry)
+            val imageToImageViewModel: UnifiedImageToImageViewModel = viewModel(parentEntry)
             GalleryScreen(
                 viewModel = imageToImageViewModel,
                 onBack = {

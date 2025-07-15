@@ -44,7 +44,6 @@ class UnifiedImageToImageViewModel : ViewModel() {
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
-        private set
 
     var selectedModel by mutableStateOf("flux-img2img") // Default model
         private set

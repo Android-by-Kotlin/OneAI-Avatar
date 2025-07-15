@@ -35,10 +35,11 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
-    viewModel: ImageToImageViewModel = viewModel(),
+    viewModel: UnifiedImageToImageViewModel = viewModel(),
     onBack: () -> Unit
 ) {
-    val galleryImages by viewModel.galleryImages.collectAsState()
+    // Temporary fallback - gallery not implemented in UnifiedImageToImageViewModel yet
+    val galleryImages = remember { emptyList<GeneratedImage>() }
     var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     
@@ -180,7 +181,7 @@ fun GalleryScreen(
                     TextButton(
                         onClick = {
                             selectedImage?.let { image ->
-                                viewModel.removeFromGallery(image.id)
+                                // viewModel.removeFromGallery(image.id) // TODO: Implement in UnifiedImageToImageViewModel
                             }
                             selectedImage = null
                             showDeleteDialog = false
