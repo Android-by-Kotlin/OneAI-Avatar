@@ -3,6 +3,7 @@ package max.ohm.oneai.imagetoimage
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -14,6 +15,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
@@ -33,7 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import max.ohm.oneai.imagetoimage.ImageToImageViewModel
+import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.ContentValues
 import android.content.Intent
@@ -48,7 +54,7 @@ import java.io.FileOutputStream
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun ImageToImageScreen(
-    viewModel: ImageToImageViewModel = viewModel(),
+    viewModel: UnifiedImageToImageViewModel = viewModel(),
     onNavigateToGallery: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -56,6 +62,7 @@ fun ImageToImageScreen(
     var showAdvancedSettings by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     var showFullscreenImage by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     
     // Gradient colors for Pro style
     val gradientColors = listOf(
@@ -162,13 +169,122 @@ fun ImageToImageScreen(
                 )
             }
         ) { paddingValues ->
-        Column(
+Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            
+            // Model Selection Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
+                ),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = Color(0xFF6366F1).copy(alpha = 0.3f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Model Selection Header
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Settings,
+                            contentDescription = null,
+                            tint = Color(0xFF6366F1),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "AI Model Selection",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
+                    }
+                    
+                    // Model Selection Dropdown
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+OutlinedTextField(
+    readOnly = true,
+    value = viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Select Model",
+    onValueChange = { },
+    placeholder = { 
+        Text(
+            "Choose AI Model...",
+            color = Color.White.copy(alpha = 0.5f),
+            fontSize = 12.sp
+        ) 
+    },
+    modifier = Modifier
+        .fillMaxWidth()
+        .menuAnchor(),
+    colors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        focusedBorderColor = Color(0xFF6366F1),
+        unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+        focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+        unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+        cursorColor = Color(0xFF6366F1)
+    ),
+    shape = RoundedCornerShape(12.dp),
+    leadingIcon = {
+        Icon(
+            Icons.Outlined.ModelTraining,
+            contentDescription = null,
+            tint = Color(0xFF6366F1),
+            modifier = Modifier.size(18.dp)
+        )
+    },
+    trailingIcon = {
+        ExposedDropdownMenuDefaults.TrailingIcon(
+            expanded = expanded
+        )
+    }
+)
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(Color(0xFF1A1F3A))
+                        ) {
+                            viewModel.availableModels.forEach { model ->
+                                DropdownMenuItem(
+                                    onClick = {
+                                        viewModel.updateSelectedModel(model.first)
+                                        expanded = false
+                                    },
+                                    text = { 
+                                        Text(
+                                            text = model.second,
+                                            color = Color.White,
+                                            fontSize = 13.sp
+                                        )
+                                    },
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = Color.White
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             // Hero Section - Image Upload
             Card(
                 modifier = Modifier
@@ -306,6 +422,7 @@ fun ImageToImageScreen(
                                 ) {
                                     // Show URL image if available
                                     viewModel.generatedImageUrl?.let { imageUrl ->
+                                        Log.d("ImageDisplay", "Showing URL image: $imageUrl")
                                         AsyncImage(
                                             model = imageUrl,
                                             contentDescription = "Generated Image",
@@ -318,6 +435,7 @@ fun ImageToImageScreen(
                                     
                                     // Show bitmap if URL is not available
                                     viewModel.generatedImageBitmap?.let { bitmap ->
+                                        Log.d("ImageDisplay", "Showing bitmap image: ${bitmap.width}x${bitmap.height}")
                                         if (viewModel.generatedImageUrl == null) {
                                             Image(
                                                 bitmap = bitmap.asImageBitmap(),
@@ -326,6 +444,21 @@ fun ImageToImageScreen(
                                                     .fillMaxSize()
                                                     .clip(RoundedCornerShape(12.dp)),
                                                 contentScale = ContentScale.Fit
+                                            )
+                                        }
+                                    }
+                                    
+                                    // Debug: Show a placeholder if no image is available
+                                    if (viewModel.generatedImageUrl == null && viewModel.generatedImageBitmap == null) {
+                                        Log.d("ImageDisplay", "No image available to display")
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "No Image",
+                                                color = Color.White,
+                                                fontSize = 12.sp
                                             )
                                         }
                                     }
@@ -349,7 +482,8 @@ fun ImageToImageScreen(
                             }
                             
                             // Generation time display
-                            if (viewModel.generationTime > 0) {
+                            val totalTime = viewModel.totalGenerationTimeInSeconds.collectAsState().value
+                            if (totalTime != null && totalTime > 0) {
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
                                     color = Color(0xFF10B981).copy(alpha = 0.2f),
@@ -372,7 +506,7 @@ fun ImageToImageScreen(
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            "Generated in ${viewModel.formatTime(viewModel.generationTime)}",
+                                            "Generated in ${totalTime}s",
                                             color = Color(0xFF10B981),
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Medium
@@ -960,135 +1094,94 @@ fun ImageToImageScreen(
                 }
             }
             
-            // Generate Buttons Row
-            Row(
+            // Generate Button (Single button at bottom)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .height(60.dp)
+                    .shadow(
+                        elevation = if (!viewModel.isLoading) 12.dp else 0.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        ambientColor = Color(0xFF6366F1).copy(alpha = 0.5f),
+                        spotColor = Color(0xFF6366F1).copy(alpha = 0.5f)
+                    )
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        if (viewModel.isLoading || viewModel.selectedImage == null) {
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color.Gray.copy(alpha = 0.3f),
+                                    Color.Gray.copy(alpha = 0.3f)
+                                )
+                            )
+                        } else {
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color(0xFF6366F1),
+                                    Color(0xFFEC4899)
+                                )
+                            )
+                        }
+                    )
+                    .clickable(
+                        enabled = !viewModel.isLoading && viewModel.selectedImage != null
+                    ) {
+                        viewModel.generateImage()
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                // Transform Button
-                Button(
-                    onClick = { viewModel.generateImage() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(60.dp)
-                        .shadow(
-                            elevation = if (!viewModel.isLoading) 8.dp else 0.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = Color(0xFF6366F1).copy(alpha = 0.4f),
-                            spotColor = Color(0xFF6366F1).copy(alpha = 0.4f)
-                        ),
-                    enabled = !viewModel.isLoading && viewModel.selectedImage != null,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6366F1),
-                        disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    AnimatedContent(
-                        targetState = viewModel.isLoading,
-                        transitionSpec = {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                fadeOut(animationSpec = tween(300))
-                        }
-                    ) { isLoading ->
-                        if (isLoading) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Transforming...",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.AutoAwesome,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    "Transform",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                AnimatedContent(
+                    targetState = viewModel.isLoading,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
                     }
-                }
-                
-                // Ghibli Style Button
-                Button(
-                    onClick = { viewModel.generateGhibliStyle() },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(60.dp)
-                        .shadow(
-                            elevation = if (!viewModel.isLoading) 8.dp else 0.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = Color(0xFF10B981).copy(alpha = 0.4f),
-                            spotColor = Color(0xFF10B981).copy(alpha = 0.4f)
-                        ),
-                    enabled = !viewModel.isLoading && viewModel.selectedImage != null,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF10B981),
-                        disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    AnimatedContent(
-                        targetState = viewModel.isGeneratingGhibli,
-                        transitionSpec = {
-                            fadeIn(animationSpec = tween(300)) togetherWith
-                                fadeOut(animationSpec = tween(300))
+                ) { isLoading ->
+                    if (isLoading) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}...",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.White
+                            )
                         }
-                    ) { isLoadingGhibli ->
-                        if (isLoadingGhibli) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    "Generating...",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                                    "Generate Image",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
-                            }
-                        } else {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Palette,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    "Ghibli Style",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold
+                                    "with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Selected Model"}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White.copy(alpha = 0.8f)
                                 )
                             }
                         }
@@ -1099,9 +1192,9 @@ fun ImageToImageScreen(
             // Error Message
             // Live timer display during generation
             AnimatedVisibility(
-                visible = viewModel.isTimerRunning,
-                enter = fadeIn() + slideInVertically(),
-                exit = fadeOut() + slideOutVertically()
+visible = viewModel.isLoading,
+enter = fadeIn() + slideInVertically(),
+exit = fadeOut() + slideOutVertically()
             ) {
                 Card(
                     modifier = Modifier
@@ -1131,7 +1224,7 @@ fun ImageToImageScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Generating: ${viewModel.formatTime(viewModel.elapsedTime)}",
+                            "Generating: ${viewModel.elapsedTimeInSeconds.collectAsState().value} sec",
                             color = Color(0xFF6366F1),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
@@ -1200,7 +1293,7 @@ fun ImageToImageScreen(
 // Helper functions for saving and sharing images
 private suspend fun saveGeneratedImage(
     context: android.content.Context,
-    viewModel: ImageToImageViewModel
+    viewModel: UnifiedImageToImageViewModel
 ) {
     try {
         val bitmap = viewModel.generatedImageBitmap
@@ -1242,7 +1335,7 @@ private suspend fun saveGeneratedImage(
 
 private suspend fun shareGeneratedImage(
     context: android.content.Context,
-    viewModel: ImageToImageViewModel
+    viewModel: UnifiedImageToImageViewModel
 ) {
     try {
         val bitmap = viewModel.generatedImageBitmap

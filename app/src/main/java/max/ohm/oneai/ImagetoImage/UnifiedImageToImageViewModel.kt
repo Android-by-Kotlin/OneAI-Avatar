@@ -85,6 +85,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
+        "headshot-img2img" to "Headshot",
         "anime-style" to "Anime Style Transfer",
         "oil-painting" to "Oil Painting Style",
         "watercolor" to "Watercolor Style",
@@ -201,6 +202,16 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performGhibliStyle(base64Image)
+                    }
+
+
+                    "headshot-img2img" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        performHeadshotImg2Img(base64Image)
                     }
                     
                     "anime-style" -> {
@@ -420,6 +431,39 @@ class UnifiedImageToImageViewModel : ViewModel() {
             modelName = "Ghibli Style"
         )
         
+        processApiResult(result)
+    }
+
+
+    private suspend fun performHeadshotImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Headshot..."
+
+
+
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("prompt", prompt)
+            put("negative_prompt", negativePrompt)
+            put("face_image", base64Image)
+            put("width", "512")
+            put("height", "768")
+            put("samples", "1")
+            put("num_inference_steps","31")
+            put("safety_checker", false)
+            put("base64", true)
+            put("seed", "")
+            put("guidance_scale", guidanceScale)
+            put("s_scale", "2.0")
+            put("webhook", null)
+            put("track_id", null)
+        }
+
+        val result = makeApiCallWithPolling(
+            url = "https://modelslab.com/api/v6/image_editing/head_shot",
+            jsonBody = jsonBody,
+            modelName = "Headshot Img2Img"
+        )
+
         processApiResult(result)
     }
 
@@ -650,13 +694,37 @@ class UnifiedImageToImageViewModel : ViewModel() {
                 
                 // Check status
                 val status = jsonResponse.optString("status", "")
-                if (status == "success") {
-                    // Already checked output above
-                    errorMessage = "Success but no image URL found"
-                } else {
-                    val errorMsg = jsonResponse.optString("message",
-                        jsonResponse.optString("error", "Unknown error"))
-                    errorMessage = "$modelName Error: $errorMsg"
+                when (status) {
+                    "success" -> {
+                        // Already checked output above
+                        errorMessage = "Success but no image URL found"
+                    }
+                    "processing" -> {
+                        // Some APIs return processing status in regular calls
+                        val errorMsg = jsonResponse.optString("message", "Image is being processed")
+                        
+                        // Check if this indicates we need to poll
+                        if (errorMsg.contains("Try to fetch request after") || 
+                            errorMsg.contains("seconds estimated") ||
+                            errorMsg.contains("processing")) {
+                            errorMessage = "$modelName is processing. This model requires polling which is not implemented for this endpoint. Please try a different model."
+                        } else {
+                            errorMessage = "$modelName is processing: $errorMsg"
+                        }
+                    }
+                    else -> {
+                        val errorMsg = jsonResponse.optString("message",
+                            jsonResponse.optString("error", "Unknown error"))
+                        
+                        // Check if this is actually a processing message
+                        if (errorMsg.contains("Try to fetch request after") || 
+                            errorMsg.contains("seconds estimated") ||
+                            errorMsg.contains("processing")) {
+                            errorMessage = "$modelName is processing. This model requires polling which is not implemented for this endpoint. Please try a different model."
+                        } else {
+                            errorMessage = "$modelName Error: $errorMsg"
+                        }
+                    }
                 }
             } else {
                 errorMessage = "$modelName Error: ${response.code} - ${response.message}"
@@ -746,7 +814,42 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     }
                     else -> {
                         val errorMsg = jsonResponse.optString("message", "Unknown error")
-                        errorMessage = "$modelName Error: $errorMsg"
+                        
+                        // Check if this is a processing message that needs polling
+                        if (errorMsg.contains("Try to fetch request after") || 
+                            errorMsg.contains("seconds estimated") ||
+                            errorMsg.contains("processing")) {
+                            // This is actually a processing response, not an error
+                            val fetchUrl = jsonResponse.optString("fetch_result", "")
+                            if (fetchUrl.isNotEmpty()) {
+                                // Wait a bit and start polling
+                                delay(5000L) // Wait 5 seconds before first poll
+                                
+                                val maxRetries = 60 // 5 minutes with 5 second intervals
+                                val retryDelay = 5000L
+                                
+                                for (attempt in 1..maxRetries) {
+                                    withContext(Dispatchers.Main) {
+                                        loadingMessage = "$modelName processing... ($attempt/$maxRetries)"
+                                    }
+                                    
+                                    val result = fetchProcessingResult(fetchUrl)
+                                    if (result != null) {
+                                        return@withContext result
+                                    }
+                                    
+                                    if (attempt < maxRetries) {
+                                        delay(retryDelay)
+                                    }
+                                }
+                                
+                                errorMessage = "$modelName generation timed out after 5 minutes"
+                            } else {
+                                errorMessage = "Processing response received but no fetch URL provided"
+                            }
+                        } else {
+                            errorMessage = "$modelName Error: $errorMsg"
+                        }
                     }
                 }
             } else {
@@ -813,60 +916,137 @@ class UnifiedImageToImageViewModel : ViewModel() {
     }
 
     private suspend fun processApiResult(result: String?) {
+        Log.d("UnifiedImg2Img", "processApiResult called with: $result")
         if (result != null) {
             when {
                 result.endsWith(".base64") -> {
+                    Log.d("UnifiedImg2Img", "Processing base64 URL: $result")
                     // Fetch and decode base64 from URL
                     val base64Data = fetchBase64FromUrl(result)
                     if (base64Data != null) {
                         try {
-                            val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
-                            generatedImageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                            Log.d("UnifiedImg2Img", "Successfully decoded base64 image")
+                            Log.d("UnifiedImg2Img", "Base64 data length: ${base64Data.length}")
+                            Log.d("UnifiedImg2Img", "Base64 data preview: ${base64Data.take(100)}...")
+                            
+                            // Check if this is a data URL (data:image/jpeg;base64,/9j/4AA...)
+                            val actualBase64Data = if (base64Data.startsWith("data:image")) {
+                                Log.d("UnifiedImg2Img", "Detected data URL format")
+                                base64Data.substring(base64Data.indexOf(",") + 1)
+                            } else {
+                                base64Data
+                            }
+                            
+                            Log.d("UnifiedImg2Img", "Actual base64 data length: ${actualBase64Data.length}")
+                            Log.d("UnifiedImg2Img", "Actual base64 preview: ${actualBase64Data.take(50)}...")
+                            
+                            // Try different base64 decoding approaches
+                            val imageBytes = try {
+                                Base64.decode(actualBase64Data, Base64.DEFAULT)
+                            } catch (e: Exception) {
+                                Log.e("UnifiedImg2Img", "Failed to decode base64 with DEFAULT flag", e)
+                                try {
+                                    Base64.decode(actualBase64Data, Base64.NO_WRAP)
+                                } catch (e2: Exception) {
+                                    Log.e("UnifiedImg2Img", "Failed to decode base64 with NO_WRAP flag", e2)
+                                    throw e2
+                                }
+                            }
+                            
+                            Log.d("UnifiedImg2Img", "Decoded bytes length: ${imageBytes.size}")
+                            
+                            // Try to decode with options for better memory management
+                            val options = BitmapFactory.Options().apply {
+                                inJustDecodeBounds = false
+                                inSampleSize = 1
+                                inPreferredConfig = Bitmap.Config.RGB_565 // Use less memory
+                            }
+                            
+                            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options)
+                            if (bitmap != null) {
+                                generatedImageBitmap = bitmap
+                                Log.d("UnifiedImg2Img", "Successfully decoded base64 image: ${bitmap.width}x${bitmap.height}")
+                            } else {
+                                Log.e("UnifiedImg2Img", "BitmapFactory.decodeByteArray returned null")
+                                Log.e("UnifiedImg2Img", "First few bytes: ${imageBytes.take(20).joinToString { "%02x".format(it) }}")
+                                
+                                // If we have a data URL, use it directly
+                                if (base64Data.startsWith("data:image")) {
+                                    Log.d("UnifiedImg2Img", "Using data URL directly")
+                                    generatedImageUrl = base64Data
+                                    errorMessage = null
+                                } else {
+                                    Log.d("UnifiedImg2Img", "Fallback: Using original URL as image source")
+                                    generatedImageUrl = result
+                                    errorMessage = null
+                                }
+                            }
                         } catch (e: Exception) {
                             Log.e("UnifiedImg2Img", "Failed to decode base64", e)
-                            errorMessage = "Failed to decode generated image"
+                            // If we have a data URL, use it as fallback
+                            if (base64Data.startsWith("data:image")) {
+                                Log.d("UnifiedImg2Img", "Exception fallback: Using data URL")
+                                generatedImageUrl = base64Data
+                                errorMessage = null
+                            } else {
+                                errorMessage = "Failed to decode generated image: ${e.message}"
+                            }
                         }
                     } else {
-                        errorMessage = "Failed to fetch base64 data"
+                        errorMessage = "Failed to fetch base64 data from URL"
                     }
                 }
                 result.startsWith("data:image") -> {
+                    Log.d("UnifiedImg2Img", "Processing data URL: ${result.take(50)}...")
                     // Direct base64 data URL
                     try {
                         val base64Data = result.substring(result.indexOf(",") + 1)
                         val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
                         generatedImageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        Log.d("UnifiedImg2Img", "Successfully decoded data URL")
+                        Log.d("UnifiedImg2Img", "Successfully decoded data URL: ${generatedImageBitmap?.width}x${generatedImageBitmap?.height}")
                     } catch (e: Exception) {
                         Log.e("UnifiedImg2Img", "Failed to decode data URL", e)
                         errorMessage = "Failed to decode generated image"
                     }
                 }
                 else -> {
+                    Log.d("UnifiedImg2Img", "Processing regular URL: $result")
                     // Regular image URL
                     generatedImageUrl = result
-                    Log.d("UnifiedImg2Img", "Successfully received image URL: $result")
+                    Log.d("UnifiedImg2Img", "Successfully set image URL: $result")
                 }
             }
-        } else if (errorMessage == null) {
-            errorMessage = "Failed to generate image"
+        } else {
+            Log.d("UnifiedImg2Img", "processApiResult called with null result")
+            if (errorMessage == null) {
+                errorMessage = "Failed to generate image"
+            }
         }
+        
+        // Debug the final state
+        Log.d("UnifiedImg2Img", "Final state - URL: ${generatedImageUrl}, Bitmap: ${generatedImageBitmap?.let { "${it.width}x${it.height}" } ?: "null"}")
     }
 
     private suspend fun fetchBase64FromUrl(url: String): String? = withContext(Dispatchers.IO) {
         try {
+            Log.d("UnifiedImg2Img", "Fetching base64 from URL: $url")
             val request = Request.Builder()
                 .url(url)
                 .build()
             
             val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Response code: ${response.code}")
+            
             if (response.isSuccessful) {
-                return@withContext response.body?.string()
+                val responseBody = response.body?.string()
+                Log.d("UnifiedImg2Img", "Response body length: ${responseBody?.length ?: 0}")
+                Log.d("UnifiedImg2Img", "Response body preview: ${responseBody?.take(100) ?: "null"}...")
+                return@withContext responseBody
+            } else {
+                Log.e("UnifiedImg2Img", "Failed to fetch base64. Response code: ${response.code}, message: ${response.message}")
             }
             null
         } catch (e: Exception) {
-            Log.e("UnifiedImg2Img", "Error fetching base64", e)
+            Log.e("UnifiedImg2Img", "Error fetching base64 from URL: $url", e)
             null
         }
     }
