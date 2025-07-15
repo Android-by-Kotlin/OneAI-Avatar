@@ -81,8 +81,11 @@ fun ImageToImageScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
-        bitmap?.let {
-            viewModel.updateSelectedImage(it)
+        if (bitmap != null) {
+            Toast.makeText(context, "Camera image captured: ${bitmap.width}x${bitmap.height}", Toast.LENGTH_LONG).show()
+            viewModel.updateSelectedImage(bitmap)
+        } else {
+            Toast.makeText(context, "No image captured from camera", Toast.LENGTH_SHORT).show()
         }
     }
     

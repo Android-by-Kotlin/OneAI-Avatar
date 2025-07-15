@@ -102,20 +102,30 @@ class ImageToImageViewModel : ViewModel() {
         .build()
     
     fun updateSelectedImage(bitmap: Bitmap?) {
+        Log.d("ImageToImage", "updateSelectedImage called with bitmap: ${bitmap?.let { "${it.width}x${it.height}" } ?: "null"}")
         selectedImage = bitmap
         errorMessage = null
+        // Reset any previous generation when new image is selected
+        generatedImageUrl = null
+        generatedImageBitmap = null
+        generatedImageBase64 = null
     }
     
     fun generateImage() {
+        Log.d("ImageToImage", "generateImage called")
         if (selectedImage == null) {
+            Log.e("ImageToImage", "No selected image")
             errorMessage = "Please select an image first"
             return
         }
+        Log.d("ImageToImage", "Selected image: ${selectedImage!!.width}x${selectedImage!!.height}")
         
         if (prompt.isEmpty()) {
+            Log.e("ImageToImage", "Empty prompt")
             errorMessage = "Please enter a prompt"
             return
         }
+        Log.d("ImageToImage", "Prompt: $prompt")
         
         viewModelScope.launch {
             isLoading = true
@@ -135,9 +145,10 @@ class ImageToImageViewModel : ViewModel() {
             }
             
             try {
-                // Convert image to base64
+                // Resize and convert image to base64
                 val base64Image = withContext(Dispatchers.IO) {
-                    bitmapToBase64(selectedImage!!)
+                    val resizedBitmap = resizeBitmapIfNeeded(selectedImage!!)
+                    bitmapToBase64(resizedBitmap)
                 }
                 
                 // Call img2img API
@@ -184,8 +195,9 @@ class ImageToImageViewModel : ViewModel() {
     
     private suspend fun performGhibliStyleGeneration(base64Image: String): String? = withContext(Dispatchers.IO) {
         try {
-            // Calculate dimensions preserving aspect ratio
-            val dimensions = calculateDimensions(selectedImage!!)
+            // Calculate dimensions preserving aspect ratio (using resized bitmap)
+            val resizedBitmap = resizeBitmapIfNeeded(selectedImage!!)
+            val dimensions = calculateDimensions(resizedBitmap)
             
             val jsonBody = JSONObject().apply {
 put("key", API_KEY)
@@ -408,10 +420,13 @@ put("key", API_KEY)
     }
     
     fun generateGhibliStyle() {
+        Log.d("ImageToImage", "generateGhibliStyle called")
         if (selectedImage == null) {
+            Log.e("ImageToImage", "No selected image for Ghibli style")
             errorMessage = "Please select an image first"
             return
         }
+        Log.d("ImageToImage", "Selected image for Ghibli: ${selectedImage!!.width}x${selectedImage!!.height}")
         
         viewModelScope.launch {
             isLoading = true
@@ -433,9 +448,10 @@ put("key", API_KEY)
             }
             
             try {
-                // Convert image to base64
+                // Resize and convert image to base64
                 val base64Image = withContext(Dispatchers.IO) {
-                    bitmapToBase64(selectedImage!!)
+                    val resizedBitmap = resizeBitmapIfNeeded(selectedImage!!)
+                    bitmapToBase64(resizedBitmap)
                 }
                 
                 // Call Ghibli style API
@@ -482,11 +498,45 @@ put("key", API_KEY)
         }
     }
     
+    private fun resizeBitmapIfNeeded(bitmap: Bitmap, maxDimension: Int = 1024): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        
+        // Check if resizing is needed
+        if (width <= maxDimension && height <= maxDimension) {
+            return bitmap
+        }
+        
+        // Calculate new dimensions maintaining aspect ratio
+        val aspectRatio = width.toFloat() / height.toFloat()
+        val newWidth: Int
+        val newHeight: Int
+        
+        if (width > height) {
+            newWidth = maxDimension
+            newHeight = (maxDimension / aspectRatio).toInt()
+        } else {
+            newHeight = maxDimension
+            newWidth = (maxDimension * aspectRatio).toInt()
+        }
+        
+        Log.d("ImageToImage", "Resizing bitmap from ${width}x${height} to ${newWidth}x${newHeight}")
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+    
     private fun bitmapToBase64(bitmap: Bitmap): String {
+        Log.d("ImageToImage", "Converting bitmap to base64: ${bitmap.width}x${bitmap.height}")
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        
+        // Use JPEG compression for better file size (especially for photos)
+        val compressResult = bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+        Log.d("ImageToImage", "Bitmap compress result: $compressResult (JPEG 90%)")
+        
         val imageBytes = outputStream.toByteArray()
-        return Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+        Log.d("ImageToImage", "Image byte array size: ${imageBytes.size} bytes (${imageBytes.size / 1024}KB)")
+        val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+        Log.d("ImageToImage", "Base64 string length: ${base64String.length}")
+        return base64String
     }
     
     private suspend fun fetchBase64FromUrl(url: String): String? = withContext(Dispatchers.IO) {
