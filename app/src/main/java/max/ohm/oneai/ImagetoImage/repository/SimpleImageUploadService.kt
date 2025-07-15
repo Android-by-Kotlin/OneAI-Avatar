@@ -1,4 +1,4 @@
-package max.ohm.oneai.ImagetoImage.repository
+package max.ohm.oneai.imagetoimage.repository
 
 import android.content.Context
 import android.net.Uri

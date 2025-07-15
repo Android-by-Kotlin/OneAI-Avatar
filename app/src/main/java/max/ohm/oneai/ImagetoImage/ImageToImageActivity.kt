@@ -1,4 +1,4 @@
-package max.ohm.oneai.ImagetoImage
+package max.ohm.oneai.imagetoimage
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import max.ohm.oneai.ImagetoImage.ui.ImageToImageScreen
+import max.ohm.oneai.imagetoimage.ui.ImageToImageScreen
 import max.ohm.oneai.ui.theme.OneAITheme
 
 class ImageToImageActivity : ComponentActivity() {

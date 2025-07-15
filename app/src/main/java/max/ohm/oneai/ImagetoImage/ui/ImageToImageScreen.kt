@@ -1,4 +1,4 @@
-package max.ohm.oneai.ImagetoImage.ui
+package max.ohm.oneai.imagetoimage.ui
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import max.ohm.oneai.ImagetoImage.viewmodel.ImageToImageViewModel
+import max.ohm.oneai.imagetoimage.viewmodel.ImageToImageViewModel
 
 @Composable
 fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {

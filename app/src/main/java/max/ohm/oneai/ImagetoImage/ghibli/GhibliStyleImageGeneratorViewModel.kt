@@ -16,16 +16,17 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.sql.Types.NULL
 import java.util.concurrent.TimeUnit
+import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
 
 class GhibliStyleImageGeneratorViewModel : ViewModel() {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(600, TimeUnit.SECONDS)  // Increased to 600 seconds (10 minutes)
-        .readTimeout(600, TimeUnit.SECONDS)     // Increased to 600 seconds (10 minutes)
-        .writeTimeout(600, TimeUnit.SECONDS)    // Increased to 600 seconds (10 minutes)
+        .connectTimeout(600, TimeUnit.SECONDS)  // 10 minutes
+        .readTimeout(600, TimeUnit.SECONDS)     // 10 minutes
+        .writeTimeout(600, TimeUnit.SECONDS)    // 10 minutes
         .build()
 
-    private val MODELSLAB_API_KEY = "NXwTLvT5B3Zvrc0KhjYaqiSSarqk2lCMGsiDfVQHCQjGWw6owEe36MWr2HSV"
+    private val API_KEY = MODELSLAB_API_KEY
 
     fun generateGhibliStyleImage(selectedImage: Bitmap, onSuccess: (Bitmap) -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
@@ -52,7 +53,7 @@ class GhibliStyleImageGeneratorViewModel : ViewModel() {
         try {
             // Note: This file is not currently being used. The main implementation is in ImageToImageViewModel.kt
             val jsonBody = JSONObject().apply {
-                put("key", MODELSLAB_API_KEY)
+put("key", API_KEY)
                 put("model_id", "fluxdev")
                 put("init_image", base64Image)
                 put("prompt", "Ghibli Studio style, Charming hand-drawn anime-style illustration")

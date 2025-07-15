@@ -1,7 +1,7 @@
-package max.ohm.oneai.ImagetoImage.api
+package max.ohm.oneai.imagetoimage.api
 
-import max.ohm.oneai.ImagetoImage.data.ImageToImageRequest
-import max.ohm.oneai.ImagetoImage.data.ImageToImageResponse
+import max.ohm.oneai.imagetoimage.data.ImageToImageRequest
+import max.ohm.oneai.imagetoimage.data.ImageToImageResponse
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST

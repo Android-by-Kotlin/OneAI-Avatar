@@ -1,11 +1,12 @@
-package max.ohm.oneai.ImagetoImage.repository
+package max.ohm.oneai.imagetoimage.repository
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import max.ohm.oneai.ImagetoImage.api.ImageToImageApiService
-import max.ohm.oneai.ImagetoImage.data.ImageToImageRequest
-import max.ohm.oneai.ImagetoImage.data.ImageToImageResponse
+import max.ohm.oneai.imagetoimage.api.ImageToImageApiService
+import max.ohm.oneai.imagetoimage.data.ImageToImageRequest
+import max.ohm.oneai.imagetoimage.data.ImageToImageResponse
+import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -37,7 +38,9 @@ object ImageToImageRepository {
     suspend fun generateImage(initImageUrl: String, prompt: String): ImageToImageResponse {
         return withContext(Dispatchers.IO) {
             apiService.generateImage(
-                apiKey = "qVVcoYnOc0uGhiotcMmYzVBR6GhaJbRkqQOYko21dshwf6cMEGM97axKTIB8",
+//                apiKey = "qVVcoYnOc0uGhiotcMmYzVBR6GhaJbRkqQOYko21dshwf6cMEGM97axKTIB8",
+                apiKey= MODELSLAB_API_KEY ,
+//
                 request = ImageToImageRequest(
                     initImage = initImageUrl,
                     prompt = prompt,

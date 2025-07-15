@@ -345,6 +345,39 @@ fun ImageToImageScreen(
                                 }
                             }
                             
+                            // Generation time display
+                            if (viewModel.generationTime > 0) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF10B981).copy(alpha = 0.2f),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Timer,
+                                            contentDescription = null,
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "Generated in ${viewModel.formatTime(viewModel.generationTime)}",
+                                            color = Color(0xFF10B981),
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                }
+                            }
+                            
                             // Clear button
                             IconButton(
                                 onClick = { 
@@ -1015,48 +1048,28 @@ fun ImageToImageScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     AnimatedContent(
-                        targetState = viewModel.isLoading && viewModel.isGeneratingGhibli,
+                        targetState = viewModel.isGeneratingGhibli,
                         transitionSpec = {
                             fadeIn(animationSpec = tween(300)) togetherWith
                                 fadeOut(animationSpec = tween(300))
                         }
                     ) { isLoadingGhibli ->
                         if (isLoadingGhibli) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = Color.White,
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        "Generating...",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                                if (viewModel.loadingMessage.isNotEmpty()) {
-                                    Text(
-                                        viewModel.loadingMessage,
-                                        fontSize = 10.sp,
-                                        color = Color.White.copy(alpha = 0.8f),
-                                        modifier = Modifier.padding(top = 2.dp)
-                                    )
-                                } else {
-                                    Text(
-                                        "Please wait",
-                                        fontSize = 10.sp,
-                                        color = Color.White.copy(alpha = 0.8f),
-                                        modifier = Modifier.padding(top = 2.dp)
-                                    )
-                                }
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Generating...",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         } else {
                             Row(
@@ -1076,6 +1089,50 @@ fun ImageToImageScreen(
                                 )
                             }
                         }
+                    }
+                }
+            }
+            
+            // Error Message
+            // Live timer display during generation
+            AnimatedVisibility(
+                visible = viewModel.isTimerRunning,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF6366F1).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color(0xFF6366F1).copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Timer,
+                            contentDescription = null,
+                            tint = Color(0xFF6366F1),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Generating: ${viewModel.formatTime(viewModel.elapsedTime)}",
+                            color = Color(0xFF6366F1),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }

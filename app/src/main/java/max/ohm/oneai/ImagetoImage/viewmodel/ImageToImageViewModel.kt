@@ -1,4 +1,4 @@
-package max.ohm.oneai.ImagetoImage.viewmodel
+package max.ohm.oneai.imagetoimage.viewmodel
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import max.ohm.oneai.ImagetoImage.repository.ImageToImageRepository
-import max.ohm.oneai.ImagetoImage.repository.SimpleImageUploadService
+import max.ohm.oneai.imagetoimage.repository.ImageToImageRepository
+import max.ohm.oneai.imagetoimage.repository.SimpleImageUploadService
 import java.io.ByteArrayOutputStream
 
 data class ImageToImageUiState(

@@ -1,4 +1,4 @@
-package max.ohm.oneai.ImagetoImage.data
+package max.ohm.oneai.imagetoimage.data
 
 import com.google.gson.annotations.SerializedName
 

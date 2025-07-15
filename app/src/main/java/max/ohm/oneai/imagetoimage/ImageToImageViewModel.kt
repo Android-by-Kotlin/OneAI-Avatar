@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,8 +24,21 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
 
 class ImageToImageViewModel : ViewModel() {
+    
+    // Helper function to format time
+    fun formatTime(milliseconds: Long): String {
+        val totalSeconds = milliseconds / 1000
+        return if (totalSeconds < 60) {
+            String.format("%.1fs", milliseconds / 1000f)
+        } else {
+            val minutes = totalSeconds / 60
+            val seconds = totalSeconds % 60
+            String.format("%d:%02d", minutes, seconds)
+        }
+    }
     
     // Gallery State
     private val _galleryImages = MutableStateFlow<List<GeneratedImage>>(emptyList())
@@ -67,14 +81,24 @@ class ImageToImageViewModel : ViewModel() {
     var loadingMessage by mutableStateOf("")
         private set
     
+    // Time tracking
+    var generationTime by mutableStateOf(0L)
+        private set
+    
+    var elapsedTime by mutableStateOf(0L)
+        private set
+    
+    var isTimerRunning by mutableStateOf(false)
+        private set
+    
     // ModelsLab API configuration
-    private val MODELSLAB_API_KEY = "NXwTLvT5B3Zvrc0KhjYaqiSSarqk2lCMGsiDfVQHCQjGWw6owEe36MWr2HSV"
+    private val API_KEY = MODELSLAB_API_KEY
     private val IMG2IMG_URL = "https://modelslab.com/api/v4/dreambooth/img2img"
     
     private val client = OkHttpClient.Builder()
-        .connectTimeout(600, TimeUnit.SECONDS)  // Increased to 10 minutes
-        .readTimeout(600, TimeUnit.SECONDS)     // Increased to 10 minutes
-        .writeTimeout(600, TimeUnit.SECONDS)    // Increased to 10 minutes
+        .connectTimeout(600, TimeUnit.SECONDS)  // 10 minutes
+        .readTimeout(600, TimeUnit.SECONDS)     // 10 minutes
+        .writeTimeout(600, TimeUnit.SECONDS)    // 10 minutes
         .build()
     
     fun updateSelectedImage(bitmap: Bitmap?) {
@@ -95,8 +119,20 @@ class ImageToImageViewModel : ViewModel() {
         
         viewModelScope.launch {
             isLoading = true
+            isTimerRunning = true
+            elapsedTime = 0L
+            generationTime = 0L
+            val startTime = System.currentTimeMillis()
             errorMessage = null
             isGhibliStyle = false
+            
+            // Start timer coroutine
+            val timerJob = launch {
+                while (isTimerRunning) {
+                    elapsedTime = System.currentTimeMillis() - startTime
+                    delay(100) // Update every 100ms
+                }
+            }
             
             try {
                 // Convert image to base64
@@ -137,6 +173,11 @@ class ImageToImageViewModel : ViewModel() {
                 errorMessage = "Error: ${e.message}"
             } finally {
                 isLoading = false
+                isTimerRunning = false
+                timerJob.cancel()
+                generationTime = System.currentTimeMillis() - startTime
+                elapsedTime = generationTime
+                Log.d("ImageToImage", "Total image generation time: ${generationTime}ms")
             }
         }
     }
@@ -147,7 +188,7 @@ class ImageToImageViewModel : ViewModel() {
             val dimensions = calculateDimensions(selectedImage!!)
             
             val jsonBody = JSONObject().apply {
-                put("key", MODELSLAB_API_KEY)
+put("key", API_KEY)
                 put("model_id", "fluxdev")
                 put("init_image", base64Image)
                 put("prompt", "Ghibli Studio style, Charming hand-drawn anime-style illustration")
@@ -282,7 +323,7 @@ class ImageToImageViewModel : ViewModel() {
         try {
             // Create request body with API key
             val jsonBody = JSONObject().apply {
-                put("key", MODELSLAB_API_KEY)
+put("key", API_KEY)
             }
             
             val requestBody = jsonBody.toString()
@@ -374,10 +415,22 @@ class ImageToImageViewModel : ViewModel() {
         
         viewModelScope.launch {
             isLoading = true
+            isTimerRunning = true
+            elapsedTime = 0L
+            generationTime = 0L
+            val startTime = System.currentTimeMillis()
             errorMessage = null
             isGhibliStyle = true
             isGeneratingGhibli = true
             loadingMessage = "Initializing Ghibli style generation..."
+            
+            // Start timer coroutine
+            val timerJob = launch {
+                while (isTimerRunning) {
+                    elapsedTime = System.currentTimeMillis() - startTime
+                    delay(100) // Update every 100ms
+                }
+            }
             
             try {
                 // Convert image to base64
@@ -419,6 +472,11 @@ class ImageToImageViewModel : ViewModel() {
             } finally {
                 isLoading = false
                 isGeneratingGhibli = false
+                isTimerRunning = false
+                timerJob.cancel()
+                generationTime = System.currentTimeMillis() - startTime
+                elapsedTime = generationTime
+                Log.d("ImageToImage", "Total Ghibli generation time: ${generationTime}ms")
                 loadingMessage = ""
             }
         }
@@ -456,7 +514,7 @@ class ImageToImageViewModel : ViewModel() {
     private suspend fun performImg2ImgWithBase64(base64Image: String): String? = withContext(Dispatchers.IO) {
         try {
             val jsonBody = JSONObject().apply {
-                put("key", MODELSLAB_API_KEY)
+put("key", API_KEY)
                 put("model_id", "flux")
                 put("prompt", prompt)
                 put("negative_prompt", negativePrompt)
@@ -613,5 +671,8 @@ class ImageToImageViewModel : ViewModel() {
         steps = 20
         errorMessage = null
         isGhibliStyle = false
+        generationTime = 0L
+        elapsedTime = 0L
+        isTimerRunning = false
     }
 }
