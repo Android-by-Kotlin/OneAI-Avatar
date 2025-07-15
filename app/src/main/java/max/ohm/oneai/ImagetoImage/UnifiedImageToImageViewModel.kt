@@ -86,6 +86,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
         "headshot-img2img" to "Headshot",
+        "Enhance-img2img" to "Enhance",
         "anime-style" to "Anime Style Transfer",
         "oil-painting" to "Oil Painting Style",
         "watercolor" to "Watercolor Style",
@@ -212,6 +213,16 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performHeadshotImg2Img(base64Image)
+                    }
+
+
+                    "Enhance-img2img" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        performEnhanceImg2Img(base64Image)
                     }
                     
                     "anime-style" -> {
@@ -462,6 +473,31 @@ class UnifiedImageToImageViewModel : ViewModel() {
             url = "https://modelslab.com/api/v6/image_editing/head_shot",
             jsonBody = jsonBody,
             modelName = "Headshot Img2Img"
+        )
+
+        processApiResult(result)
+    }
+
+
+    private suspend fun performEnhanceImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Enhance..."
+
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("init_image", base64Image)
+            put("face_enhance", true)  // default its off
+            put("scale", 2)
+            put("model_id", "ultra_resolution")
+            put("webhook", null)
+            put("track_id", null)
+            put("base64", true)
+
+        }
+
+        val result = makeApiCallWithPolling(
+            url = "https://modelslab.com/api/v6/image_editing/super_resolution",
+            jsonBody = jsonBody,
+            modelName = "Enhance Img2Img"
         )
 
         processApiResult(result)
