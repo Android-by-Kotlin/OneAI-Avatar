@@ -67,6 +67,12 @@ class UnifiedImageToImageViewModel : ViewModel() {
     var imageStrength by mutableStateOf(0.35f)
     var cfgScale by mutableStateOf(7)
     
+    // Outpaint parameters
+    var outpaintLeft by mutableStateOf(0)
+    var outpaintRight by mutableStateOf(0)
+    var outpaintTop by mutableStateOf(0)
+    var outpaintBottom by mutableStateOf(0)
+    
     // Context for Stability AI
     private var context: Context? = null
 
@@ -103,6 +109,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
+        "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
         
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
@@ -163,6 +170,22 @@ class UnifiedImageToImageViewModel : ViewModel() {
         cfgScale = scale
     }
     
+    fun updateOutpaintLeft(value: Int) {
+        outpaintLeft = value
+    }
+    
+    fun updateOutpaintRight(value: Int) {
+        outpaintRight = value
+    }
+    
+    fun updateOutpaintTop(value: Int) {
+        outpaintTop = value
+    }
+    
+    fun updateOutpaintBottom(value: Int) {
+        outpaintBottom = value
+    }
+    
     fun updateMaskBitmap(bitmap: Bitmap?) {
         maskBitmap = bitmap
     }
@@ -202,7 +225,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -257,6 +280,15 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performStabilityAIInpaint()
+                    }
+                    
+                    "stability-ai-outpaint" -> {
+                        if (outpaintLeft == 0 && outpaintRight == 0 && outpaintTop == 0 && outpaintBottom == 0) {
+                            errorMessage = "Please specify at least one outpaint direction"
+                            isLoading = false
+                            return@launch
+                        }
+                        performStabilityAIOutpaint()
                     }
                     
                     // Standard Image-to-Image Models
@@ -1472,6 +1504,93 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
     }
 
+    private suspend fun performStabilityAIOutpaint() = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Stability AI Outpaint..."
+
+        try {
+            // Create temporary file for image
+            val imageFile = File.createTempFile("temp_image", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val imageOutputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, imageOutputStream)
+            imageOutputStream.close()
+
+            // Call the outpaint API
+            outpaintImage(imageFile)
+
+            // Clean up temp file
+            imageFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI outpaint", e)
+            errorMessage = "Stability AI Outpaint Error: ${e.localizedMessage}"
+        }
+    }
+
+    private suspend fun outpaintImage(imageFile: File) = withContext(Dispatchers.IO) {
+        loadingMessage = "Outpainting image..."
+
+        try {
+            val requestBodyBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("output_format", "webp")
+
+            // Add outpaint parameters only if they are greater than 0
+            if (outpaintLeft > 0) {
+                requestBodyBuilder.addFormDataPart("left", outpaintLeft.toString())
+            }
+            if (outpaintRight > 0) {
+                requestBodyBuilder.addFormDataPart("right", outpaintRight.toString())
+            }
+            if (outpaintTop > 0) {
+                requestBodyBuilder.addFormDataPart("up", outpaintTop.toString())
+            }
+            if (outpaintBottom > 0) {
+                requestBodyBuilder.addFormDataPart("down", outpaintBottom.toString())
+            }
+
+            val requestBody = requestBodyBuilder.build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/edit/outpaint")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Outpaint API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Outpaint API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated outpainted bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated outpainted image"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Outpaint API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in outpaint API call", e)
+            errorMessage = "Error: ${e.localizedMessage}"
+        }
+    }
+
     private suspend fun performStabilityAIInpaint() = withContext(Dispatchers.IO) {
         loadingMessage = "Processing with Stability AI Inpaint..."
 
@@ -1571,5 +1690,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
         timerJob?.cancel()
         maskBitmap = null
         showMaskingInterface = false
+        outpaintLeft = 0
+        outpaintRight = 0
+        outpaintTop = 0
+        outpaintBottom = 0
     }
 }
