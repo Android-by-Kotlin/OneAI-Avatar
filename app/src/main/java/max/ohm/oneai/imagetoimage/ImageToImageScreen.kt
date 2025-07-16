@@ -58,6 +58,10 @@ fun ImageToImageScreen(
     onNavigateToGallery: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.setContext(context)
+    }
+
     val scrollState = rememberScrollState()
     var showAdvancedSettings by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()

@@ -18,13 +18,21 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import max.ohm.oneai.a4f.A4FClient.A4F_API_KEY
 import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
+import max.ohm.oneai.stabilityai.STABILITY_API_KEY
+import max.ohm.oneai.stabilityai.repository.StabilityRepository
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.ResponseBody
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.concurrent.TimeUnit
+import android.content.Context
 
 class UnifiedImageToImageViewModel : ViewModel() {
 
@@ -54,6 +62,13 @@ class UnifiedImageToImageViewModel : ViewModel() {
     var strength by mutableStateOf(0.7f)
     var guidanceScale by mutableStateOf(7.5f)
     var steps by mutableStateOf(20)
+    
+    // Stability AI specific parameters
+    var imageStrength by mutableStateOf(0.35f)
+    var cfgScale by mutableStateOf(7)
+    
+    // Context for Stability AI
+    private var context: Context? = null
 
     // Timer states
     private val _elapsedTimeInSeconds = MutableStateFlow(0L)
@@ -78,6 +93,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
     // Available models
     val availableModels = listOf(
+        // Stability AI Models (Premium)
+        "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
+        
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
         "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
@@ -87,10 +105,12 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "ghibli-style" to "Ghibli Studio Style",
         "headshot-img2img" to "Headshot",
         "Enhance-img2img" to "Enhance",
+        "Remove-img2img" to "Remove Background",
+        "Sketch Img2Img" to "Sketch to Realistic",
         "anime-style" to "Anime Style Transfer",
         "oil-painting" to "Oil Painting Style",
         "watercolor" to "Watercolor Style",
-        "sketch-style" to "Sketch/Drawing Style",
+
         "cyberpunk-style" to "Cyberpunk Style",
         "fantasy-art" to "Fantasy Art Style",
         
@@ -100,6 +120,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "super-resolution" to "Super Resolution Upscale"
     )
 
+    fun setContext(context: Context) {
+        this.context = context
+    }
+    
     fun updateSelectedImage(bitmap: Bitmap?) {
         selectedImage = bitmap
         errorMessage = null
@@ -122,6 +146,14 @@ class UnifiedImageToImageViewModel : ViewModel() {
     fun clearErrorMessage() {
         errorMessage = null
     }
+    
+    fun updateImageStrength(strength: Float) {
+        imageStrength = strength
+    }
+    
+    fun updateCfgScale(scale: Int) {
+        cfgScale = scale
+    }
 
     private fun startTimer() {
         _elapsedTimeInSeconds.value = 0L
@@ -143,10 +175,22 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
 
         // Validate prompt for models that need it
-        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img")
+        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img")
         if (selectedModel in promptRequiredModels && prompt.isBlank()) {
             errorMessage = "Please enter a prompt for this model"
             return
+        }
+        
+        // Validate Stability AI requirements
+        if (selectedModel == "stability-ai-img2img") {
+            if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
+                errorMessage = "Please set your Stability AI API Key"
+                return
+            }
+            if (context == null) {
+                errorMessage = "Context not available. Please restart the app."
+                return
+            }
         }
 
         isLoading = true
@@ -167,6 +211,11 @@ class UnifiedImageToImageViewModel : ViewModel() {
                 }
 
                 when (selectedModel) {
+                    // Stability AI Models (Premium)
+                    "stability-ai-img2img" -> {
+                        performStabilityAIImg2Img()
+                    }
+                    
                     // Standard Image-to-Image Models
                     "flux-img2img" -> {
                         if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
@@ -224,6 +273,27 @@ class UnifiedImageToImageViewModel : ViewModel() {
                         }
                         performEnhanceImg2Img(base64Image)
                     }
+
+
+                    "Remove-img2img" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                    }
+                        performRemoveImg2Img(base64Image)
+                    }
+
+
+                    "Sketch Img2Img" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        performSketchImg2Img(base64Image)
+                    }
+
                     
                     "anime-style" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -252,14 +322,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
                         performWatercolorStyle(base64Image)
                     }
                     
-                    "sketch-style" -> {
-                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
-                            errorMessage = "Please set your A4F API Key"
-                            isLoading = false
-                            return@launch
-                        }
-                        performSketchStyle(base64Image)
-                    }
+
                     
                     "cyberpunk-style" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
@@ -326,6 +389,54 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
     }
 
+    // Stability AI Implementation
+    private suspend fun performStabilityAIImg2Img() = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Stability AI..."
+        
+        try {
+            // Create a temporary URI for the selected image
+            val tempFile = File.createTempFile("temp_image", ".png", context!!.cacheDir)
+            val outputStream = tempFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+            
+            val imageUri = android.net.Uri.fromFile(tempFile)
+            
+            // Call Stability AI repository
+            val response = StabilityRepository.generateImageToImage(
+                context = context!!,
+                imageUri = imageUri,
+                prompt = prompt
+            )
+            
+            if (response?.status == "success" && response.imageData != null) {
+                // Convert bytes to bitmap
+                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                if (bitmap != null) {
+                    generatedImageBitmap = bitmap
+                    Log.d("UnifiedImg2Img", "Successfully generated Stability AI image: ${bitmap.width}x${bitmap.height}")
+                } else {
+                    // Create temporary file for URL display
+                    val generatedFile = File.createTempFile("stability_generated", ".png", context!!.cacheDir)
+                    generatedFile.writeBytes(response.imageData)
+                    generatedImageUrl = generatedFile.toURI().toString()
+                    Log.d("UnifiedImg2Img", "Created temporary file for Stability AI image")
+                }
+            } else {
+                val error = response?.error ?: "Failed to generate image with Stability AI"
+                errorMessage = "Stability AI Error: $error"
+                Log.e("UnifiedImg2Img", "Stability AI generation failed: $error")
+            }
+            
+            // Clean up temp file
+            tempFile.delete()
+            
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI generation", e)
+            errorMessage = "Stability AI Error: ${e.localizedMessage}"
+        }
+    }
+    
     // Standard Image-to-Image implementations
     private suspend fun performFluxImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
         loadingMessage = "Processing with Flux..."
@@ -486,7 +597,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
             put("key", MODELSLAB_API_KEY)
             put("init_image", base64Image)
             put("face_enhance", true)  // default its off
-            put("scale", 3)
+            put("scale", 3)   // default scale 2
             put("model_id", "ultra_resolution")
             put("webhook", null)
             put("track_id", null)
@@ -503,9 +614,110 @@ class UnifiedImageToImageViewModel : ViewModel() {
         processApiResult(result)
     }
 
+
+
+    private suspend fun performRemoveImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Remove Background..."
+
+
+
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("image", base64Image)
+            put("seed", null)
+            put("post_process_mask", false)
+            put("only_mask", false)
+            put("alpha_matting", false)
+            put("base64", true)
+            put("webhook", null)
+            put("track_id", null)
+
+        }
+
+        val result = makeApiCallWithPolling(
+            url = "https://modelslab.com/api/v6/image_editing/removebg_mask",
+            jsonBody = jsonBody,
+            modelName = "Remove Img2Img"
+        )
+
+        processApiResult(result)
+    }
+
+
+
+
+    private suspend fun performSketchImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Sketch..."
+
+
+//
+//        {
+//            "key":"<your-key>",
+//            "model_id": "boziorealvisxlv4",
+//            "init_image":"<base64-image>",
+//            "prompt": "hyper realistic, beautiful girl, wearing blue dress, blue eyes, black hair, looking at camera, pose like model",
+//            "negative_prompt": "(normal quality), (low quality), (worst quality), Living Room paintings, sketches, fog, signature, soft, blurry, drawing, sketch, poor quality, ugly text, type, word, logo, pixelated, low resolution, saturated, high contrast, over sharpened, dirt",
+//            "auto_hint": "no",
+//            "guess_mode": "no",
+//            "strength": 0.8,
+//            "controlnet_conditioning_scale": "0.9",
+//            "guidance_scale": 5,
+//            "tomesd": "yes",
+//            "seed": null,
+//            "samples": 1,
+//            "num_inference_steps": 21,
+//            "scheduler": "DPMSolverMultistepScheduler",
+//            "use_karras_sigmas": "yes",
+//            "base64": true,
+//            "clip_skip": 2,
+//            "controlnet_type": "lineart",
+//            "controlnet_model": "lineart",
+//            "lora_model": "more_details_XL",
+//            "lora_strength": "0.9",
+//            "webhook": null,
+//            "track_id": null
+//        }
+
+
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("model_id", "boziorealvisxlv4")
+            put("init_image", base64Image)
+            put("prompt", prompt)
+            put("negative_prompt", negativePrompt)
+            put("auto_hint", "no")
+            put("guess_mode", "no")
+            put("strength", 0.8)
+            put("controlnet_conditioning_scale", "0.9")
+            put("guidance_scale", 5)
+            put("tomesd", "yes")
+            put("seed", null)
+            put("samples", 1)
+            put("num_inference_steps", 21)
+            put("scheduler", "DPMSolverMultistepScheduler")
+            put("use_karras_sigmas", "yes")
+            put("base64", true)
+            put("clip_skip", 2)
+            put("controlnet_type", "lineart")
+            put("controlnet_model", "lineart")
+            put("lora_model", "more_details")
+            put("lora_strength", "0.9")
+            put("webhook", null)
+            put("track_id", null)
+        }
+
+        val result = makeApiCallWithPolling(
+            url = "https://modelslab.com/api/v5/controlnet",
+            jsonBody = jsonBody,
+            modelName = "Sketch Img2Img"
+        )
+
+        processApiResult(result)
+    }
+
     private suspend fun performAnimeStyle(base64Image: String) = withContext(Dispatchers.IO) {
         loadingMessage = "Applying anime style..."
-        
+
         val jsonBody = JSONObject().apply {
             put("key", A4F_API_KEY)
             put("model", "anime-style-transfer")
@@ -520,7 +732,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
             jsonBody = jsonBody,
             modelName = "Anime Style"
         )
-        
+
         processApiResult(result)
     }
 
@@ -1145,6 +1357,8 @@ class UnifiedImageToImageViewModel : ViewModel() {
         strength = 0.7f
         guidanceScale = 7.5f
         steps = 20
+        imageStrength = 0.35f
+        cfgScale = 7
         errorMessage = null
         loadingMessage = ""
         _elapsedTimeInSeconds.value = 0L

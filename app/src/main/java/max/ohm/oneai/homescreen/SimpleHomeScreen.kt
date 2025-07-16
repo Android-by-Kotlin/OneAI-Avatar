@@ -304,8 +304,13 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                // Empty space for alignment
-                Spacer(modifier = Modifier.weight(1f))
+                FeatureButton(
+                    icon = Icons.Default.AutoAwesome,
+                    title = "Stability AI",
+                    description = "Premium image transform",
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("stabilityAI") }
+                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))

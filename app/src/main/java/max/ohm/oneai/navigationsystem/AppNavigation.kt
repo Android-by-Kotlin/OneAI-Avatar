@@ -39,6 +39,8 @@ import max.ohm.oneai.imageediting.FaceGenViewModel
 import max.ohm.oneai.imagetoimage.ImageToImageScreen
 import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import max.ohm.oneai.imagetoimage.GalleryScreen
+import max.ohm.oneai.stabilityai.ui.StabilityImageToImageScreen
+import max.ohm.oneai.stabilityai.viewmodel.StabilityImageToImageViewModel
 import androidx.navigation.NavBackStackEntry
 
 // --- Navigation ---
@@ -292,6 +294,19 @@ fun AppNavigation() {
                     navController.popBackStack()
                 }
             )
+        }
+        
+        composable("stabilityAI") { // Add Stability AI destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val stabilityViewModel: StabilityImageToImageViewModel = viewModel()
+            StabilityImageToImageScreen(viewModel = stabilityViewModel)
         }
 
         // Add other destinations here (translator)

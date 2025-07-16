@@ -15,15 +15,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import max.ohm.oneai.imagetoimage.repository.ImageToImageRepository
 import max.ohm.oneai.imagetoimage.repository.SimpleImageUploadService
+import max.ohm.oneai.stabilityai.repository.StabilityRepository
+import max.ohm.oneai.stabilityai.data.StabilityImageResponse
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 data class ImageToImageUiState(
     val imageUrl: String = "",
-    val prompt: String = "a girl standing in front of car in a dark background",
+    val prompt: String = "A galactic dog in space",
     val imageUri: Uri? = null,
     val isLoading: Boolean = false,
     val generatedImageUrl: String? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val useStabilityAI: Boolean = true  // Default to Stability AI
 )
 
 class ImageToImageViewModel : ViewModel() {
@@ -49,6 +53,13 @@ class ImageToImageViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(imageUri = uri, imageUrl = "", errorMessage = null)
     }
     
+    fun toggleProvider() {
+        _uiState.value = _uiState.value.copy(
+            useStabilityAI = !_uiState.value.useStabilityAI,
+            errorMessage = null
+        )
+    }
+    
     fun generateImage() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -57,75 +68,106 @@ class ImageToImageViewModel : ViewModel() {
                 generatedImageUrl = null
             )
             
-            val imageUrl = when {
-                _uiState.value.imageUrl.isNotBlank() -> _uiState.value.imageUrl
-                _uiState.value.imageUri != null -> {
-                    // Try to upload the image first
-                    context?.let { ctx ->
-val uploadedUrl = SimpleImageUploadService.uploadImageFromUri(ctx, _uiState.value.imageUri!!) ?: null
-                        if (uploadedUrl != null) {
-                            uploadedUrl
-                        } else {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                errorMessage = "Failed to upload image. Please make sure that the image service is configured properly."
-                            )
-                            return@launch
-                        }
-                    } ?: run {
+            try {
+                if (_uiState.value.useStabilityAI) {
+                    // Use Stability AI
+                    if (_uiState.value.imageUri == null) {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            errorMessage = "Context not available. Please restart the app."
+                            errorMessage = "Please select an image to use Stability AI"
                         )
                         return@launch
                     }
-                }
-                else -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Please enter an image URL or select an image"
+                    
+                    val response = StabilityRepository.generateImageToImage(
+                        context!!,
+                        _uiState.value.imageUri!!,
+                        _uiState.value.prompt
                     )
-                    return@launch
-                }
-            }
-        
-            
-            try {
-                val response = ImageToImageRepository.generateImage(
-                    initImageUrl = imageUrl,
-                    prompt = _uiState.value.prompt
-                )
-                
-                when {
-                    response.status == "success" && !response.output.isNullOrEmpty() -> {
+                    
+                    if (response?.status == "success" && response.imageData != null) {
+                        val generatedFile = File.createTempFile("generated", ".png", context!!.cacheDir)
+                        generatedFile.writeBytes(response.imageData)
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            generatedImageUrl = response.output.first()
+                            generatedImageUrl = generatedFile.toURI().toString()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = response?.error ?: "Failed to generate image"
                         )
                     }
-                    response.status == "processing" -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "Image is still processing. Please try again in a few seconds."
-                        )
+                } else {
+                    // Use existing ModelsLab API
+                    val imageUrl = when {
+                        _uiState.value.imageUrl.isNotBlank() -> _uiState.value.imageUrl
+                        _uiState.value.imageUri != null -> {
+                            // Try to upload the image first
+                            context?.let { ctx ->
+                                val uploadedUrl = SimpleImageUploadService.uploadImageFromUri(ctx, _uiState.value.imageUri!!) ?: null
+                                if (uploadedUrl != null) {
+                                    uploadedUrl
+                                } else {
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        errorMessage = "Failed to upload image. Please make sure that the image service is configured properly."
+                                    )
+                                    return@launch
+                                }
+                            } ?: run {
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    errorMessage = "Context not available. Please restart the app."
+                                )
+                                return@launch
+                            }
+                        }
+                        else -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Please enter an image URL or select an image"
+                            )
+                            return@launch
+                        }
                     }
-                    response.error != null -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "API Error: ${response.error}"
-                        )
-                    }
-                    response.messege != null -> {  // Handle API typo
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "API Message: ${response.messege}"
-                        )
-                    }
-                    else -> {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = "Failed to generate image: ${response.message ?: response.status ?: "Unknown error"}"
-                        )
+                    
+                    val response = ImageToImageRepository.generateImage(
+                        initImageUrl = imageUrl,
+                        prompt = _uiState.value.prompt
+                    )
+                    
+                    when {
+                        response.status == "success" && !response.output.isNullOrEmpty() -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                generatedImageUrl = response.output.first()
+                            )
+                        }
+                        response.status == "processing" -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Image is still processing. Please try again in a few seconds."
+                            )
+                        }
+                        response.error != null -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "API Error: ${response.error}"
+                            )
+                        }
+                        response.messege != null -> {  // Handle API typo
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "API Message: ${response.messege}"
+                            )
+                        }
+                        else -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Failed to generate image: ${response.message ?: response.status ?: "Unknown error"}"
+                            )
+                        }
                     }
                 }
             } catch (e: Exception) {
