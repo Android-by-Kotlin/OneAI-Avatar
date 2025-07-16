@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.*
+import max.ohm.oneai.imagetoimage.ui.BrushMaskTool
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -588,21 +589,45 @@ OutlinedTextField(
                                     )
                                 }
                                 
-                                IconButton(
-                                    onClick = { viewModel.updateSelectedImage(null) },
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .background(
-                                            Color.White.copy(alpha = 0.1f),
-                                            CircleShape
-                                        )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Clear Image",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    // Brush tool button - only show for mask erase and inpaint models
+                                    if (viewModel.selectedModel == "stability-ai-mask-erase" || viewModel.selectedModel == "stability-ai-inpaint") {
+                                        IconButton(
+                                            onClick = { viewModel.toggleMaskingInterface() },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .background(
+                                                    Color(0xFFEC4899).copy(alpha = 0.3f),
+                                                    CircleShape
+                                                )
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Brush,
+                                                contentDescription = "Brush Tool",
+                                                tint = Color(0xFFEC4899),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = { viewModel.updateSelectedImage(null) },
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .background(
+                                                Color.White.copy(alpha = 0.1f),
+                                                CircleShape
+                                            )
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Clear Image",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -848,6 +873,56 @@ OutlinedTextField(
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
+                    }
+                    
+                    // Mask status indicator for mask erase and inpaint models
+                    if (viewModel.selectedModel == "stability-ai-mask-erase" || viewModel.selectedModel == "stability-ai-inpaint") {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (viewModel.maskBitmap != null) 
+                                    Color(0xFF10B981).copy(alpha = 0.2f) 
+                                else 
+                                    Color(0xFFEF4444).copy(alpha = 0.2f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    if (viewModel.maskBitmap != null) 
+                                        Icons.Default.CheckCircle 
+                                    else 
+                                        Icons.Default.ErrorOutline,
+                                    contentDescription = null,
+                                    tint = if (viewModel.maskBitmap != null) 
+                                        Color(0xFF10B981) 
+                                    else 
+                                        Color(0xFFEF4444),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (viewModel.maskBitmap != null) {
+                                        when (viewModel.selectedModel) {
+                                            "stability-ai-mask-erase" -> "Mask created - Ready to erase"
+                                            "stability-ai-inpaint" -> "Mask created - Ready to inpaint"
+                                            else -> "Mask created - Ready to process"
+                                        }
+                                    } else {
+                                        "Please create a mask using the brush tool"
+                                    },
+                                    color = Color.White,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
                     }
                     
                     // Main Prompt Input
@@ -1289,6 +1364,18 @@ exit = fadeOut() + slideOutVertically()
                 generatedImageUrl = viewModel.generatedImageUrl,
                 generatedImageBitmap = viewModel.generatedImageBitmap,
                 onDismiss = { showFullscreenImage = false }
+            )
+        }
+        
+        // Brush mask tool dialog
+        if (viewModel.showMaskingInterface && viewModel.selectedImage != null) {
+            BrushMaskTool(
+                originalImage = viewModel.selectedImage!!,
+                onMaskCreated = { maskBitmap ->
+                    viewModel.updateMaskBitmap(maskBitmap)
+                    viewModel.toggleMaskingInterface()
+                },
+                onDismiss = { viewModel.toggleMaskingInterface() }
             )
         }
     }

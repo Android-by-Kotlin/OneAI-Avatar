@@ -91,10 +91,18 @@ class UnifiedImageToImageViewModel : ViewModel() {
         .writeTimeout(600, TimeUnit.SECONDS)
         .build()
 
+    // Masking state variables
+    var maskBitmap by mutableStateOf<Bitmap?>(null)
+        private set
+    var showMaskingInterface by mutableStateOf(false)
+        private set
+    
     // Available models
     val availableModels = listOf(
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
+        "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
+        "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
@@ -154,6 +162,18 @@ class UnifiedImageToImageViewModel : ViewModel() {
     fun updateCfgScale(scale: Int) {
         cfgScale = scale
     }
+    
+    fun updateMaskBitmap(bitmap: Bitmap?) {
+        maskBitmap = bitmap
+    }
+    
+    fun toggleMaskingInterface() {
+        showMaskingInterface = !showMaskingInterface
+    }
+    
+    fun clearMask() {
+        maskBitmap = null
+    }
 
     private fun startTimer() {
         _elapsedTimeInSeconds.value = 0L
@@ -175,14 +195,14 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
 
         // Validate prompt for models that need it
-        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img")
+        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img", "stability-ai-inpaint")
         if (selectedModel in promptRequiredModels && prompt.isBlank()) {
             errorMessage = "Please enter a prompt for this model"
             return
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -214,6 +234,29 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     // Stability AI Models (Premium)
                     "stability-ai-img2img" -> {
                         performStabilityAIImg2Img()
+                    }
+                    
+                    "stability-ai-mask-erase" -> {
+                        if (maskBitmap == null) {
+                            errorMessage = "Please create a mask first by using the brush tool"
+                            isLoading = false
+                            return@launch
+                        }
+                        performStabilityAIMaskErase()
+                    }
+                    
+                    "stability-ai-inpaint" -> {
+                        if (maskBitmap == null) {
+                            errorMessage = "Please create a mask first by using the brush tool"
+                            isLoading = false
+                            return@launch
+                        }
+                        if (prompt.isBlank()) {
+                            errorMessage = "Please enter a prompt for inpainting"
+                            isLoading = false
+                            return@launch
+                        }
+                        performStabilityAIInpaint()
                     }
                     
                     // Standard Image-to-Image Models
@@ -614,11 +657,92 @@ class UnifiedImageToImageViewModel : ViewModel() {
         processApiResult(result)
     }
 
+    private suspend fun performStabilityAIMaskErase() = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Stability AI Mask Erase..."
+        
+        try {
+            // Create temporary files for image and mask
+            val imageFile = File.createTempFile("temp_image", ".png", context!!.cacheDir)
+            val maskFile = File.createTempFile("temp_mask", ".png", context!!.cacheDir)
+            
+            // Save selected image to temp file
+            val imageOutputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, imageOutputStream)
+            imageOutputStream.close()
+            
+            // Save mask to temp file
+            val maskOutputStream = maskFile.outputStream()
+            maskBitmap!!.compress(Bitmap.CompressFormat.PNG, 100, maskOutputStream)
+            maskOutputStream.close()
+            
+            // Debug: Log mask bitmap info
+            Log.d("UnifiedImg2Img", "Mask bitmap created: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+            Log.d("UnifiedImg2Img", "Original image: ${selectedImage!!.width}x${selectedImage!!.height}")
+            Log.d("UnifiedImg2Img", "Mask file size: ${maskFile.length()} bytes")
+            
+            // Call the erase API
+            eraseImageWithMask(imageFile, maskFile)
+            
+            // Clean up temp files
+            imageFile.delete()
+            maskFile.delete()
+            
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI mask erase", e)
+            errorMessage = "Stability AI Mask Error: ${e.localizedMessage}"
+        }
+    }
 
+    private suspend fun eraseImageWithMask(imageFile: File, maskFile: File) = withContext(Dispatchers.IO) {
+        loadingMessage = "Erasing image area..."
+
+        try {
+            val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("mask", maskFile.name, maskFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("output_format", "webp")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/edit/erase")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI API response message: ${response.message}")
+            
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated image"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in mask API call", e)
+            errorMessage = "Error: ${e.localizedMessage}"
+        }
+    }
 
     private suspend fun performRemoveImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
-        loadingMessage = "Processing with Remove Background..."
-
 
 
         val jsonBody = JSONObject().apply {
@@ -1348,6 +1472,87 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
     }
 
+    private suspend fun performStabilityAIInpaint() = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Stability AI Inpaint..."
+
+        try {
+            // Create temporary files for image and mask
+            val imageFile = File.createTempFile("temp_image", ".png", context!!.cacheDir)
+            val maskFile = File.createTempFile("temp_mask", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val imageOutputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, imageOutputStream)
+            imageOutputStream.close()
+
+            // Save mask to temp file
+            val maskOutputStream = maskFile.outputStream()
+            maskBitmap!!.compress(Bitmap.CompressFormat.PNG, 100, maskOutputStream)
+            maskOutputStream.close()
+
+            // Call the inpaint API
+            inpaintImageWithMask(imageFile, maskFile)
+
+            // Clean up temp files
+            imageFile.delete()
+            maskFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI inpaint", e)
+            errorMessage = "Stability AI Inpaint Error: ${e.localizedMessage}"
+        }
+    }
+
+    private suspend fun inpaintImageWithMask(imageFile: File, maskFile: File) = withContext(Dispatchers.IO) {
+        loadingMessage = "Inpainting image..."
+
+        try {
+            val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("mask", maskFile.name, maskFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("prompt", prompt)
+                .addFormDataPart("output_format", "webp")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/edit/inpaint")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Inpaint API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Inpaint API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated inpainted bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated inpainted image"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Inpaint API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in inpaint API call", e)
+            errorMessage = "Error: ${e.localizedMessage}"
+        }
+    }
+
     fun reset() {
         selectedImage = null
         generatedImageBitmap = null
@@ -1364,5 +1569,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         _elapsedTimeInSeconds.value = 0L
         _totalGenerationTimeInSeconds.value = null
         timerJob?.cancel()
+        maskBitmap = null
+        showMaskingInterface = false
     }
 }
