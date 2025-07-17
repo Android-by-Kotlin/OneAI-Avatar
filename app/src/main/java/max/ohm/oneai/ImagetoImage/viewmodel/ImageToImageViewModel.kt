@@ -27,7 +27,10 @@ data class ImageToImageUiState(
     val isLoading: Boolean = false,
     val generatedImageUrl: String? = null,
     val errorMessage: String? = null,
-    val useStabilityAI: Boolean = true  // Default to Stability AI
+    val useStabilityAI: Boolean = true,  // Default to Stability AI
+    val isSearchAndReplaceMode: Boolean = false,
+    val searchPrompt: String = "dog",
+    val replacePrompt: String = "golden retriever"
 )
 
 class ImageToImageViewModel : ViewModel() {
@@ -60,6 +63,21 @@ class ImageToImageViewModel : ViewModel() {
         )
     }
     
+    fun toggleSearchAndReplaceMode() {
+        _uiState.value = _uiState.value.copy(
+            isSearchAndReplaceMode = !_uiState.value.isSearchAndReplaceMode,
+            errorMessage = null
+        )
+    }
+    
+    fun updateSearchPrompt(prompt: String) {
+        _uiState.value = _uiState.value.copy(searchPrompt = prompt)
+    }
+    
+    fun updateReplacePrompt(prompt: String) {
+        _uiState.value = _uiState.value.copy(replacePrompt = prompt)
+    }
+    
     fun generateImage() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -79,24 +97,50 @@ class ImageToImageViewModel : ViewModel() {
                         return@launch
                     }
                     
-                    val response = StabilityRepository.generateImageToImage(
-                        context!!,
-                        _uiState.value.imageUri!!,
-                        _uiState.value.prompt
-                    )
-                    
-                    if (response?.status == "success" && response.imageData != null) {
-                        val generatedFile = File.createTempFile("generated", ".png", context!!.cacheDir)
-                        generatedFile.writeBytes(response.imageData)
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            generatedImageUrl = generatedFile.toURI().toString()
+                    if (_uiState.value.isSearchAndReplaceMode) {
+                        // Use search and replace API
+                        val response = StabilityRepository.searchAndReplace(
+                            context!!,
+                            _uiState.value.imageUri!!,
+                            _uiState.value.replacePrompt,
+                            _uiState.value.searchPrompt,
+                            "webp"
                         )
+                        
+                        if (response?.status == "success" && response.imageData != null) {
+                            val generatedFile = File.createTempFile("search_replace", ".webp", context!!.cacheDir)
+                            generatedFile.writeBytes(response.imageData)
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                generatedImageUrl = generatedFile.toURI().toString()
+                            )
+                        } else {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = response?.error ?: "Failed to search and replace"
+                            )
+                        }
                     } else {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            errorMessage = response?.error ?: "Failed to generate image"
+                        // Use regular image-to-image API
+                        val response = StabilityRepository.generateImageToImage(
+                            context!!,
+                            _uiState.value.imageUri!!,
+                            _uiState.value.prompt
                         )
+                        
+                        if (response?.status == "success" && response.imageData != null) {
+                            val generatedFile = File.createTempFile("generated", ".png", context!!.cacheDir)
+                            generatedFile.writeBytes(response.imageData)
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                generatedImageUrl = generatedFile.toURI().toString()
+                            )
+                        } else {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = response?.error ?: "Failed to generate image"
+                            )
+                        }
                     }
                 } else {
                     // Use existing ModelsLab API

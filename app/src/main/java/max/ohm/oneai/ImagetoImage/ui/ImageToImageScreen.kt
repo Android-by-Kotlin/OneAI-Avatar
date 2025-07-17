@@ -159,17 +159,70 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                 }
             }
             
+            // Search and Replace Mode Toggle (only for Stability AI)
+            if (uiState.useStabilityAI) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (uiState.isSearchAndReplaceMode) "Search & Replace Mode" else "Image-to-Image Mode",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Switch(
+                            checked = uiState.isSearchAndReplaceMode,
+                            onCheckedChange = { viewModel.toggleSearchAndReplaceMode() }
+                        )
+                    }
+                }
+            }
+            
             // Prompt Input
-            OutlinedTextField(
-                value = uiState.prompt,
-                onValueChange = viewModel::updatePrompt,
-                label = { Text("Prompt") },
-                placeholder = { Text("Describe what you want to generate") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5,
-                enabled = !uiState.isLoading
-            )
+            if (uiState.isSearchAndReplaceMode && uiState.useStabilityAI) {
+                // Search and Replace Prompts
+                OutlinedTextField(
+                    value = uiState.searchPrompt,
+                    onValueChange = viewModel::updateSearchPrompt,
+                    label = { Text("Search for") },
+                    placeholder = { Text("What to find in the image (e.g., dog, car, person)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = !uiState.isLoading
+                )
+                
+                OutlinedTextField(
+                    value = uiState.replacePrompt,
+                    onValueChange = viewModel::updateReplacePrompt,
+                    label = { Text("Replace with") },
+                    placeholder = { Text("What to replace it with (e.g., golden retriever, blue sports car)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 3,
+                    enabled = !uiState.isLoading
+                )
+            } else {
+                // Regular prompt
+                OutlinedTextField(
+                    value = uiState.prompt,
+                    onValueChange = viewModel::updatePrompt,
+                    label = { Text("Prompt") },
+                    placeholder = { Text("Describe what you want to generate") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    enabled = !uiState.isLoading
+                )
+            }
             
             // Generate Button
             Button(
@@ -190,7 +243,11 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                     )
                 } else {
                     Text(
-                        text = if (uiState.useStabilityAI) "Generate with Stability AI" else "Generate with ModelsLab",
+                        text = when {
+                            uiState.useStabilityAI && uiState.isSearchAndReplaceMode -> "Search & Replace with Stability AI"
+                            uiState.useStabilityAI -> "Generate with Stability AI"
+                            else -> "Generate with ModelsLab"
+                        },
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -218,7 +275,11 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                         ) {
                             CircularProgressIndicator()
                             Text(
-                                text = "Generating image...",
+                                text = if (uiState.useStabilityAI && uiState.isSearchAndReplaceMode) {
+                                    "Searching and replacing..."
+                                } else {
+                                    "Generating image..."
+                                },
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }

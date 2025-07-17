@@ -63,6 +63,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
     var guidanceScale by mutableStateOf(7.5f)
     var steps by mutableStateOf(20)
     
+    // Search and Replace specific parameters
+    var searchPrompt by mutableStateOf("")
+    var replacePrompt by mutableStateOf("")
+    
     // Stability AI specific parameters
     var imageStrength by mutableStateOf(0.35f)
     var cfgScale by mutableStateOf(7)
@@ -122,6 +126,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
     val availableModels = listOf(
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
+        "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
@@ -336,8 +341,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
             return
         }
         
+        // Validate search and replace model
+        if (selectedModel == "stability-ai-search-replace") {
+            if (searchPrompt.isBlank()) {
+                errorMessage = "Please enter what to search for"
+                return
+            }
+            if (replacePrompt.isBlank()) {
+                errorMessage = "Please enter what to replace with"
+                return
+            }
+        }
+        
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -367,9 +384,12 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
                 when (selectedModel) {
                     // Stability AI Models (Premium)
-                    "stability-ai-img2img" -> {
-                        performStabilityAIImg2Img()
-                    }
+            "stability-ai-img2img" -> {
+                performStabilityAIImg2Img()
+            }
+            "stability-ai-search-replace" -> {
+                performStabilityAISearchAndReplace()
+            }
                     
                     "stability-ai-mask-erase" -> {
                         if (maskBitmap == null) {
@@ -651,7 +671,54 @@ class UnifiedImageToImageViewModel : ViewModel() {
             errorMessage = "Stability AI Error: ${e.localizedMessage}"
         }
     }
-    
+
+    // Search and Replace implementation
+    private suspend fun performStabilityAISearchAndReplace() = withContext(Dispatchers.IO) {
+        loadingMessage = "Performing Search and Replace with Stability AI..."
+
+        try {
+            // Create a temporary URI for the selected image
+            val tempFile = File.createTempFile("search_replace_temp", ".png", context!!.cacheDir)
+            val outputStream = tempFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+
+            val imageUri = android.net.Uri.fromFile(tempFile)
+
+            // Call Stability AI repository
+            val response = StabilityRepository.searchAndReplace(
+                context = context!!,
+                imageUri = imageUri,
+                prompt = replacePrompt,
+                searchPrompt = searchPrompt,
+                outputFormat = "webp"
+            )
+
+            if (response?.status == "success" && response.imageData != null) {
+                // Convert bytes to bitmap
+                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                if (bitmap != null) {
+                    generatedImageBitmap = bitmap
+                } else {
+                    // Create temporary file for URL display
+                    val generatedFile = File.createTempFile("stability_search_replace", ".webp", context!!.cacheDir)
+                    generatedFile.writeBytes(response.imageData)
+                    generatedImageUrl = generatedFile.toURI().toString()
+                }
+            } else {
+                val error = response?.error ?: "Failed to perform search and replace"
+                errorMessage = "Search and Replace Error: $error"
+            }
+
+            // Clean up temp file
+            tempFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Search and Replace", e)
+            errorMessage = "Search and Replace Error: ${e.localizedMessage}"
+        }
+    }
+
     // Standard Image-to-Image implementations
     private suspend fun performFluxImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
         loadingMessage = "Processing with Flux..."
