@@ -128,6 +128,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
         "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
         "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
+        "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
@@ -367,7 +368,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -405,6 +406,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
             "stability-ai-search-recolor" -> {
                 performStabilityAISearchAndRecolor()
+            }
+            "stability-ai-remove-background" -> {
+                performStabilityAIRemoveBackground()
             }
                     
                     "stability-ai-mask-erase" -> {
@@ -779,6 +783,51 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Search and Recolor", e)
             errorMessage = "Search and Recolor Error: ${e.localizedMessage}"
+        }
+    }
+
+    // Remove Background implementation
+    private suspend fun performStabilityAIRemoveBackground() = withContext(Dispatchers.IO) {
+        loadingMessage = "Removing background with Stability AI..."
+
+        try {
+            // Create a temporary URI for the selected image
+            val tempFile = File.createTempFile("remove_bg_temp", ".png", context!!.cacheDir)
+            val outputStream = tempFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+
+            val imageUri = android.net.Uri.fromFile(tempFile)
+
+            // Call Stability AI repository
+            val response = StabilityRepository.removeBackground(
+                context = context!!,
+                imageUri = imageUri,
+                outputFormat = "webp"
+            )
+
+            if (response?.status == "success" && response.imageData != null) {
+                // Convert bytes to bitmap
+                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                if (bitmap != null) {
+                    generatedImageBitmap = bitmap
+                } else {
+                    // Create temporary file for URL display
+                    val generatedFile = File.createTempFile("stability_remove_bg", ".webp", context!!.cacheDir)
+                    generatedFile.writeBytes(response.imageData)
+                    generatedImageUrl = generatedFile.toURI().toString()
+                }
+            } else {
+                val error = response?.error ?: "Failed to remove background"
+                errorMessage = "Remove Background Error: $error"
+            }
+
+            // Clean up temp file
+            tempFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Remove Background", e)
+            errorMessage = "Remove Background Error: ${e.localizedMessage}"
         }
     }
 

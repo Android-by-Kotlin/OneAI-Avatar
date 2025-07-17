@@ -110,3 +110,40 @@ data class SearchAndRecolorResponse(
     }
 }
 
+data class RemoveBackgroundRequest(
+    val image: String, // Base64 encoded or file path
+    val outputFormat: String = "webp"
+)
+
+data class RemoveBackgroundResponse(
+    val status: String? = null,
+    val imageData: ByteArray? = null,
+    val error: String? = null,
+    val message: String? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RemoveBackgroundResponse
+
+        if (status != other.status) return false
+        if (imageData != null) {
+            if (other.imageData == null) return false
+            if (!imageData.contentEquals(other.imageData)) return false
+        } else if (other.imageData != null) return false
+        if (error != other.error) return false
+        if (message != other.message) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = status?.hashCode() ?: 0
+        result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (error?.hashCode() ?: 0)
+        result = 31 * result + (message?.hashCode() ?: 0)
+        return result
+    }
+}
+

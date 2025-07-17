@@ -43,4 +43,13 @@ interface StabilityApiService {
         @Part("select_prompt") selectPrompt: RequestBody,
         @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
     ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/edit/remove-background")
+    suspend fun removeBackground(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "image/*",
+        @Part image: MultipartBody.Part,
+        @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
+    ): Response<ResponseBody>
 }

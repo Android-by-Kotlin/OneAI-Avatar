@@ -8,6 +8,7 @@ import max.ohm.oneai.stabilityai.api.StabilityApiService
 import max.ohm.oneai.stabilityai.data.StabilityImageResponse
 import max.ohm.oneai.stabilityai.data.SearchAndReplaceResponse
 import max.ohm.oneai.stabilityai.data.SearchAndRecolorResponse
+import max.ohm.oneai.stabilityai.data.RemoveBackgroundResponse
 import max.ohm.oneai.stabilityai.STABILITY_API_KEY
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -163,6 +164,51 @@ object StabilityRepository {
                 }
             } catch (e: Exception) {
                 SearchAndRecolorResponse(
+                    error = "Exception: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
+
+    suspend fun removeBackground(
+        context: Context, 
+        imageUri: Uri, 
+        outputFormat: String = "webp"
+    ): RemoveBackgroundResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val file = File.createTempFile("remove_bg_image", ".png", context.cacheDir)
+                inputStream?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
+
+                val image = MultipartBody.Part.createFormData(
+                    "image",
+                    file.name,
+                    file.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                val response: Response<ResponseBody> = stabilityApiService.removeBackground(
+                    authorization = "Bearer $STABILITY_API_KEY",
+                    accept = "image/*",
+                    image = image,
+                    outputFormat = outputFormat.toRequestBody()
+                )
+
+                // Clean up temporary file
+                file.delete()
+
+                if (response.isSuccessful) {
+                    RemoveBackgroundResponse(
+                        imageData = response.body()?.bytes(), 
+                        status = "success"
+                    )
+                } else {
+                    RemoveBackgroundResponse(
+                        error = "Failed: ${response.code()} ${response.message()}"
+                    )
+                }
+            } catch (e: Exception) {
+                RemoveBackgroundResponse(
                     error = "Exception: ${e.localizedMessage}"
                 )
             }
