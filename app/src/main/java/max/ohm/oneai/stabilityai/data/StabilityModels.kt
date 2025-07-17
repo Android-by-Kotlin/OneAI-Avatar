@@ -69,12 +69,26 @@ data class SearchAndReplaceResponse(
     val imageData: ByteArray? = null,
     val error: String? = null,
     val message: String? = null
+) 
+
+data class SearchAndRecolorRequest(
+    val image: String, // Base64 encoded or file path
+    val prompt: String,
+    val selectPrompt: String,
+    val outputFormat: String = "webp"
+)
+
+data class SearchAndRecolorResponse(
+    val status: String? = null,
+    val imageData: ByteArray? = null,
+    val error: String? = null,
+    val message: String? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as SearchAndReplaceResponse
+        other as SearchAndRecolorResponse
 
         if (status != other.status) return false
         if (imageData != null) {

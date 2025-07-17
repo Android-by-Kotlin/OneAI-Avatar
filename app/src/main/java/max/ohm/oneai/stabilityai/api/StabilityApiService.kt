@@ -32,4 +32,15 @@ interface StabilityApiService {
         @Part("search_prompt") searchPrompt: RequestBody,
         @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
     ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/edit/search-and-recolor")
+    suspend fun searchAndRecolor(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "image/*",
+        @Part image: MultipartBody.Part,
+        @Part("prompt") prompt: RequestBody,
+        @Part("select_prompt") selectPrompt: RequestBody,
+        @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
+    ): Response<ResponseBody>
 }

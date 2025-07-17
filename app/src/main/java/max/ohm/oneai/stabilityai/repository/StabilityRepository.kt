@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import max.ohm.oneai.stabilityai.api.StabilityApiService
 import max.ohm.oneai.stabilityai.data.StabilityImageResponse
 import max.ohm.oneai.stabilityai.data.SearchAndReplaceResponse
+import max.ohm.oneai.stabilityai.data.SearchAndRecolorResponse
 import max.ohm.oneai.stabilityai.STABILITY_API_KEY
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -113,6 +114,55 @@ object StabilityRepository {
                 }
             } catch (e: Exception) {
                 SearchAndReplaceResponse(
+                    error = "Exception: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
+
+    suspend fun searchAndRecolor(
+        context: Context, 
+        imageUri: Uri, 
+        prompt: String, 
+        selectPrompt: String, 
+        outputFormat: String = "webp"
+    ): SearchAndRecolorResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val file = File.createTempFile("search_recolor_image", ".png", context.cacheDir)
+                inputStream?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
+
+                val image = MultipartBody.Part.createFormData(
+                    "image",
+                    file.name,
+                    file.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                val response: Response<ResponseBody> = stabilityApiService.searchAndRecolor(
+                    authorization = "Bearer $STABILITY_API_KEY",
+                    accept = "image/*",
+                    image = image,
+                    prompt = prompt.toRequestBody(),
+                    selectPrompt = selectPrompt.toRequestBody(),
+                    outputFormat = outputFormat.toRequestBody()
+                )
+
+                // Clean up temporary file
+                file.delete()
+
+                if (response.isSuccessful) {
+                    SearchAndRecolorResponse(
+                        imageData = response.body()?.bytes(), 
+                        status = "success"
+                    )
+                } else {
+                    SearchAndRecolorResponse(
+                        error = "Failed: ${response.code()} ${response.message()}"
+                    )
+                }
+            } catch (e: Exception) {
+                SearchAndRecolorResponse(
                     error = "Exception: ${e.localizedMessage}"
                 )
             }

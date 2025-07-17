@@ -127,6 +127,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
         "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
+        "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
@@ -353,8 +354,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
         }
         
+        // Validate search and recolor model
+        if (selectedModel == "stability-ai-search-recolor") {
+            if (searchPrompt.isBlank()) {
+                errorMessage = "Please enter what to select for recoloring"
+                return
+            }
+            if (replacePrompt.isBlank()) {
+                errorMessage = "Please enter the new color/appearance"
+                return
+            }
+        }
+        
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -389,6 +402,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
             "stability-ai-search-replace" -> {
                 performStabilityAISearchAndReplace()
+            }
+            "stability-ai-search-recolor" -> {
+                performStabilityAISearchAndRecolor()
             }
                     
                     "stability-ai-mask-erase" -> {
@@ -716,6 +732,53 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Search and Replace", e)
             errorMessage = "Search and Replace Error: ${e.localizedMessage}"
+        }
+    }
+
+    // Search and Recolor implementation
+    private suspend fun performStabilityAISearchAndRecolor() = withContext(Dispatchers.IO) {
+        loadingMessage = "Performing Search and Recolor with Stability AI..."
+
+        try {
+            // Create a temporary URI for the selected image
+            val tempFile = File.createTempFile("search_recolor_temp", ".png", context!!.cacheDir)
+            val outputStream = tempFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+
+            val imageUri = android.net.Uri.fromFile(tempFile)
+
+            // Call Stability AI repository
+            val response = StabilityRepository.searchAndRecolor(
+                context = context!!,
+                imageUri = imageUri,
+                prompt = replacePrompt, // This is the new color/appearance
+                selectPrompt = searchPrompt, // This is what to select for recoloring
+                outputFormat = "webp"
+            )
+
+            if (response?.status == "success" && response.imageData != null) {
+                // Convert bytes to bitmap
+                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                if (bitmap != null) {
+                    generatedImageBitmap = bitmap
+                } else {
+                    // Create temporary file for URL display
+                    val generatedFile = File.createTempFile("stability_search_recolor", ".webp", context!!.cacheDir)
+                    generatedFile.writeBytes(response.imageData)
+                    generatedImageUrl = generatedFile.toURI().toString()
+                }
+            } else {
+                val error = response?.error ?: "Failed to perform search and recolor"
+                errorMessage = "Search and Recolor Error: $error"
+            }
+
+            // Clean up temp file
+            tempFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Search and Recolor", e)
+            errorMessage = "Search and Recolor Error: ${e.localizedMessage}"
         }
     }
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -1163,40 +1164,115 @@ OutlinedTextField(
                         }
                     }
                     
-                    // Main Prompt Input
-                    OutlinedTextField(
-                        value = viewModel.prompt,
-                        onValueChange = { viewModel.prompt = it },
-                        placeholder = { 
-                            Text(
-                                "Describe your transformation...",
-                                color = Color.White.copy(alpha = 0.5f)
-                            ) 
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                            focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
-                            unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
-                            cursorColor = Color(0xFF6366F1)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        minLines = 3,
-                        maxLines = 5,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.Edit,
-                                contentDescription = null,
-                                tint = Color(0xFF6366F1),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    )
+                    // Replace the prompt inputs with search and replace/recolor inputs based on selected model
+                    if (viewModel.selectedModel == "stability-ai-search-replace" || viewModel.selectedModel == "stability-ai-search-recolor") {
+                        OutlinedTextField(
+                            value = viewModel.searchPrompt,
+                            onValueChange = { viewModel.searchPrompt = it },
+                            placeholder = { 
+                                Text(
+                                    if (viewModel.selectedModel == "stability-ai-search-recolor") 
+                                        "What to select for recoloring..."
+                                    else 
+                                        "What to search for...",
+                                    color = Color.White.copy(alpha = 0.5f)
+                                ) 
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF6366F1),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                cursorColor = Color(0xFF6366F1)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            maxLines = 1,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Search,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6366F1),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                        OutlinedTextField(
+                            value = viewModel.replacePrompt,
+                            onValueChange = { viewModel.replacePrompt = it },
+                            placeholder = { 
+                                Text(
+                                    if (viewModel.selectedModel == "stability-ai-search-recolor") 
+                                        "New color/appearance..."
+                                    else 
+                                        "What to replace with...",
+                                    color = Color.White.copy(alpha = 0.5f)
+                                ) 
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF6366F1),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                cursorColor = Color(0xFF6366F1)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            minLines = 2,
+                            maxLines = 3,
+                            leadingIcon = {
+                                Icon(
+                                Icons.Outlined.SwapHoriz,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6366F1),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    } else {
+                        // Main Prompt Input
+                        OutlinedTextField(
+                            value = viewModel.prompt,
+                            onValueChange = { viewModel.prompt = it },
+                            placeholder = { 
+                                Text(
+                                    "Describe your transformation...",
+                                    color = Color.White.copy(alpha = 0.5f)
+                                ) 
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFF6366F1),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                cursorColor = Color(0xFF6366F1)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            minLines = 3,
+                            maxLines = 5,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Edit,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6366F1),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        )
+                    }
                     
                     // Negative Prompt (Collapsible)
                     AnimatedVisibility(
