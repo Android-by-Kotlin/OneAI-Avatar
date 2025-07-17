@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -21,7 +22,13 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.*
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import max.ohm.oneai.imagetoimage.ui.BrushMaskTool
+import max.ohm.oneai.stabilityai.ui.ImageComparisonView
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -51,6 +58,142 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+
+
+//@Composable
+//fun RegularImageToImageInputs(viewModel: UnifiedImageToImageViewModel) {
+//    Column(modifier = Modifier.fillMaxWidth()) {
+//        // Prompt Input
+//        OutlinedTextField(
+//            value = viewModel.prompt,
+//            onValueChange = { viewModel.prompt = it },
+//            label = { Text("Prompt") },
+//            modifier = Modifier.fillMaxWidth(),
+//            colors = OutlinedTextFieldDefaults.colors(
+//                focusedBorderColor = Color(0xFF6366F1),
+//                focusedLabelColor = Color(0xFF6366F1),
+//                unfocusedBorderColor = Color(0xFF374151),
+//                unfocusedLabelColor = Color(0xFF9CA3AF)
+//            )
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Negative Prompt Input
+//        OutlinedTextField(
+//            value = viewModel.negativePrompt,
+//            onValueChange = { viewModel.negativePrompt = it },
+//            label = { Text("Negative Prompt") },
+//            modifier = Modifier.fillMaxWidth(),
+//            colors = OutlinedTextFieldDefaults.colors(
+//                focusedBorderColor = Color(0xFF6366F1),
+//                focusedLabelColor = Color(0xFF6366F1),
+//                unfocusedBorderColor = Color(0xFF374151),
+//                unfocusedLabelColor = Color(0xFF9CA3AF)
+//            )
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // Advanced Settings
+//        Column(
+//            modifier = Modifier.fillMaxWidth()
+//        ) {
+//            // Strength Slider
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text(
+//                    text = "Strength",
+//                    color = Color.White,
+//                    fontSize = 14.sp
+//                )
+//                Text(
+//                    text = "%.1f".format(viewModel.strength),
+//                    color = Color(0xFF6366F1),
+//                    fontSize = 14.sp
+//                )
+//            }
+//
+//            Slider(
+//                value = viewModel.strength,
+//                onValueChange = { viewModel.strength = it },
+//                valueRange = 0f..1f,
+//                colors = SliderDefaults.colors(
+//                    thumbColor = Color(0xFF6366F1),
+//                    activeTrackColor = Color(0xFF6366F1),
+//                    inactiveTrackColor = Color(0xFF374151)
+//                )
+//            )
+//
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            // Guidance Scale Slider
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text(
+//                    text = "Guidance Scale",
+//                    color = Color.White,
+//                    fontSize = 14.sp
+//                )
+//                Text(
+//                    text = "%.1f".format(viewModel.guidanceScale),
+//                    color = Color(0xFF6366F1),
+//                    fontSize = 14.sp
+//                )
+//            }
+//
+//            Slider(
+//                value = viewModel.guidanceScale,
+//                onValueChange = { viewModel.guidanceScale = it },
+//                valueRange = 1f..20f,
+//                colors = SliderDefaults.colors(
+//                    thumbColor = Color(0xFF6366F1),
+//                    activeTrackColor = Color(0xFF6366F1),
+//                    inactiveTrackColor = Color(0xFF374151)
+//                )
+//            )
+//
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            // Steps Slider
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Text(
+//                    text = "Steps",
+//                    color = Color.White,
+//                    fontSize = 14.sp
+//                )
+//                Text(
+//                    text = viewModel.steps.toString(),
+//                    color = Color(0xFF6366F1),
+//                    fontSize = 14.sp
+//                )
+//            }
+//
+//            Slider(
+//                value = viewModel.steps.toFloat(),
+//                onValueChange = { viewModel.steps = it.toInt() },
+//                valueRange = 1f..50f,
+//                colors = SliderDefaults.colors(
+//                    thumbColor = Color(0xFF6366F1),
+//                    activeTrackColor = Color(0xFF6366F1),
+//                    inactiveTrackColor = Color(0xFF374151)
+//                )
+//            )
+//        }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//    }
+//}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -98,6 +241,27 @@ fun ImageToImageScreen(
             viewModel.updateSelectedImage(bitmap)
         } else {
             Toast.makeText(context, "No image captured from camera", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    // Multiple image picker launcher for batch processing
+    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            val bitmaps = mutableListOf<Bitmap>()
+            uris.forEach { uri ->
+                try {
+                    val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    bitmaps.add(bitmap)
+                } catch (e: Exception) {
+                    Log.e("BatchProcessing", "Error loading image", e)
+                }
+            }
+            if (bitmaps.isNotEmpty()) {
+                viewModel.addBatchImages(bitmaps)
+                Toast.makeText(context, "Added ${bitmaps.size} images to batch", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     
@@ -182,6 +346,74 @@ Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             
+            // Batch Processing Status (show only when batch images are selected)
+            if (viewModel.batchImages.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
+                    ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = Color(0xFFEC4899).copy(alpha = 0.3f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        ) {
+                            Icon(
+                                Icons.Outlined.Collections,
+                                contentDescription = null,
+                                tint = Color(0xFFEC4899),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Batch Processing - ${viewModel.batchImages.size} images",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            TextButton(
+                                onClick = { viewModel.clearBatchImages() }
+                            ) {
+                                Text(
+                                    "Clear",
+                                    color = Color(0xFFEC4899),
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                        
+                        // Progress indicator when processing
+                        if (viewModel.isBatchProcessing) {
+                            Column {
+                                LinearProgressIndicator(
+                                    progress = viewModel.batchProcessingProgress.toFloat() / viewModel.batchProcessingTotal.toFloat(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp),
+                                    color = Color(0xFFEC4899)
+                                )
+                                Text(
+                                    viewModel.batchProcessingCurrentImage ?: "Processing...",
+                                    color = Color.White,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
             // Model Selection Card
             Card(
                 modifier = Modifier
@@ -213,11 +445,14 @@ Column(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             "AI Model Selection",
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
                     }
+                    
+                    // Regular image to image inputs
+                   // RegularImageToImageInputs(viewModel)
                     
                     // Model Selection Dropdown
                     ExposedDropdownMenuBox(
@@ -756,7 +991,7 @@ OutlinedTextField(
                                 
                                 Spacer(modifier = Modifier.height(32.dp))
                                 
-                                // Secondary options row
+                    // Secondary options row
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -798,9 +1033,12 @@ OutlinedTextField(
                                         }
                                     }
                                     
-                                    // Recent files option
+                                    // Batch processing option
                                     OutlinedCard(
-                                        onClick = { /* TODO: Implement recent files */ },
+                                        onClick = { 
+                                            // Launch multiple image picker for batch processing
+                                            multipleImagePickerLauncher.launch("image/*")
+                                        },
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(80.dp),
@@ -821,14 +1059,14 @@ OutlinedTextField(
                                             verticalArrangement = Arrangement.Center
                                         ) {
                                             Icon(
-                                                Icons.Outlined.History,
-                                                contentDescription = "Recent",
+                                                Icons.Outlined.Collections,
+                                                contentDescription = "Batch",
                                                 modifier = Modifier.size(24.dp),
                                                 tint = Color(0xFFEC4899)
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
-                                                "Recent",
+                                                "Batch",
                                                 fontSize = 12.sp,
                                                 color = Color.White.copy(alpha = 0.8f)
                                             )
@@ -1169,6 +1407,159 @@ OutlinedTextField(
                                 modifier = Modifier.padding(top = 8.dp)
                             )
                         }
+                        
+                        // Outpaint Controls - only show for outpaint model
+                        if (viewModel.selectedModel == "stability-ai-outpaint") {
+                            Spacer(modifier = Modifier.height(20.dp))
+                            
+                            Text(
+                                "Outpaint Settings",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            
+                            // Left Outpaint
+                            Column(
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Left Extension",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        "${viewModel.outpaintLeft}px",
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                
+                                Slider(
+                                    value = viewModel.outpaintLeft.toFloat(),
+                                    onValueChange = { viewModel.updateOutpaintLeft(it.toInt()) },
+                                    valueRange = 0f..512f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                            
+                            // Right Outpaint
+                            Column(
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Right Extension",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        "${viewModel.outpaintRight}px",
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                
+                                Slider(
+                                    value = viewModel.outpaintRight.toFloat(),
+                                    onValueChange = { viewModel.updateOutpaintRight(it.toInt()) },
+                                    valueRange = 0f..512f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                            
+                            // Top Outpaint
+                            Column(
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Top Extension",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        "${viewModel.outpaintTop}px",
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                
+                                Slider(
+                                    value = viewModel.outpaintTop.toFloat(),
+                                    onValueChange = { viewModel.updateOutpaintTop(it.toInt()) },
+                                    valueRange = 0f..512f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                            
+                            // Bottom Outpaint
+                            Column(
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Bottom Extension",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        "${viewModel.outpaintBottom}px",
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                
+                                Slider(
+                                    value = viewModel.outpaintBottom.toFloat(),
+                                    onValueChange = { viewModel.updateOutpaintBottom(it.toInt()) },
+                                    valueRange = 0f..512f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1204,9 +1595,14 @@ OutlinedTextField(
                         }
                     )
                     .clickable(
-                        enabled = !viewModel.isLoading && viewModel.selectedImage != null
+                        enabled = (!viewModel.isLoading && !viewModel.isBatchProcessing) &&
+                                (viewModel.selectedImage != null || 
+                                (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()))
                     ) {
-                        viewModel.generateImage()
+when {
+                            viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty() -> viewModel.processBatch()
+                            else -> viewModel.generateImage()
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -1229,7 +1625,11 @@ OutlinedTextField(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}...",
+                                if (viewModel.selectedModel.startsWith("batch-") && viewModel.isBatchProcessing) {
+                                    "Processing Batch... (${viewModel.batchProcessingProgress + 1}/${viewModel.batchProcessingTotal})"
+                                } else {
+                                    "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}..."
+                                },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.White
@@ -1251,7 +1651,11 @@ OutlinedTextField(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "Generate Image",
+                                    if (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()) {
+                                        "Process Batch (${viewModel.batchImages.size} images)"
+                                    } else {
+                                        "Generate Image"
+                                    },
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -1353,7 +1757,7 @@ exit = fadeOut() + slideOutVertically()
                 }
             }
 
-            Spacer(modifier = Modifier.height(80.dp))
+                        Spacer(modifier = Modifier.height(80.dp))
           }
         }
         

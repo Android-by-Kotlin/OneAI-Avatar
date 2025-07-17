@@ -19,7 +19,10 @@ data class StabilityImageToImageUiState(
     val errorMessage: String? = null,
     val imageStrength: Float = 0.35f,
     val steps: Int = 30,
-    val cfgScale: Int = 7
+    val cfgScale: Int = 7,
+    val searchPrompt: String = "dog",
+    val isSearchAndReplaceMode: Boolean = false,
+    val outputFormat: String = "webp"
 )
 
 class StabilityImageToImageViewModel : ViewModel() {
@@ -56,6 +59,21 @@ class StabilityImageToImageViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(cfgScale = cfgScale)
     }
     
+    fun updateSearchPrompt(searchPrompt: String) {
+        _uiState.value = _uiState.value.copy(searchPrompt = searchPrompt)
+    }
+    
+    fun toggleSearchAndReplaceMode() {
+        _uiState.value = _uiState.value.copy(
+            isSearchAndReplaceMode = !_uiState.value.isSearchAndReplaceMode,
+            errorMessage = null
+        )
+    }
+    
+    fun updateOutputFormat(format: String) {
+        _uiState.value = _uiState.value.copy(outputFormat = format)
+    }
+    
     fun generateImage() {
         viewModelScope.launch {
             if (_uiState.value.imageUri == null) {
@@ -79,25 +97,53 @@ class StabilityImageToImageViewModel : ViewModel() {
             )
             
             try {
-                val response = StabilityRepository.generateImageToImage(
-                    context = context!!,
-                    imageUri = _uiState.value.imageUri!!,
-                    prompt = _uiState.value.prompt
-                )
-                
-                if (response?.status == "success" && response.imageData != null) {
-                    val generatedFile = File.createTempFile("stability_generated", ".png", context!!.cacheDir)
-                    generatedFile.writeBytes(response.imageData)
+                if (_uiState.value.isSearchAndReplaceMode) {
+                    // Use search-and-replace API
+                    val response = StabilityRepository.searchAndReplace(
+                        context = context!!,
+                        imageUri = _uiState.value.imageUri!!,
+                        prompt = _uiState.value.prompt,
+                        searchPrompt = _uiState.value.searchPrompt,
+                        outputFormat = _uiState.value.outputFormat
+                    )
                     
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        generatedImageUrl = generatedFile.toURI().toString()
-                    )
+                    if (response?.status == "success" && response.imageData != null) {
+                        val fileExtension = if (_uiState.value.outputFormat == "webp") ".webp" else ".png"
+                        val generatedFile = File.createTempFile("stability_search_replace", fileExtension, context!!.cacheDir)
+                        generatedFile.writeBytes(response.imageData)
+                        
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            generatedImageUrl = generatedFile.toURI().toString()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = response?.error ?: "Failed to generate image with Stability AI Search & Replace"
+                        )
+                    }
                 } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = response?.error ?: "Failed to generate image with Stability AI"
+                    // Use regular image-to-image API
+                    val response = StabilityRepository.generateImageToImage(
+                        context = context!!,
+                        imageUri = _uiState.value.imageUri!!,
+                        prompt = _uiState.value.prompt
                     )
+                    
+                    if (response?.status == "success" && response.imageData != null) {
+                        val generatedFile = File.createTempFile("stability_generated", ".png", context!!.cacheDir)
+                        generatedFile.writeBytes(response.imageData)
+                        
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            generatedImageUrl = generatedFile.toURI().toString()
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = response?.error ?: "Failed to generate image with Stability AI"
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -118,4 +164,5 @@ class StabilityImageToImageViewModel : ViewModel() {
             errorMessage = null
         )
     }
+    
 }

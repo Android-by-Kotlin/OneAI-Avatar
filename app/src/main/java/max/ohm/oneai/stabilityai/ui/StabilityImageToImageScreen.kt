@@ -71,6 +71,51 @@ fun StabilityImageToImageScreen(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             
+            // Mode Toggle
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Mode Selection",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (uiState.isSearchAndReplaceMode) "Search & Replace" else "Image-to-Image",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Switch(
+                            checked = uiState.isSearchAndReplaceMode,
+                            onCheckedChange = { viewModel.toggleSearchAndReplaceMode() }
+                        )
+                    }
+                    
+                    Text(
+                        text = if (uiState.isSearchAndReplaceMode) {
+                            "Search for objects in the image and replace them with new content"
+                        } else {
+                            "Transform the entire image based on a prompt"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+            
             // Info Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -134,49 +179,83 @@ fun StabilityImageToImageScreen(
                 }
             }
             
-            // MEGA DEBUG: PROMPT INPUT SECTION - THIS SHOULD BE IMPOSSIBLE TO MISS!
+            // Prompt Input Section
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFF0000)) // Red background
-                    .padding(4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF00FF00) // Bright green background
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "🚀🚀🚀 PROMPT INPUT SECTION 🚀🚀🚀",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color(0xFF000000), // Black text on green background
+                        text = if (uiState.isSearchAndReplaceMode) "Search & Replace Prompts" else "Transformation Prompt",
+                        style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    Text(
-                        text = "👇 THIS IS THE PROMPT FIELD 👇",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF000000),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    OutlinedTextField(
-                        value = uiState.prompt,
-                        onValueChange = viewModel::updatePrompt,
-                        label = { Text("Transformation Prompt", color = Color(0xFF000000)) },
-                        placeholder = { Text("Describe how you want to transform the image", color = Color(0xFF666666)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFFFFFFFF)),
-                        minLines = 3,
-                        maxLines = 6,
-                        enabled = !uiState.isLoading
-                    )
-                    Text(
-                        text = "Current prompt: ${uiState.prompt}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF000000),
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    
+                    if (uiState.isSearchAndReplaceMode) {
+                        // Search Prompt Field
+                        OutlinedTextField(
+                            value = uiState.searchPrompt,
+                            onValueChange = viewModel::updateSearchPrompt,
+                            label = { Text("Search for (what to replace)") },
+                            placeholder = { Text("e.g., dog, cat, car, person") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 2,
+                            enabled = !uiState.isLoading
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        // Replace Prompt Field
+                        OutlinedTextField(
+                            value = uiState.prompt,
+                            onValueChange = viewModel::updatePrompt,
+                            label = { Text("Replace with (new content)") },
+                            placeholder = { Text("e.g., golden retriever, blue sports car") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2,
+                            maxLines = 4,
+                            enabled = !uiState.isLoading
+                        )
+                        
+                        // Output Format Selection
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Output Format",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                onClick = { viewModel.updateOutputFormat("webp") },
+                                label = { Text("WebP") },
+                                selected = uiState.outputFormat == "webp"
+                            )
+                            FilterChip(
+                                onClick = { viewModel.updateOutputFormat("png") },
+                                label = { Text("PNG") },
+                                selected = uiState.outputFormat == "png"
+                            )
+                        }
+                    } else {
+                        // Regular transformation prompt
+                        OutlinedTextField(
+                            value = uiState.prompt,
+                            onValueChange = viewModel::updatePrompt,
+                            label = { Text("Transformation Prompt") },
+                            placeholder = { Text("Describe how you want to transform the image") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 3,
+                            maxLines = 6,
+                            enabled = !uiState.isLoading
+                        )
+                    }
                 }
             }
             
@@ -254,13 +333,17 @@ fun StabilityImageToImageScreen(
                     )
                 } else {
                     Text(
-                        text = "Transform Image with Stability AI",
+                        text = if (uiState.isSearchAndReplaceMode) {
+                            "Search & Replace with Stability AI"
+                        } else {
+                            "Transform Image with Stability AI"
+                        },
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
             
-            // Loading indicator
+            // Loading indicators
             if (uiState.isLoading) {
                 Card(
                     modifier = Modifier
@@ -282,7 +365,11 @@ fun StabilityImageToImageScreen(
                         ) {
                             CircularProgressIndicator()
                             Text(
-                                text = "Transforming image with Stability AI...",
+                                text = if (uiState.isSearchAndReplaceMode) {
+                                    "Searching and replacing with Stability AI..."
+                                } else {
+                                    "Transforming image with Stability AI..."
+                                },
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(

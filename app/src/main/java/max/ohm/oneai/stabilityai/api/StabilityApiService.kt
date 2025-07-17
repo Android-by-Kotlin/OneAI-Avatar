@@ -2,6 +2,7 @@ package max.ohm.oneai.stabilityai.api
 
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -19,5 +20,16 @@ interface StabilityApiService {
         @Part("cfg_scale") cfgScale: RequestBody,
         @Part("samples") samples: RequestBody,
         @Part("steps") steps: RequestBody
+    ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/edit/search-and-replace")
+    suspend fun searchAndReplace(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "image/*",
+        @Part image: MultipartBody.Part,
+        @Part("prompt") prompt: RequestBody,
+        @Part("search_prompt") searchPrompt: RequestBody,
+        @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
     ): Response<ResponseBody>
 }

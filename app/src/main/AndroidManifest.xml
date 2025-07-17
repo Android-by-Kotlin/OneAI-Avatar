@@ -39,7 +39,7 @@
         </activity>
         
         <activity
-            android:name=".ImagetoImage.ImageToImageActivity"
+            android:name=".imagetoimage.ImageToImageActivity"
             android:exported="false"
             android:theme="@style/Theme.OneAI" />
         
