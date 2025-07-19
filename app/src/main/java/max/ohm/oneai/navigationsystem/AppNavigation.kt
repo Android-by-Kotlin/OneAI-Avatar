@@ -41,6 +41,8 @@ import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import max.ohm.oneai.imagetoimage.GalleryScreen
 import max.ohm.oneai.stabilityai.ui.StabilityImageToImageScreen
 import max.ohm.oneai.stabilityai.viewmodel.StabilityImageToImageViewModel
+import max.ohm.oneai.stabilityai.ui.SketchToImageScreen
+import max.ohm.oneai.stabilityai.viewmodel.SketchToImageViewModel
 import androidx.navigation.NavBackStackEntry
 
 // --- Navigation ---
@@ -274,7 +276,7 @@ fun AppNavigation() {
             )
         }
         
-        composable("imageToImageGallery") { // Add Gallery destination
+        composable("imageToImageGallery") { backStackEntry -> // Add Gallery destination
             // Check if user is logged in
             LaunchedEffect(loginState) {
                 if (loginState !is LoginState.Success) {
@@ -284,7 +286,7 @@ fun AppNavigation() {
                 }
             }
             // Get parent entry to share ViewModel
-            val parentEntry = remember {
+            val parentEntry = remember(backStackEntry) {
                 navController.getBackStackEntry("imageToImage")
             }
             val imageToImageViewModel: UnifiedImageToImageViewModel = viewModel(parentEntry)
@@ -307,6 +309,22 @@ fun AppNavigation() {
             }
             val stabilityViewModel: StabilityImageToImageViewModel = viewModel()
             StabilityImageToImageScreen(viewModel = stabilityViewModel)
+        }
+        
+        composable("sketchToImage") { // Add Sketch to Image destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val sketchToImageViewModel: SketchToImageViewModel = viewModel()
+            SketchToImageScreen(
+                onBackClick = { navController.popBackStack() },
+                viewModel = sketchToImageViewModel
+            )
         }
 
         // Add other destinations here (translator)

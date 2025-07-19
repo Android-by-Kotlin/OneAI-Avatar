@@ -188,6 +188,8 @@ fun ImageGeneratorScreen(
         ModelChoice("Flux Schnell", "flux.1-schnell"),
         ModelChoice("Image-1", "provider-5/gpt-image-1"),
         ModelChoice("ImageGen-4", "provider-4/imagen-4"),
+        ModelChoice("ImageGen-4-Preview", "provider-3/imagen-4.0-generate-preview-06-06"),
+        ModelChoice("ImageGen-3-Preview", "provider-3/imagen-3.0-generate-002"),
         ModelChoice("ImageGen-3", "provider-4/imagen-3"),
         ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
         ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),

@@ -191,6 +191,36 @@ class UnifiedImageViewModel : ViewModel() {
                         isLoading = false
                     }
 
+
+
+                    "provider-3/imagen-4.0-generate-preview-06-06" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-3/imagen-4.0-generate-preview-06-06", // Use the pro model
+                            prompt = prompt.text,
+                            n = 1,
+                            // size = "1024x1536"  //chatgpt app size
+                            size = "1024x1792"
+                            //size = "720x1280"
+                            // size = "1080x2340"
+                            //size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                        }
+                        isLoading = false
+                    }
+
                     "provider-4/imagen-3" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
@@ -202,6 +232,35 @@ class UnifiedImageViewModel : ViewModel() {
                             prompt = prompt.text,
                             n = 1,
                           //  size = "1024x1536"  //chatgpt app size
+                            size = "1024x1792"
+                            //size = "720x1280"
+                            // size = "1080x2340"
+                            //size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                        }
+                        isLoading = false
+                    }
+
+
+                    "provider-3/imagen-3.0-generate-002" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-3/imagen-3.0-generate-002", // Use the pro model
+                            prompt = prompt.text,
+                            n = 1,
+                            //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
                             //size = "720x1280"
                             // size = "1080x2340"

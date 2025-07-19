@@ -315,6 +315,46 @@ fun SimpleHomeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
+            // Sketch to Image row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                FeatureButton(
+                    icon = Icons.Default.Brush,
+                    title = "Sketch to Image",
+                    description = "Transform sketches",
+                    modifier = Modifier.weight(1f),
+                    onClick = { navController.navigate("sketchToImage") }
+                )
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Placeholder for future feature
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF2A2A2A).copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Coming Soon",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
             // Enhanced Features row
             Card(
                 modifier = Modifier

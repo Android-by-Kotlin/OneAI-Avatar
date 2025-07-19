@@ -147,3 +147,81 @@ data class RemoveBackgroundResponse(
     }
 }
 
+data class ReplaceBackgroundAndRelightRequest(
+    val subjectImage: String, // Base64 encoded or file path
+    val backgroundPrompt: String? = null,
+    val backgroundReference: String? = null, // Base64 encoded or file path
+    val outputFormat: String = "webp"
+)
+
+data class ReplaceBackgroundAndRelightResponse(
+    val status: String? = null,
+    val imageData: ByteArray? = null,
+    val error: String? = null,
+    val message: String? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ReplaceBackgroundAndRelightResponse
+
+        if (status != other.status) return false
+        if (imageData != null) {
+            if (other.imageData == null) return false
+            if (!imageData.contentEquals(other.imageData)) return false
+        } else if (other.imageData != null) return false
+        if (error != other.error) return false
+        if (message != other.message) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = status?.hashCode() ?: 0
+        result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (error?.hashCode() ?: 0)
+        result = 31 * result + (message?.hashCode() ?: 0)
+        return result
+    }
+}
+
+data class SketchToImageRequest(
+    val image: String, // Base64 encoded or file path
+    val prompt: String,
+    val controlStrength: Float = 0.7f,
+    val outputFormat: String = "webp"
+)
+
+data class SketchToImageResponse(
+    val status: String? = null,
+    val imageData: ByteArray? = null,
+    val error: String? = null,
+    val message: String? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SketchToImageResponse
+
+        if (status != other.status) return false
+        if (imageData != null) {
+            if (other.imageData == null) return false
+            if (!imageData.contentEquals(other.imageData)) return false
+        } else if (other.imageData != null) return false
+        if (error != other.error) return false
+        if (message != other.message) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = status?.hashCode() ?: 0
+        result = 31 * result + (imageData?.contentHashCode() ?: 0)
+        result = 31 * result + (error?.hashCode() ?: 0)
+        result = 31 * result + (message?.hashCode() ?: 0)
+        return result
+    }
+}
+

@@ -9,6 +9,8 @@ import max.ohm.oneai.stabilityai.data.StabilityImageResponse
 import max.ohm.oneai.stabilityai.data.SearchAndReplaceResponse
 import max.ohm.oneai.stabilityai.data.SearchAndRecolorResponse
 import max.ohm.oneai.stabilityai.data.RemoveBackgroundResponse
+import max.ohm.oneai.stabilityai.data.ReplaceBackgroundAndRelightResponse
+import max.ohm.oneai.stabilityai.data.SketchToImageResponse
 import max.ohm.oneai.stabilityai.STABILITY_API_KEY
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -214,5 +216,126 @@ object StabilityRepository {
             }
         }
     }
-    
+
+    suspend fun replaceBackgroundAndRelight(
+        context: Context, 
+        imageUri: Uri, 
+        backgroundPrompt: String? = null,
+        backgroundReferenceUri: Uri? = null,
+        outputFormat: String = "webp"
+    ): ReplaceBackgroundAndRelightResponse? {
+        return withContext(Dispatchers.IO) {
+            var file: File? = null
+            var backgroundFile: File? = null
+            try {
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                file = File.createTempFile("replace_bg_relight_image", ".png", context.cacheDir)
+                inputStream?.use { input -> file!!.outputStream().use { output -> input.copyTo(output) } }
+
+                val subjectImage = MultipartBody.Part.createFormData(
+                    "subject_image",
+                    file!!.name,
+                    file!!.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                // Handle background reference image if provided
+                val backgroundReference = backgroundReferenceUri?.let { uri ->
+                    val backgroundInputStream = context.contentResolver.openInputStream(uri)
+                    backgroundFile = File.createTempFile("background_ref", ".png", context.cacheDir)
+                    backgroundInputStream?.use { input -> backgroundFile!!.outputStream().use { output -> input.copyTo(output) } }
+                    
+                    MultipartBody.Part.createFormData(
+                        "background_reference",
+                        backgroundFile!!.name,
+                        backgroundFile!!.asRequestBody("image/png".toMediaTypeOrNull())
+                    )
+                }
+
+                // Create background prompt part only if no background reference image is provided
+                val backgroundPromptPart = if (backgroundReferenceUri == null && backgroundPrompt != null) {
+                    MultipartBody.Part.createFormData("background_prompt", backgroundPrompt)
+                } else null
+
+                val outputFormatPart = MultipartBody.Part.createFormData("output_format", outputFormat)
+
+                val response: Response<ResponseBody> = stabilityApiService.replaceBackgroundAndRelight(
+                    authorization = "Bearer $STABILITY_API_KEY",
+                    accept = "image/*",
+                    subjectImage = subjectImage,
+                    backgroundPrompt = backgroundPromptPart,
+                    backgroundReference = backgroundReference,
+                    outputFormat = outputFormatPart
+                )
+
+                // Clean up temporary files
+                file?.delete()
+                backgroundFile?.delete()
+
+                if (response.isSuccessful) {
+                    ReplaceBackgroundAndRelightResponse(
+                        imageData = response.body()?.bytes(), 
+                        status = "success"
+                    )
+                } else {
+                    ReplaceBackgroundAndRelightResponse(
+                        error = "Failed: ${response.code()} ${response.message()}"
+                    )
+                }
+            } catch (e: Exception) {
+                // Clean up temporary files in case of exception
+                file?.delete()
+                backgroundFile?.delete()
+                
+                ReplaceBackgroundAndRelightResponse(
+                    error = "Exception: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
+
+    suspend fun sketchToImage(
+        context: Context,
+        imageUri: Uri,
+        prompt: String
+    ): SketchToImageResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val file = File.createTempFile("sketch_image", ".png", context.cacheDir)
+                inputStream?.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
+
+                val imagePart = MultipartBody.Part.createFormData(
+                    "image",
+                    file.name,
+                    file.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                val response: Response<ResponseBody> = stabilityApiService.sketchToImage(
+                    authorization = "Bearer $STABILITY_API_KEY",
+                    image = imagePart,
+                    prompt = prompt.toRequestBody(),
+                    controlStrength = "0.7".toRequestBody(),
+                    outputFormat = "webp".toRequestBody()
+                )
+
+                // Clean up temporary file
+                file.delete()
+
+                if (response.isSuccessful) {
+                    SketchToImageResponse(
+                        imageData = response.body()?.bytes(),
+                        status = "success"
+                    )
+                } else {
+                    SketchToImageResponse(
+                        error = "Failed: ${response.code()} ${response.message()}"
+                    )
+                }
+            } catch (e: Exception) {
+                SketchToImageResponse(
+                    error = "Exception: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
 }

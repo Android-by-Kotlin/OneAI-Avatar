@@ -67,9 +67,13 @@ class UnifiedImageToImageViewModel : ViewModel() {
     var searchPrompt by mutableStateOf("")
     var replacePrompt by mutableStateOf("")
     
+    // Replace Background and Relight specific parameters
+    var backgroundReferenceUri by mutableStateOf<android.net.Uri?>(null)
+    
     // Stability AI specific parameters
     var imageStrength by mutableStateOf(0.35f)
     var cfgScale by mutableStateOf(7)
+    var controlStrength by mutableStateOf(0.7f) // For sketch-to-image
     
     // Outpaint parameters
     var outpaintLeft by mutableStateOf(0)
@@ -126,9 +130,11 @@ class UnifiedImageToImageViewModel : ViewModel() {
     val availableModels = listOf(
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
+        "stability-ai-sketch" to "🎨 Stability AI Sketch-to-Image",
         "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
         "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
         "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
+        "stability-ai-replace-background-relight" to "🚀 Stability AI Replace Background & Relight",
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
@@ -194,8 +200,16 @@ class UnifiedImageToImageViewModel : ViewModel() {
         imageStrength = strength
     }
     
+    fun updateControlStrength(strength: Float) {
+        controlStrength = strength
+    }
+    
     fun updateCfgScale(scale: Int) {
         cfgScale = scale
+    }
+    
+    fun updateBackgroundReferenceUri(uri: android.net.Uri?) {
+        backgroundReferenceUri = uri
     }
     
     fun updateOutpaintLeft(value: Int) {
@@ -337,7 +351,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
 
         // Validate prompt for models that need it
-        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img", "stability-ai-inpaint")
+        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img", "stability-ai-inpaint", "stability-ai-sketch")
         if (selectedModel in promptRequiredModels && prompt.isBlank()) {
             errorMessage = "Please enter a prompt for this model"
             return
@@ -367,8 +381,16 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
         }
         
+        // Validate replace background and relight model
+        if (selectedModel == "stability-ai-replace-background-relight") {
+            if (prompt.isBlank() && backgroundReferenceUri == null) {
+                errorMessage = "Please enter a background prompt or select a background reference image"
+                return
+            }
+        }
+        
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -401,6 +423,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
             "stability-ai-img2img" -> {
                 performStabilityAIImg2Img()
             }
+            "stability-ai-sketch" -> {
+                performStabilityAISketchToImage()
+            }
             "stability-ai-search-replace" -> {
                 performStabilityAISearchAndReplace()
             }
@@ -409,6 +434,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
             "stability-ai-remove-background" -> {
                 performStabilityAIRemoveBackground()
+            }
+            "stability-ai-replace-background-relight" -> {
+                performStabilityAIReplaceBackgroundAndRelight()
             }
                     
                     "stability-ai-mask-erase" -> {
@@ -762,15 +790,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
             )
 
             if (response?.status == "success" && response.imageData != null) {
-                // Convert bytes to bitmap
-                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                // Always save to file first for WEBP format
+                val generatedFile = File.createTempFile("stability_search_recolor", ".webp", context!!.cacheDir)
+                generatedFile.writeBytes(response.imageData)
+                
+                // Try to decode the saved file
+                val bitmap = BitmapFactory.decodeFile(generatedFile.absolutePath)
                 if (bitmap != null) {
                     generatedImageBitmap = bitmap
+                    // Keep the file URL as backup
+                    generatedImageUrl = generatedFile.absolutePath
                 } else {
-                    // Create temporary file for URL display
-                    val generatedFile = File.createTempFile("stability_search_recolor", ".webp", context!!.cacheDir)
-                    generatedFile.writeBytes(response.imageData)
-                    generatedImageUrl = generatedFile.toURI().toString()
+                    // If bitmap decode fails, use file URL for display
+                    generatedImageUrl = generatedFile.absolutePath
+                    Log.e("UnifiedImg2Img", "Failed to decode WEBP image, using file URL: $generatedImageUrl")
                 }
             } else {
                 val error = response?.error ?: "Failed to perform search and recolor"
@@ -807,15 +840,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
             )
 
             if (response?.status == "success" && response.imageData != null) {
-                // Convert bytes to bitmap
-                val bitmap = BitmapFactory.decodeByteArray(response.imageData, 0, response.imageData.size)
+                // Always save to file first for WEBP format
+                val generatedFile = File.createTempFile("stability_remove_bg", ".webp", context!!.cacheDir)
+                generatedFile.writeBytes(response.imageData)
+                
+                // Try to decode the saved file
+                val bitmap = BitmapFactory.decodeFile(generatedFile.absolutePath)
                 if (bitmap != null) {
                     generatedImageBitmap = bitmap
+                    // Keep the file URL as backup
+                    generatedImageUrl = generatedFile.absolutePath
                 } else {
-                    // Create temporary file for URL display
-                    val generatedFile = File.createTempFile("stability_remove_bg", ".webp", context!!.cacheDir)
-                    generatedFile.writeBytes(response.imageData)
-                    generatedImageUrl = generatedFile.toURI().toString()
+                    // If bitmap decode fails, use file URL for display
+                    generatedImageUrl = generatedFile.absolutePath
+                    Log.e("UnifiedImg2Img", "Failed to decode WEBP image, using file URL: $generatedImageUrl")
                 }
             } else {
                 val error = response?.error ?: "Failed to remove background"
@@ -828,6 +866,58 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Remove Background", e)
             errorMessage = "Remove Background Error: ${e.localizedMessage}"
+        }
+    }
+
+    // Replace Background and Relight implementation
+    private suspend fun performStabilityAIReplaceBackgroundAndRelight() = withContext(Dispatchers.IO) {
+        loadingMessage = "Replacing background and relighting with Stability AI..."
+
+        try {
+            // Create a temporary URI for the selected image
+            val tempFile = File.createTempFile("replace_bg_relight_temp", ".png", context!!.cacheDir)
+            val outputStream = tempFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+
+            val imageUri = android.net.Uri.fromFile(tempFile)
+
+            // Call Stability AI repository
+            val response = StabilityRepository.replaceBackgroundAndRelight(
+                context = context!!,
+                imageUri = imageUri,
+                backgroundPrompt = prompt, // Using the main prompt for background description
+                backgroundReferenceUri = backgroundReferenceUri, // Using the background reference image if provided
+                outputFormat = "webp"
+            )
+
+            if (response?.status == "success" && response.imageData != null) {
+                // Always save to file first for WEBP format
+                val generatedFile = File.createTempFile("stability_replace_bg_relight", ".webp", context!!.cacheDir)
+                generatedFile.writeBytes(response.imageData)
+                
+                // Try to decode the saved file
+                val bitmap = BitmapFactory.decodeFile(generatedFile.absolutePath)
+                if (bitmap != null) {
+                    generatedImageBitmap = bitmap
+                    // Keep the file URL as backup
+                    generatedImageUrl = generatedFile.absolutePath
+                } else {
+                    // If bitmap decode fails, use file URL for display
+                    generatedImageUrl = generatedFile.absolutePath
+                    Log.e("UnifiedImg2Img", "Failed to decode WEBP image, using file URL: $generatedImageUrl")
+                }
+            } else {
+                val error = response?.error ?: "Failed to replace background and relight"
+                errorMessage = "Replace Background & Relight Error: $error"
+            }
+
+            // Clean up temp file
+            tempFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Replace Background & Relight", e)
+            errorMessage = "Replace Background & Relight Error: ${e.localizedMessage}"
         }
     }
 
@@ -2124,6 +2214,69 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("BatchProcessing", "Error in batch upscale", e)
             null
+        }
+    }
+    
+    private suspend fun performStabilityAISketchToImage() = withContext(Dispatchers.IO) {
+        loadingMessage = "Transforming sketch with Stability AI..."
+
+        try {
+            // Create temporary file for sketch image
+            val imageFile = File.createTempFile("sketch_image", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val imageOutputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, imageOutputStream)
+            imageOutputStream.close()
+
+            // Create the multipart request
+            val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("prompt", prompt)
+                .addFormDataPart("control_strength", controlStrength.toString())
+                .addFormDataPart("output_format", "webp")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/control/sketch")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Sketch-to-Image API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Sketch-to-Image API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated sketch-to-image bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated image from sketch"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Sketch-to-Image API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+
+            // Clean up temp file
+            imageFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI sketch-to-image", e)
+            errorMessage = "Stability AI Sketch-to-Image Error: ${e.localizedMessage}"
         }
     }
 }

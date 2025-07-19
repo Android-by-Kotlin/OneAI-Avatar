@@ -52,4 +52,26 @@ interface StabilityApiService {
         @Part image: MultipartBody.Part,
         @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
     ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/edit/replace-background-and-relight")
+    suspend fun replaceBackgroundAndRelight(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String,
+        @Part subjectImage: MultipartBody.Part,
+        @Part backgroundPrompt: MultipartBody.Part?,
+        @Part backgroundReference: MultipartBody.Part?,
+        @Part outputFormat: MultipartBody.Part
+    ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/control/sketch")
+    suspend fun sketchToImage(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "image/*",
+        @Part image: MultipartBody.Part,
+        @Part("prompt") prompt: RequestBody,
+        @Part("control_strength") controlStrength: RequestBody = "0.7".toRequestBody(),
+        @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
+    ): Response<ResponseBody>
 }

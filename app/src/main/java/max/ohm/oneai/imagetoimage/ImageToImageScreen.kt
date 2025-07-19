@@ -48,6 +48,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.content.ContentValues
@@ -262,6 +264,20 @@ fun ImageToImageScreen(
             if (bitmaps.isNotEmpty()) {
                 viewModel.addBatchImages(bitmaps)
                 Toast.makeText(context, "Added ${bitmaps.size} images to batch", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    // Background reference image picker launcher
+    val backgroundImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                viewModel.updateBackgroundReferenceUri(uri)
+                Toast.makeText(context, "Background reference image selected", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                viewModel.errorMessage = "Failed to load background image: ${e.message}"
             }
         }
     }
@@ -662,32 +678,37 @@ OutlinedTextField(
                                         .clickable { showFullscreenImage = true }
                                 ) {
                                     // Show URL image if available
-                                    viewModel.generatedImageUrl?.let { imageUrl ->
-                                        Log.d("ImageDisplay", "Showing URL image: $imageUrl")
-                                        AsyncImage(
-                                            model = imageUrl,
-                                            contentDescription = "Generated Image",
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(RoundedCornerShape(12.dp)),
-                                            contentScale = ContentScale.Fit
-                                        )
-                                    }
-                                    
-                                    // Show bitmap if URL is not available
-                                    viewModel.generatedImageBitmap?.let { bitmap ->
-                                        Log.d("ImageDisplay", "Showing bitmap image: ${bitmap.width}x${bitmap.height}")
-                                        if (viewModel.generatedImageUrl == null) {
-                                            Image(
-                                                bitmap = bitmap.asImageBitmap(),
-                                                contentDescription = "Generated Image",
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .clip(RoundedCornerShape(12.dp)),
-                                                contentScale = ContentScale.Fit
-                                            )
-                                        }
-                                    }
+viewModel.generatedImageUrl?.let { imageUrl ->
+    Log.d("ImageDisplay", "Showing URL image: $imageUrl")
+    Image(
+        painter = rememberAsyncImagePainter(
+            ImageRequest.Builder(LocalContext.current)
+                .data(imageUrl)
+                .crossfade(true)
+                .build()
+        ),
+        contentDescription = "Generated Image",
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(12.dp)),
+        contentScale = ContentScale.Fit
+    )
+}
+
+// Show bitmap if URL is not available
+viewModel.generatedImageBitmap?.let { bitmap ->
+    Log.d("ImageDisplay", "Showing bitmap image: ${bitmap.width}x${bitmap.height}")
+    if (viewModel.generatedImageUrl == null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Generated Image",
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(12.dp)),
+            contentScale = ContentScale.Fit
+        )
+    }
+}
                                     
                                     // Debug: Show a placeholder if no image is available
                                     if (viewModel.generatedImageUrl == null && viewModel.generatedImageBitmap == null) {
@@ -1164,8 +1185,44 @@ OutlinedTextField(
                         }
                     }
                     
-                    // Replace the prompt inputs with search and replace/recolor inputs based on selected model
-                    if (viewModel.selectedModel == "stability-ai-search-replace" || viewModel.selectedModel == "stability-ai-search-recolor") {
+                    // Handle different prompt inputs based on selected model
+                    when (viewModel.selectedModel) {
+                        "stability-ai-sketch" -> {
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "What should your sketch become? (e.g., a medieval castle on a hill)",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 4,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Brush,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
+                        "stability-ai-search-replace", "stability-ai-search-recolor" -> {
                         OutlinedTextField(
                             value = viewModel.searchPrompt,
                             onValueChange = { viewModel.searchPrompt = it },
@@ -1237,41 +1294,229 @@ OutlinedTextField(
                                 )
                             }
                         )
-                    } else {
-                        // Main Prompt Input
-                        OutlinedTextField(
-                            value = viewModel.prompt,
-                            onValueChange = { viewModel.prompt = it },
-                            placeholder = { 
-                                Text(
-                                    "Describe your transformation...",
-                                    color = Color.White.copy(alpha = 0.5f)
-                                ) 
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color(0xFF6366F1),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                                focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
-                                unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
-                                cursorColor = Color(0xFF6366F1)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            minLines = 3,
-                            maxLines = 5,
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Edit,
-                                    contentDescription = null,
-                                    tint = Color(0xFF6366F1),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                        }
+                        "stability-ai-remove-background" -> {
+                            // No prompts needed for background removal
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF10B981).copy(alpha = 0.2f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Ready to remove background - no prompts needed!",
+                                        color = Color.White,
+                                        fontSize = 14.sp
+                                    )
+                                }
                             }
-                        )
+                        }
+                        "stability-ai-replace-background-relight" -> {
+                            // Background reference image picker
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable { backgroundImagePickerLauncher.launch("image/*") },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (viewModel.backgroundReferenceUri != null) 
+                                        Color(0xFF10B981) else Color.White.copy(alpha = 0.2f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Background Reference Image (Optional)",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (viewModel.backgroundReferenceUri != null) {
+                                            IconButton(
+                                                onClick = { viewModel.updateBackgroundReferenceUri(null) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove background reference",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (viewModel.backgroundReferenceUri != null) {
+                                        // Show preview of selected background reference
+                                        AsyncImage(
+                                            model = viewModel.backgroundReferenceUri,
+                                            contentDescription = "Background reference",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(top = 8.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Show upload prompt
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.AddPhotoAlternate,
+                                                contentDescription = null,
+                                                tint = Color(0xFF6366F1),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Tap to upload reference image",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Only show text prompt if no background reference image is selected
+                            if (viewModel.backgroundReferenceUri == null) {
+                                OutlinedTextField(
+                                    value = viewModel.prompt,
+                                    onValueChange = { viewModel.prompt = it },
+                                    placeholder = { 
+                                        Text(
+                                            "Describe the new background and lighting...",
+                                            color = Color.White.copy(alpha = 0.5f)
+                                        ) 
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedTextColor = Color.White,
+                                        unfocusedTextColor = Color.White,
+                                        focusedBorderColor = Color(0xFF6366F1),
+                                        unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                        focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                        unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                        cursorColor = Color(0xFF6366F1)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    minLines = 2,
+                                    maxLines = 4,
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Outlined.Landscape,
+                                            contentDescription = null,
+                                            tint = Color(0xFF6366F1),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                )
+                            } else {
+                                // Show info message when background reference is selected
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 12.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF10B981).copy(alpha = 0.2f)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Using background reference image",
+                                            color = Color.White,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            // Main Prompt Input for other models
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "Describe your transformation...",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 3,
+                                maxLines = 5,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Edit,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
                     }
                     
                     // Negative Prompt (Collapsible)
@@ -1385,35 +1630,73 @@ OutlinedTextField(
                         Column(
                             modifier = Modifier.padding(bottom = 20.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "Transformation Strength",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                            if (viewModel.selectedModel == "stability-ai-sketch") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Control Strength",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        String.format("%.0f%%", viewModel.controlStrength * 100),
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Slider(
+                                    value = viewModel.controlStrength,
+                                    onValueChange = { viewModel.updateControlStrength(it) },
+                                    valueRange = 0.1f..1f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
                                 )
                                 Text(
-                                    String.format("%.0f%%", viewModel.strength * 100),
-                                    color = Color(0xFF6366F1),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
+                                    "Higher values follow your sketch more closely",
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Transformation Strength",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        String.format("%.0f%%", viewModel.strength * 100),
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Slider(
+                                    value = viewModel.strength,
+                                    onValueChange = { viewModel.strength = it },
+                                    valueRange = 0.1f..1f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFF6366F1),
+                                        activeTrackColor = Color(0xFF6366F1),
+                                        inactiveTrackColor = Color.White.copy(alpha = 0.1f)
+                                    ),
+                                    modifier = Modifier.padding(top = 8.dp)
                                 )
                             }
-                            
-                            Slider(
-                                value = viewModel.strength,
-                                onValueChange = { viewModel.strength = it },
-                                valueRange = 0.1f..1f,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Color(0xFF6366F1),
-                                    activeTrackColor = Color(0xFF6366F1),
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.1f)
-                                ),
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
                         }
                         
                         // Guidance Scale Slider
