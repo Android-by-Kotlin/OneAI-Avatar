@@ -144,6 +144,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
         "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
         "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
+        "stability-ai-upscale" to "🚀 Stability AI Conservative Upscale",
         
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
@@ -400,7 +401,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint" || selectedModel == "stability-ai-style" || selectedModel == "stability-ai-style-transfer") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint" || selectedModel == "stability-ai-style" || selectedModel == "stability-ai-style-transfer" || selectedModel == "stability-ai-upscale") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -505,6 +506,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performStabilityAIStyleTransfer()
+                    }
+                    
+                    "stability-ai-upscale" -> {
+                        performStabilityAIUpscale()
                     }
                     
                     // Standard Image-to-Image Models
@@ -2507,6 +2512,82 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Stability AI style transfer", e)
             errorMessage = "Stability AI Style Transfer Error: ${e.localizedMessage}"
+        }
+    }
+    
+    private suspend fun performStabilityAIUpscale() = withContext(Dispatchers.IO) {
+        loadingMessage = "Upscaling image with Stability AI..."
+
+        try {
+            // Create temporary file for image
+            val imageFile = File.createTempFile("upscale_image", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val outputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+            outputStream.close()
+
+            // Create the multipart request
+            val requestBodyBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("output_format", "webp")
+
+            // Add prompt if available (optional for upscaling)
+            if (prompt.isNotBlank()) {
+                requestBodyBuilder.addFormDataPart("prompt", prompt)
+            }
+
+            val requestBody = requestBodyBuilder.build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/upscale/conservative")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Upscale API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Upscale API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    
+                    // Always save to file first for WEBP format
+                    val generatedFile = File.createTempFile("stability_upscaled", ".webp", context!!.cacheDir)
+                    generatedFile.writeBytes(responseBody)
+                    
+                    // Try to decode the saved file
+                    val bitmap = BitmapFactory.decodeFile(generatedFile.absolutePath)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        // Keep the file URL as backup
+                        generatedImageUrl = generatedFile.absolutePath
+                        Log.d("UnifiedImg2Img", "Successfully upscaled image: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        // If bitmap decode fails, use file URL for display
+                        generatedImageUrl = generatedFile.absolutePath
+                        Log.d("UnifiedImg2Img", "Using file URL for display: $generatedImageUrl")
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Upscale API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+
+            // Clean up temp file
+            imageFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI upscale", e)
+            errorMessage = "Stability AI Upscale Error: ${e.localizedMessage}"
         }
     }
 }

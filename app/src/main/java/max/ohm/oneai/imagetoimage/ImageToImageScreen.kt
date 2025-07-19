@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.ZoomIn
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -278,6 +280,21 @@ fun ImageToImageScreen(
                 Toast.makeText(context, "Background reference image selected", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 viewModel.errorMessage = "Failed to load background image: ${e.message}"
+            }
+        }
+    }
+    
+    // Style reference image picker launcher
+    val styleImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                viewModel.updateStyleReferenceImage(bitmap)
+                Toast.makeText(context, "Style reference image selected", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                viewModel.errorMessage = "Failed to load style image: ${e.message}"
             }
         }
     }
@@ -1515,6 +1532,211 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     }
                                 }
                             }
+                        }
+                        "stability-ai-style-transfer" -> {
+                            // Style reference image picker (required)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable { styleImagePickerLauncher.launch("image/*") },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (viewModel.styleReferenceImage != null) 
+                                        Color(0xFF10B981) else Color(0xFFEF4444)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Style Reference Image (Required)",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (viewModel.styleReferenceImage != null) {
+                                            IconButton(
+                                                onClick = { viewModel.updateStyleReferenceImage(null) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove style reference",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (viewModel.styleReferenceImage != null) {
+                                        // Show preview of selected style reference
+                                        Image(
+                                            bitmap = viewModel.styleReferenceImage!!.asImageBitmap(),
+                                            contentDescription = "Style reference",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(top = 8.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Show upload prompt
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Palette,
+                                                contentDescription = null,
+                                                tint = Color(0xFFEC4899),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Tap to upload style reference image",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Info card about style transfer
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF6366F1).copy(alpha = 0.2f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Style Transfer will apply the artistic style from your reference image to the content image",
+                                        color = Color.White,
+                                        fontSize = 13.sp,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                        "stability-ai-upscale" -> {
+                            // Info card about upscaling
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF10B981).copy(alpha = 0.2f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.ZoomIn,
+                                            contentDescription = null,
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Conservative Upscaling",
+                                            color = Color.White,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "• Increases resolution up to 4x",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        "• Preserves original image details",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        "• Optional prompt for enhancement guidance",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+                            
+                            // Optional prompt for upscaling guidance
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "Optional: Describe details to enhance (e.g., 'sharp details, high quality')",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF10B981),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF10B981)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 3,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
                         }
                         else -> {
                             // Main Prompt Input for other models
