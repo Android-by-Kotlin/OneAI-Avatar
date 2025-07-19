@@ -85,4 +85,14 @@ interface StabilityApiService {
         @Part("control_strength") controlStrength: RequestBody = "0.7".toRequestBody(),
         @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
     ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v2beta/stable-image/control/style")
+    suspend fun styleControl(
+        @Header("Authorization") authorization: String,
+        @Header("Accept") accept: String = "image/*",
+        @Part image: MultipartBody.Part,
+        @Part("prompt") prompt: RequestBody,
+        @Part("output_format") outputFormat: RequestBody = "webp".toRequestBody()
+    ): Response<ResponseBody>
 }

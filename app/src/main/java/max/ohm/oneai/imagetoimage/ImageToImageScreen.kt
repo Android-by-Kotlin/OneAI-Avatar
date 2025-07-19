@@ -1222,6 +1222,41 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 }
                             )
                         }
+                        "stability-ai-structure" -> {
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "What should this structure become? (e.g., a well manicured shrub in an english garden)",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 4,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Architecture,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
                         "stability-ai-search-replace", "stability-ai-search-recolor" -> {
                         OutlinedTextField(
                             value = viewModel.searchPrompt,
@@ -1630,7 +1665,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                         Column(
                             modifier = Modifier.padding(bottom = 20.dp)
                         ) {
-                            if (viewModel.selectedModel == "stability-ai-sketch") {
+                            if (viewModel.selectedModel == "stability-ai-sketch" || viewModel.selectedModel == "stability-ai-structure") {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -1661,7 +1696,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     modifier = Modifier.padding(top = 8.dp)
                                 )
                                 Text(
-                                    "Higher values follow your sketch more closely",
+                                    if (viewModel.selectedModel == "stability-ai-sketch") 
+                                        "Higher values follow your sketch more closely"
+                                    else
+                                        "Higher values preserve original structure more",
                                     fontSize = 12.sp,
                                     color = Color.White.copy(alpha = 0.6f),
                                     modifier = Modifier.padding(top = 4.dp)
