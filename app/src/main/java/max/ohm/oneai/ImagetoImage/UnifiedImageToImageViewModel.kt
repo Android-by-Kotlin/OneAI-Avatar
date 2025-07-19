@@ -69,7 +69,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     // Replace Background and Relight specific parameters
     var backgroundReferenceUri by mutableStateOf<android.net.Uri?>(null)
+        private set
     
+    var styleReferenceImage by mutableStateOf<Bitmap?>(null)
+        private set
     // Stability AI specific parameters
     var imageStrength by mutableStateOf(0.35f)
     var cfgScale by mutableStateOf(7)
@@ -133,6 +136,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "stability-ai-sketch" to "🎨 Stability AI Sketch-to-Image",
         "stability-ai-structure" to "🏗️ Stability AI Structure Control",
         "stability-ai-style" to "🎨 Stability AI Style Control",
+        "stability-ai-style-transfer" to "🎨 Stability AI Style Transfer",
         "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
         "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
         "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
@@ -212,6 +216,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     fun updateBackgroundReferenceUri(uri: android.net.Uri?) {
         backgroundReferenceUri = uri
+    }
+    
+    fun updateStyleReferenceImage(bitmap: Bitmap?) {
+        styleReferenceImage = bitmap
     }
     
     fun updateOutpaintLeft(value: Int) {
@@ -392,7 +400,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint" || selectedModel == "stability-ai-style" || selectedModel == "stability-ai-style-transfer") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -488,6 +496,15 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performStabilityAIStyleControl()
+                    }
+                    
+                    "stability-ai-style-transfer" -> {
+                        if (styleReferenceImage == null) {
+                            errorMessage = "Please select a style reference image for style transfer"
+                            isLoading = false
+                            return@launch
+                        }
+                        performStabilityAIStyleTransfer()
                     }
                     
                     // Standard Image-to-Image Models
@@ -2421,6 +2438,75 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Stability AI style control", e)
             errorMessage = "Stability AI Style Control Error: ${e.localizedMessage}"
+        }
+    }
+    
+    private suspend fun performStabilityAIStyleTransfer() = withContext(Dispatchers.IO) {
+        loadingMessage = "Performing style transfer with Stability AI..."
+
+        try {
+            // Create temporary file for init/content image
+            val initImageFile = File.createTempFile("init_image", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val initOutputStream = initImageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, initOutputStream)
+            initOutputStream.close()
+
+            // Create temporary file for style image (required)
+            val styleImageFile = File.createTempFile("style_image", ".png", context!!.cacheDir)
+            val styleOutputStream = styleImageFile.outputStream()
+            styleReferenceImage!!.compress(Bitmap.CompressFormat.PNG, 100, styleOutputStream)
+            styleOutputStream.close()
+
+            // Create the multipart request
+            val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("init_image", initImageFile.name, initImageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("style_image", styleImageFile.name, styleImageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("output_format", "webp")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/control/style-transfer")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Style Transfer API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Style Transfer API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated style transfer bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated image from style transfer"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Style Transfer API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+
+            // Clean up temp files
+            initImageFile.delete()
+            styleImageFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI style transfer", e)
+            errorMessage = "Stability AI Style Transfer Error: ${e.localizedMessage}"
         }
     }
 }

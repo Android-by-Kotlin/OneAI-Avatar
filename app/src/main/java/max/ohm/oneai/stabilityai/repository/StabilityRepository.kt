@@ -432,4 +432,70 @@ object StabilityRepository {
             }
         }
     }
+
+    suspend fun styleTransfer(
+        context: Context,
+        initImageUri: Uri,
+        styleImageUri: Uri,
+        outputFormat: String = "webp"
+    ): StyleControlResponse? {
+        return withContext(Dispatchers.IO) {
+            var initFile: File? = null
+            var styleFile: File? = null
+            try {
+                // Process init image
+                val initInputStream = context.contentResolver.openInputStream(initImageUri)
+                initFile = File.createTempFile("init_image", ".png", context.cacheDir)
+                initInputStream?.use { input -> initFile!!.outputStream().use { output -> input.copyTo(output) } }
+
+                val initImagePart = MultipartBody.Part.createFormData(
+                    "init_image",
+                    initFile!!.name,
+                    initFile!!.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                // Process style image
+                val styleInputStream = context.contentResolver.openInputStream(styleImageUri)
+                styleFile = File.createTempFile("style_image", ".png", context.cacheDir)
+                styleInputStream?.use { input -> styleFile!!.outputStream().use { output -> input.copyTo(output) } }
+
+                val styleImagePart = MultipartBody.Part.createFormData(
+                    "style_image",
+                    styleFile!!.name,
+                    styleFile!!.asRequestBody("image/png".toMediaTypeOrNull())
+                )
+
+                val response: Response<ResponseBody> = stabilityApiService.styleTransfer(
+                    authorization = "Bearer $STABILITY_API_KEY",
+                    accept = "image/*",
+                    init_image = initImagePart,
+                    style_image = styleImagePart,
+                    outputFormat = outputFormat.toRequestBody()
+                )
+
+                // Clean up temporary files
+                initFile?.delete()
+                styleFile?.delete()
+
+                if (response.isSuccessful) {
+                    StyleControlResponse(
+                        imageData = response.body()?.bytes(),
+                        status = "success"
+                    )
+                } else {
+                    StyleControlResponse(
+                        error = "Failed: ${response.code()} ${response.message()}"
+                    )
+                }
+            } catch (e: Exception) {
+                // Clean up temporary files in case of exception
+                initFile?.delete()
+                styleFile?.delete()
+                
+                StyleControlResponse(
+                    error = "Exception: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
 }
