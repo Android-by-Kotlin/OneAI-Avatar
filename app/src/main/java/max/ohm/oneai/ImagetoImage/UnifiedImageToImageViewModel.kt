@@ -131,6 +131,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
         "stability-ai-sketch" to "🎨 Stability AI Sketch-to-Image",
+        "stability-ai-structure" to "🏗️ Stability AI Structure Control",
         "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
         "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
         "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
@@ -351,7 +352,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
 
         // Validate prompt for models that need it
-        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img", "stability-ai-inpaint", "stability-ai-sketch")
+        val promptRequiredModels = listOf("flux-img2img", "stable-diffusion-img2img", "sdxl-img2img", "stability-ai-img2img", "stability-ai-inpaint", "stability-ai-sketch", "stability-ai-structure")
         if (selectedModel in promptRequiredModels && prompt.isBlank()) {
             errorMessage = "Please enter a prompt for this model"
             return
@@ -390,7 +391,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
         
         // Validate Stability AI requirements
-        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
+        if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
                 errorMessage = "Please set your Stability AI API Key"
                 return
@@ -425,6 +426,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
             "stability-ai-sketch" -> {
                 performStabilityAISketchToImage()
+            }
+            "stability-ai-structure" -> {
+                performStabilityAIStructureControl()
             }
             "stability-ai-search-replace" -> {
                 performStabilityAISearchAndReplace()
@@ -2277,6 +2281,69 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Stability AI sketch-to-image", e)
             errorMessage = "Stability AI Sketch-to-Image Error: ${e.localizedMessage}"
+        }
+    }
+    
+    private suspend fun performStabilityAIStructureControl() = withContext(Dispatchers.IO) {
+        loadingMessage = "Controlling structure with Stability AI..."
+
+        try {
+            // Create temporary file for structure image
+            val imageFile = File.createTempFile("structure_image", ".png", context!!.cacheDir)
+
+            // Save selected image to temp file
+            val imageOutputStream = imageFile.outputStream()
+            selectedImage!!.compress(Bitmap.CompressFormat.PNG, 100, imageOutputStream)
+            imageOutputStream.close()
+
+            // Create the multipart request
+            val requestBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("image", imageFile.name, imageFile.asRequestBody("image/png".toMediaTypeOrNull()))
+                .addFormDataPart("prompt", prompt)
+                .addFormDataPart("control_strength", controlStrength.toString())
+                .addFormDataPart("output_format", "webp")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.stability.ai/v2beta/stable-image/control/structure")
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer $STABILITY_API_KEY")
+                .addHeader("accept", "image/*")
+                .build()
+
+            val response = client.newCall(request).execute()
+            Log.d("UnifiedImg2Img", "Stability AI Structure Control API response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "Stability AI Structure Control API response message: ${response.message}")
+
+            if (response.isSuccessful) {
+                val responseBody = response.body?.bytes()
+                if (responseBody != null) {
+                    Log.d("UnifiedImg2Img", "Response body size: ${responseBody.size} bytes")
+                    val bitmap = BitmapFactory.decodeByteArray(responseBody, 0, responseBody.size)
+                    if (bitmap != null) {
+                        generatedImageBitmap = bitmap
+                        Log.d("UnifiedImg2Img", "Generated structure controlled bitmap: ${bitmap.width}x${bitmap.height}")
+                    } else {
+                        Log.e("UnifiedImg2Img", "Failed to decode bitmap from response")
+                        errorMessage = "Failed to decode generated image from structure control"
+                    }
+                } else {
+                    Log.e("UnifiedImg2Img", "Empty response body")
+                    errorMessage = "Error: Empty response from server."
+                }
+            } else {
+                val errorBody = response.body?.string()
+                Log.e("UnifiedImg2Img", "Structure Control API Error: ${response.code} ${response.message}")
+                Log.e("UnifiedImg2Img", "Error body: $errorBody")
+                errorMessage = "Error: ${response.code} ${response.message}"
+            }
+
+            // Clean up temp file
+            imageFile.delete()
+
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in Stability AI structure control", e)
+            errorMessage = "Stability AI Structure Control Error: ${e.localizedMessage}"
         }
     }
 }
