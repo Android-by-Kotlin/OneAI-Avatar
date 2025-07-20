@@ -203,7 +203,7 @@ fun SimpleHomeScreen(
                 FeatureButton(
                     icon = Icons.Default.Videocam,
                     title = "Video Gen",
-                    description = "Create videos",
+                    description = "Create videos (2 APIs)",
                     modifier = Modifier.weight(1f),
                     onClick = { navController.navigate("videoGeneration") }
                 )
@@ -237,7 +237,7 @@ fun SimpleHomeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Fourth row of task buttons
+// Fourth row of task buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -263,7 +263,7 @@ fun SimpleHomeScreen(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Fifth row with Live Avatar and Face Gen
+// Fifth row with Live Avatar and Face Gen
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

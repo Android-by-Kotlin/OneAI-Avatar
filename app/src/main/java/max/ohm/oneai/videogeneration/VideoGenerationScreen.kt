@@ -248,30 +248,47 @@ fun VideoGenerationScreen(
                     shape = RoundedCornerShape(percent = 50)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
+                
+                // Two generation options
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Original video generation button
                     OutlinedButton(
                         onClick = { viewModel.generateVideo() },
                         enabled = !isLoading && prompt.isNotBlank(),
                         colors = generateButtonColors,
                         border = generateButtonBorder,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(if (isLoading) "Generating..." else "Generate Video")
+                        Text(if (isLoading && !viewModel.isUsingA4F.collectAsState().value) "Generating..." else "Generate Video (Original API)")
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    // New text-to-video generation button
                     Button(
-                        onClick = {
-                            generatedVideoUrl?.let { url -> downloadVideo(context, url) }
-                                ?: Toast.makeText(context, "No video to download", Toast.LENGTH_SHORT).show()
-                        },
-                        enabled = generatedVideoUrl != null && !isLoading,
-                        modifier = Modifier.weight(1f)
+                        onClick = { viewModel.generateTextToVideo() },
+                        enabled = !isLoading && prompt.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
                     ) {
-                        Text("Download Video")
+                        Text(if (isLoading && viewModel.isUsingA4F.collectAsState().value) "Generating..." else "Generate from Text (A4F API)")
+                    }
+                    
+                    // Download button
+                    if (generatedVideoUrl != null) {
+                        Button(
+                            onClick = {
+                                generatedVideoUrl?.let { url -> downloadVideo(context, url) }
+                                    ?: Toast.makeText(context, "No video to download", Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = generatedVideoUrl != null && !isLoading,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Download Video")
+                        }
                     }
                 }
             }
@@ -315,16 +332,23 @@ fun VideoPlayer(
 
     val exoPlayer = remember(videoUrl) {
         Log.d(SCREEN_TAG, "Creating new ExoPlayer instance for URL: $videoUrl")
-        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent(APP_USER_AGENT)
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(30000) // Increase timeout to 30 seconds
-            .setReadTimeoutMs(30000)    // Increase read timeout to 30 seconds
-            
-        val mediaSourceFactory = ProgressiveMediaSource.Factory(httpDataSourceFactory)
-        ExoPlayer.Builder(context)
-            .setMediaSourceFactory(mediaSourceFactory)
-            .build()
+        val player = if (videoUrl.startsWith("http") || videoUrl.startsWith("https")) {
+            // For HTTP URLs, use custom data source factory
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setUserAgent(APP_USER_AGENT)
+                .setAllowCrossProtocolRedirects(true)
+                .setConnectTimeoutMs(30000) // Increase timeout to 30 seconds
+                .setReadTimeoutMs(30000)    // Increase read timeout to 30 seconds
+                
+            val mediaSourceFactory = ProgressiveMediaSource.Factory(httpDataSourceFactory)
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+        } else {
+            // For local files, use default player
+            ExoPlayer.Builder(context).build()
+        }
+        player
             .apply {
                 Log.d(SCREEN_TAG, "Setting media item: $videoUrl")
                 try {
@@ -430,11 +454,6 @@ fun downloadVideo(context: Context, videoUrl: String) {
     val scope = (context as? androidx.lifecycle.LifecycleOwner)?.lifecycleScope ?: kotlinx.coroutines.GlobalScope
     scope.launch(Dispatchers.IO) {
         try {
-            val url = URL(videoUrl)
-            val connection = url.openConnection()
-            connection.connect()
-            val inputStream = connection.getInputStream()
-
             // Create a file in the Downloads directory
             val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (!downloadsDir.exists()) {
@@ -442,13 +461,30 @@ fun downloadVideo(context: Context, videoUrl: String) {
             }
             val fileName = "generated_video_${System.currentTimeMillis()}.mp4"
             val file = File(downloadsDir, fileName)
-            val outputStream = FileOutputStream(file)
+            
+            if (videoUrl.startsWith("http") || videoUrl.startsWith("https")) {
+                // For HTTP URLs, download from the network
+                val url = URL(videoUrl)
+                val connection = url.openConnection()
+                connection.connect()
+                val inputStream = connection.getInputStream()
+                val outputStream = FileOutputStream(file)
 
-            inputStream.use { input ->
-                outputStream.use { output ->
-                    input.copyTo(output)
+                inputStream.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            } else {
+                // For local file paths, copy the file
+                val sourceFile = File(videoUrl)
+                if (sourceFile.exists()) {
+                    sourceFile.copyTo(file, overwrite = true)
+                } else {
+                    throw Exception("Source video file not found")
                 }
             }
+            
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Download complete: $fileName", Toast.LENGTH_LONG).show()
                 // Optionally, notify the media scanner

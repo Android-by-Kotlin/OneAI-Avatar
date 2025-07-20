@@ -32,6 +32,9 @@ import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.profile.ProfileScreen
 import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
+import max.ohm.oneai.videogeneration.NewVideoGenerationScreen
+import max.ohm.oneai.videogeneration.NewVideoGenerationViewModel
+import max.ohm.oneai.videogeneration.VideoPlayerScreen
 import max.ohm.oneai.liveavatar.ui.StreamingScreen
 import max.ohm.oneai.liveavatar.ui.StreamingViewModel
 import max.ohm.oneai.imageediting.FaceGenScreen
@@ -325,6 +328,36 @@ fun AppNavigation() {
                 onBackClick = { navController.popBackStack() },
                 viewModel = sketchToImageViewModel
             )
+        }
+        
+        composable("newVideoGeneration") { // Add new video generation destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            NewVideoGenerationScreen(navController = navController)
+        }
+        
+        composable(
+            "videoPlayer?videoUrl={videoUrl}",
+            arguments = listOf(navArgument("videoUrl") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            val videoUrl = backStackEntry.arguments?.getString("videoUrl") ?: ""
+            VideoPlayerScreen(navController = navController, videoUrl = videoUrl)
         }
 
         // Add other destinations here (translator)
