@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,6 +72,7 @@ data class BannerItem(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
+    val imageUrl: String,
     val gradientColors: List<Color>,
     val route: String
 )
@@ -101,6 +103,7 @@ fun EnhancedHomeScreen(
                 title = "AI Chat Assistant",
                 subtitle = "Intelligent conversations powered by advanced AI",
                 icon = Icons.Outlined.Chat,
+                imageUrl = "https://cdn.pixabay.com/photo/2024/05/16/19/29/ai-generated-8766874_1280.jpg",
                 gradientColors = listOf(Color(0xFF667EEA), Color(0xFF764BA2)),
                 route = "chatbot"
             ),
@@ -108,6 +111,7 @@ fun EnhancedHomeScreen(
                 title = "Video Generation",
                 subtitle = "Create stunning videos from text prompts",
                 icon = Icons.Outlined.VideoLibrary,
+                imageUrl = "https://cdn.pixabay.com/photo/2019/04/24/21/55/cinema-4153289_1280.jpg",
                 gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
                 route = "videoGeneration"
             ),
@@ -115,6 +119,7 @@ fun EnhancedHomeScreen(
                 title = "Image Generation",
                 subtitle = "Transform ideas into beautiful artwork",
                 icon = Icons.Outlined.Image,
+                imageUrl = "https://cdn.pixabay.com/photo/2017/11/07/20/43/christmas-tree-2928142_1280.jpg",
                 gradientColors = listOf(Color(0xFF4FACFE), Color(0xFF00F2FE)),
                 route = "enhancedImageGenerator"
             ),
@@ -122,6 +127,7 @@ fun EnhancedHomeScreen(
                 title = "Image to Image",
                 subtitle = "Transform and enhance existing images",
                 icon = Icons.Outlined.Transform,
+                imageUrl = "https://cdn.pixabay.com/photo/2022/08/27/00/11/plant-7413415_1280.png",
                 gradientColors = listOf(Color(0xFFFA709A), Color(0xFFFEE140)),
                 route = "imageToImage"
             ),
@@ -129,6 +135,8 @@ fun EnhancedHomeScreen(
                 title = "Live Avatar",
                 subtitle = "Interactive AI-powered digital avatars",
                 icon = Icons.Outlined.VideoCall,
+                //imageUrl = "https://cdn.pixabay.com/photo/2022/12/01/04/40/backlit-7628307_1280.jpg",
+                imageUrl = "https://miro.medium.com/v2/resize:fit:1400/0*YpJsxi_-9hBsMc9H.gif",
                 gradientColors = listOf(Color(0xFF8EC5FC), Color(0xFFE0C3FC)),
                 route = "liveAvatar"
             )
@@ -430,31 +438,44 @@ private fun BannerCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = item.gradientColors,
-                        start = Offset(0f, 0f),
-                        end = Offset(1000f, 1000f)
-                    )
-                )
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.Black)
         ) {
-            // Background pattern
-            Canvas(
+            // Banner Image Background
+            AsyncImage(
+                model = item.imageUrl,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            
+            // Gradient Overlay
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer(alpha = 0.1f)
-            ) {
-                val patternSize = 40.dp.toPx()
-                for (x in 0..size.width.toInt() step patternSize.toInt()) {
-                    for (y in 0..size.height.toInt() step patternSize.toInt()) {
-                        drawCircle(
-                            color = Color.White,
-                            radius = 2.dp.toPx(),
-                            center = Offset(x.toFloat(), y.toFloat())
+                    .background(
+                        Brush.linearGradient(
+                            colors = item.gradientColors.map { it.copy(alpha = 0.8f) },
+                            start = Offset(0f, 0f),
+                            end = Offset(1000f, 1000f)
                         )
-                    }
-                }
-            }
+                    )
+            )
+            
+            // Dark gradient for text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            ),
+                            startY = 100f
+                        )
+                    )
+            )
             
             Row(
                 modifier = Modifier
