@@ -23,6 +23,7 @@ import max.ohm.oneai.chatbot.ChatBotScreen
 import max.ohm.oneai.chatbot.ResponsiveTestScreen
 import max.ohm.oneai.chatbot.UnifiedChatBotViewModel
 import max.ohm.oneai.homescreen.SimpleHomeScreen
+import max.ohm.oneai.homescreen.EnhancedHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.EnhancedImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.UnifiedImageViewModel
@@ -47,6 +48,7 @@ import max.ohm.oneai.stabilityai.viewmodel.StabilityImageToImageViewModel
 import max.ohm.oneai.stabilityai.ui.SketchToImageScreen
 import max.ohm.oneai.stabilityai.viewmodel.SketchToImageViewModel
 import androidx.navigation.NavBackStackEntry
+import max.ohm.oneai.navigation.MainScaffold
 
 // --- Navigation ---
 @Composable
@@ -57,7 +59,8 @@ fun AppNavigation() {
     val loginViewModel: LoginViewModel = viewModel()
     val loginState by loginViewModel.loginState.collectAsState()
     
-    NavHost(navController = navController, startDestination = "splash") {
+    MainScaffold(navController = navController) {
+        NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
             SplashScreen(navController = navController)
         }
@@ -73,7 +76,8 @@ fun AppNavigation() {
                     }
                 }
             }
-            SimpleHomeScreen(navController = navController, loginViewModel = loginViewModel)
+            // Use the new EnhancedHomeScreen with beautiful UI
+            EnhancedHomeScreen(navController = navController, loginViewModel = loginViewModel)
         }
         composable("profile") {
             // Check if user is logged in
@@ -361,6 +365,7 @@ fun AppNavigation() {
         }
 
         // Add other destinations here (translator)
+        }
     }
 }
 

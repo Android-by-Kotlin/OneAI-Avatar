@@ -1,5 +1,6 @@
 package max.ohm.oneai.homescreen
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +34,7 @@ import coil.request.ImageRequest
 import com.google.firebase.auth.FirebaseAuth
 import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
+import max.ohm.oneai.ui.theme.*
 
 @Composable
 fun SimpleHomeScreen(
@@ -53,12 +56,12 @@ fun SimpleHomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF121212),
-                        Color(0xFF1E1E1E)
-                    )
-                )
+        Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFF8F9FA),
+                Color(0xFFE9ECEF)
+            )
+        )
             )
     ) {
         Column(
@@ -75,19 +78,30 @@ fun SimpleHomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "OneAI",
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Welcome to OneAI",
+                        color = Color(0xFF343A40),
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    Text(
+                        text = "Your AI Companion",
+                        color = Color(0xFF6C757D),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
                 
                 // Profile Icon
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6200EE))
+                        .background(Color(0xFFADB5BD))
                         .clickable { navController.navigate("profile") },
                     contentAlignment = Alignment.Center
                 ) {
@@ -125,9 +139,10 @@ fun SimpleHomeScreen(
                     .fillMaxWidth()
                     .padding(bottom = 24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A2A2A)
+                    containerColor = Color.White
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -135,7 +150,7 @@ fun SimpleHomeScreen(
                     val user = (loginState as? LoginState.Success)?.user
                     Text(
                         text = "Welcome ${user?.name ?: "to OneAI"}",
-                        color = Color.White,
+                        color = Color(0xFF343A40),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -144,7 +159,7 @@ fun SimpleHomeScreen(
                     
                     Text(
                         text = "Your all-in-one AI assistant for text, voice, image, and more",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = Color(0xFF6C757D),
                         fontSize = 14.sp
                     )
                 }
@@ -153,12 +168,12 @@ fun SimpleHomeScreen(
             // Tasks Grid Title
             Text(
                 text = "AI Tools",
-                color = Color.White,
-                fontSize = 20.sp,
+                color = Color(0xFF343A40),
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
+                style = MaterialTheme.typography.headlineSmall
             )
-            
             // First row of task buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -174,13 +189,13 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                FeatureButton(
-                    icon = Icons.Default.Image,
-                    title = "Image Gen",
-                    description = "Create images",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("imageGenerator") }
-                )
+//                FeatureButton(
+//                    icon = Icons.Default.Image,
+//                    title = "Image Gen",
+//                    description = "Create images",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("imageGenerator") }
+//                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -190,13 +205,13 @@ fun SimpleHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                FeatureButton(
-                    icon = Icons.Default.MusicNote,
-                    title = "Music Gen",
-                    description = "Create music",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("aiMusic") }
-                )
+//                FeatureButton(
+//                    icon = Icons.Default.MusicNote,
+//                    title = "Music Gen",
+//                    description = "Create music",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("aiMusic") }
+//                )
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
@@ -212,54 +227,54 @@ fun SimpleHomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
             
             // Third row of task buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                FeatureButton(
-                    icon = Icons.Default.RecordVoiceOver,
-                    title = "AI Talk",
-                    description = "Voice chat",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("aiTalk") }
-                )
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                FeatureButton(
-                    icon = Icons.Default.VolumeUp,
-                    title = "Text to Speech",
-                    description = "Convert text to audio",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("tts") }
-                )
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                FeatureButton(
+//                    icon = Icons.Default.RecordVoiceOver,
+//                    title = "AI Talk",
+//                    description = "Voice chat",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("aiTalk") }
+//                )
+//
+//                Spacer(modifier = Modifier.width(12.dp))
+//
+//                FeatureButton(
+//                    icon = Icons.Default.VolumeUp,
+//                    title = "Text to Speech",
+//                    description = "Convert text to audio",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("tts") }
+//                )
+//            }
             
             Spacer(modifier = Modifier.height(12.dp))
             
 // Fourth row of task buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                FeatureButton(
-                    icon = Icons.Default.QuestionAnswer,
-                    title = "AI Conversation",
-                    description = "Natural dialogue",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("aiConversation") }
-                )
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                FeatureButton(
-                    icon = Icons.Default.LibraryMusic,
-                    title = "Text to Music",
-                    description = "Generate music from text",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("textToMusic") }
-                )
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                FeatureButton(
+//                    icon = Icons.Default.QuestionAnswer,
+//                    title = "AI Conversation",
+//                    description = "Natural dialogue",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("aiConversation") }
+//                )
+//
+//                Spacer(modifier = Modifier.width(12.dp))
+//
+//                FeatureButton(
+//                    icon = Icons.Default.LibraryMusic,
+//                    title = "Text to Music",
+//                    description = "Generate music from text",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("textToMusic") }
+//                )
+//            }
             
             Spacer(modifier = Modifier.height(12.dp))
             
@@ -278,13 +293,13 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                FeatureButton(
-                    icon = Icons.Default.Face,
-                    title = "Face Gen",
-                    description = "Generate faces",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("faceGen") }
-                )
+//                FeatureButton(
+//                    icon = Icons.Default.Face,
+//                    title = "Face Gen",
+//                    description = "Generate faces",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("faceGen") }
+//                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -304,76 +319,80 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                FeatureButton(
-                    icon = Icons.Default.AutoAwesome,
-                    title = "Stability AI",
-                    description = "Premium image transform",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("stabilityAI") }
-                )
+//                FeatureButton(
+//                    icon = Icons.Default.AutoAwesome,
+//                    title = "Stability AI",
+//                    description = "Premium image transform",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("stabilityAI") }
+//                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))
             
             // Sketch to Image row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                FeatureButton(
-                    icon = Icons.Default.Brush,
-                    title = "Sketch to Image",
-                    description = "Transform sketches",
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("sketchToImage") }
-                )
-                
-                Spacer(modifier = Modifier.width(12.dp))
-                
-                // Placeholder for future feature
-                Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(80.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF2A2A2A).copy(alpha = 0.5f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Coming Soon",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                FeatureButton(
+//                    icon = Icons.Default.Brush,
+//                    title = "Sketch to Image",
+//                    description = "Transform sketches",
+//                    modifier = Modifier.weight(1f),
+//                    onClick = { navController.navigate("sketchToImage") }
+//                )
+//
+//                Spacer(modifier = Modifier.width(12.dp))
+//
+//                // Placeholder for future feature
+//                Card(
+//                    modifier = Modifier
+//                        .weight(1f)
+//                        .height(80.dp),
+//                    colors = CardDefaults.cardColors(
+//                        containerColor = Color(0xFF2A2A2A).copy(alpha = 0.5f)
+//                    ),
+//                    shape = RoundedCornerShape(16.dp)
+//                ) {
+//                    Box(
+//                        modifier = Modifier.fillMaxSize(),
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Text(
+//                            text = "Coming Soon",
+//                            color = Color.White.copy(alpha = 0.5f),
+//                            fontSize = 14.sp
+//                        )
+//                    }
+//                }
+//            }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Enhanced Features row
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .clickable { navController.navigate("enhancedImageGenerator") },
-                shape = RoundedCornerShape(16.dp),
+                    .clickable { navController.navigate("enhancedImageGenerator") }
+                    .graphicsLayer {
+                        shadowElevation = 16f
+                    },
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF6366F1).copy(alpha = 0.15f)
+                    containerColor = Color(0xFF2E2E3E)
                 ),
                 border = BorderStroke(
-                    width = 2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF6366F1),
-                            Color(0xFFEC4899)
+                            Color(0xFF7F39FB).copy(alpha = 0.5f),
+                            Color(0xFFBB86FC).copy(alpha = 0.5f)
                         )
                     )
-                )
+                ),
+                elevation = CardDefaults.cardElevation(12.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -392,12 +411,12 @@ fun SimpleHomeScreen(
                             Icon(
                                 imageVector = Icons.Outlined.AutoAwesome,
                                 contentDescription = "Enhanced Image Gen",
-                                tint = Color(0xFF6366F1),
+                                tint = Color(0xFFBB86FC),
                                 modifier = Modifier.size(32.dp)
                             )
                             Text(
                                 text = "Enhanced",
-                                color = Color(0xFFEC4899),
+                                color = Color(0xFFBB86FC),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -424,7 +443,7 @@ fun SimpleHomeScreen(
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
                         contentDescription = null,
-                        tint = Color(0xFF6366F1),
+                        tint = Color(0xFFBB86FC),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -433,83 +452,83 @@ fun SimpleHomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Advanced Models section
-            Text(
-                text = "Advanced Models",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
-            // Advanced models button
-            Button(
-                onClick = { navController.navigate("openRouter") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6200EE)
-                )
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = "Advanced Models",
-                        tint = Color.White
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = "Access Premium AI Models",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Debug/Test section (for development)
-            Text(
-                text = "Development Tools",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            Button(
-                onClick = { navController.navigate("responsiveTest") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF333333)
-                )
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PhoneAndroid,
-                        contentDescription = "Responsive Test",
-                        tint = Color.White.copy(alpha = 0.7f)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = "Test Chat Bubbles Responsiveness",
-                        fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                }
-            }
+//            Text(
+//                text = "Advanced Models",
+//                color = Color.White,
+//                fontSize = 20.sp,
+//                fontWeight = FontWeight.Bold,
+//                modifier = Modifier.padding(bottom = 16.dp)
+//            )
+//
+//            // Advanced models button
+//            Button(
+//                onClick = { navController.navigate("openRouter") },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(60.dp),
+//                shape = RoundedCornerShape(12.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color(0xFF6200EE)
+//                )
+//            ) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.Bolt,
+//                        contentDescription = "Advanced Models",
+//                        tint = Color.White
+//                    )
+//
+//                    Spacer(modifier = Modifier.width(8.dp))
+//
+//                    Text(
+//                        text = "Access Premium AI Models",
+//                        fontSize = 16.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            // Debug/Test section (for development)
+//            Text(
+//                text = "Development Tools",
+//                color = Color.White.copy(alpha = 0.7f),
+//                fontSize = 16.sp,
+//                fontWeight = FontWeight.Bold,
+//                modifier = Modifier.padding(bottom = 8.dp)
+//            )
+//
+//            Button(
+//                onClick = { navController.navigate("responsiveTest") },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(50.dp),
+//                shape = RoundedCornerShape(8.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color(0xFF333333)
+//                )
+//            ) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.PhoneAndroid,
+//                        contentDescription = "Responsive Test",
+//                        tint = Color.White.copy(alpha = 0.7f)
+//                    )
+//
+//                    Spacer(modifier = Modifier.width(8.dp))
+//
+//                    Text(
+//                        text = "Test Chat Bubbles Responsiveness",
+//                        fontSize = 14.sp,
+//                        color = Color.White.copy(alpha = 0.7f)
+//                    )
+//                }
+//            }
             
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -524,43 +543,46 @@ fun FeatureButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Button(
+    Card(
         onClick = onClick,
         modifier = modifier
-            .height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF2A2A2A)
+            .aspectRatio(1f)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
         ),
-        contentPadding = PaddingValues(12.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = Color(0xFF6200EE),
-                modifier = Modifier.size(32.dp)
+                tint = Color(0xFF495057),
+                modifier = Modifier.size(40.dp)
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = title,
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                color = Color(0xFF495057),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
             )
             
             Text(
                 text = description,
-                color = Color.White.copy(alpha = 0.7f),
+                color = Color(0xFF6C757D),
                 fontSize = 12.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
-} 
+}
