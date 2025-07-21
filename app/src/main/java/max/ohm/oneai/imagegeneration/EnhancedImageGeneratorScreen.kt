@@ -327,12 +327,21 @@ fun EnhancedImageGeneratorScreen(
                                 )
                             }
                             generatedImageData != null || imageUrl != null -> {
+                                val storagePermissionState = rememberStoragePermissionState()
                                 GeneratedImageDisplay(
                                     imageData = generatedImageData ?: imageUrl,
                                     prompt = prompt.text,
                                     onDownload = {
-                                        coroutineScope.launch {
-                                            downloadImage(context, generatedImageData ?: imageUrl, prompt.text)
+                                        if (storagePermissionState.hasPermission) {
+                                            coroutineScope.launch {
+                                                val success = downloadImage(context, generatedImageData ?: imageUrl, prompt.text)
+                                                if (success) {
+                                                    Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        } else {
+                                            storagePermissionState.requestPermission()
+                                            Toast.makeText(context, "Storage permission required to download images", Toast.LENGTH_SHORT).show()
                                         }
                                     },
                                     onShare = {
@@ -453,12 +462,21 @@ fun EnhancedImageGeneratorScreen(
         
         // Image Detail Overlay
         if (showImageDetail && selectedImage != null) {
+            val storagePermissionStateForDialog = rememberStoragePermissionState()
             ImageDetailDialog(
                 image = selectedImage!!,
                 onDismiss = { showImageDetail = false },
                 onDownload = {
-                    coroutineScope.launch {
-                        downloadImage(context, selectedImage!!.imageData, selectedImage!!.prompt)
+                    if (storagePermissionStateForDialog.hasPermission) {
+                        coroutineScope.launch {
+                            val success = downloadImage(context, selectedImage!!.imageData, selectedImage!!.prompt)
+                            if (success) {
+                                Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        storagePermissionStateForDialog.requestPermission()
+                        Toast.makeText(context, "Storage permission required to download images", Toast.LENGTH_SHORT).show()
                     }
                 },
                 onShare = {
@@ -1262,22 +1280,43 @@ private suspend fun downloadImage(
     fileName: String
 ): Boolean = withContext(Dispatchers.IO) {
     try {
+        Log.d("EnhancedImageDownload", "Starting download for image: $fileName")
         val bitmap = when (imageData) {
             is String -> {
                 // URL
+                Log.d("EnhancedImageDownload", "Downloading from URL: $imageData")
                 val url = URL(imageData)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.doInput = true
+                connection.connectTimeout = 30000
+                connection.readTimeout = 30000
                 connection.connect()
+                
+                val responseCode = connection.responseCode
+                Log.d("EnhancedImageDownload", "Response code: $responseCode")
+                
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    throw IOException("HTTP error code: $responseCode")
+                }
+                
                 val input = connection.inputStream
                 val bitmap = BitmapFactory.decodeStream(input)
                 input.close()
+                connection.disconnect()
+                
+                if (bitmap == null) {
+                    throw IOException("Failed to decode bitmap from stream")
+                }
                 bitmap
             }
             is ByteArray -> {
+                Log.d("EnhancedImageDownload", "Using ByteArray data, size: ${imageData.size}")
                 BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
             }
-            else -> null
+            else -> {
+                Log.e("EnhancedImageDownload", "Invalid image data type: ${imageData?.javaClass?.simpleName}")
+                null
+            }
         }
         
         bitmap?.let {
@@ -1285,37 +1324,50 @@ private suspend fun downloadImage(
             val fileName = "AI_Art_${timeStamp}.png"
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // For Android 10 and above, use MediaStore
+                Log.d("EnhancedImageDownload", "Using MediaStore for Android 10+")
                 val resolver = context.contentResolver
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
                 
-                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                uri?.let {
-                    resolver.openOutputStream(it)?.use { output ->
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { output ->
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                     }
+                    
+                    // Mark as completed
+                    contentValues.clear()
+                    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    resolver.update(uri, contentValues, null, null)
+                    
+                    Log.d("EnhancedImageDownload", "Image saved successfully to: $uri")
+                } else {
+                    Log.e("EnhancedImageDownload", "Failed to create MediaStore entry")
+                    return@withContext false
                 }
             } else {
-                val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                if (!imagesDir.exists()) imagesDir.mkdirs()
+                // For Android 9 and below
+                Log.d("EnhancedImageDownload", "Using legacy storage for Android 9 and below")
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 
-                val imageFile = File(imagesDir, fileName)
+                val imageFile = File(downloadsDir, fileName)
                 FileOutputStream(imageFile).use { output ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                 }
-            }
-            
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Image saved to Pictures", Toast.LENGTH_SHORT).show()
+                Log.d("EnhancedImageDownload", "Image saved successfully to: ${imageFile.absolutePath}")
             }
             true
         } ?: false
     } catch (e: Exception) {
+        Log.e("EnhancedImageDownload", "Error in downloadImage", e)
         withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Failed to save image: ${e.message}", Toast.LENGTH_LONG).show()
         }
         false
     }

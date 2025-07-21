@@ -71,74 +71,122 @@ private suspend fun downloadImageAndSaveToDevice(
     imageData: Any?, // Can be ByteArray or String (URL)
     baseFileName: String
 ): Boolean = withContext(Dispatchers.IO) {
-    val resolver = context.contentResolver
-    val imageBytes: ByteArray? = when (imageData) {
-        is String -> { // URL
-            try {
-                val url = URL(imageData)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.doInput = true
-                connection.connect()
-                val inputStream = connection.inputStream
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream.close()
-                connection.disconnect()
+    try {
+        Log.d("ImageDownload", "Starting download for image: $baseFileName")
+        val resolver = context.contentResolver
+        val imageBytes: ByteArray? = when (imageData) {
+            is String -> { // URL
+                try {
+                    Log.d("ImageDownload", "Downloading from URL: $imageData")
+                    val url = URL(imageData)
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.doInput = true
+                    connection.connectTimeout = 30000 // 30 seconds timeout
+                    connection.readTimeout = 30000
+                    connection.connect()
+                    
+                    val responseCode = connection.responseCode
+                    Log.d("ImageDownload", "Response code: $responseCode")
+                    
+                    if (responseCode != HttpURLConnection.HTTP_OK) {
+                        throw IOException("HTTP error code: $responseCode")
+                    }
+                    
+                    val inputStream = connection.inputStream
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream.close()
+                    connection.disconnect()
 
-                val outputStream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                outputStream.toByteArray()
-            } catch (e: IOException) {
-                e.printStackTrace()
+                    if (bitmap == null) {
+                        throw IOException("Failed to decode bitmap from stream")
+                    }
+
+                    val outputStream = ByteArrayOutputStream()
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    outputStream.toByteArray()
+                } catch (e: Exception) {
+                    Log.e("ImageDownload", "Error downloading image from URL", e)
+                    null
+                }
+            }
+            is ByteArray -> {
+                Log.d("ImageDownload", "Using ByteArray data, size: ${imageData.size}")
+                imageData
+            }
+            else -> {
+                Log.e("ImageDownload", "Invalid image data type: ${imageData?.javaClass?.simpleName}")
                 null
             }
         }
-        is ByteArray -> imageData
-        else -> null
-    }
 
-    if (imageBytes == null) {
-        withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Failed to load image data for download.", Toast.LENGTH_SHORT).show()
+        if (imageBytes == null || imageBytes.isEmpty()) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Failed to load image data for download.", Toast.LENGTH_SHORT).show()
+            }
+            return@withContext false
         }
-        return@withContext false
-    }
 
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val safeBaseFileName = baseFileName.replace(Regex("[^a-zA-Z0-9_]"), "_").take(20)
-    val fileName = "${safeBaseFileName}_${timeStamp}.png"
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val safeBaseFileName = baseFileName.replace(Regex("[^a-zA-Z0-9_]"), "_").take(20)
+        val fileName = "${safeBaseFileName}_${timeStamp}.png"
 
-    var fos: OutputStream? = null
-    var success = false
-    try {
+        var success = false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // For Android 10 and above, use MediaStore
+            Log.d("ImageDownload", "Using MediaStore for Android 10+")
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
+            
             val imageUri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            fos = imageUri?.let { resolver.openOutputStream(it) }
+            if (imageUri != null) {
+                resolver.openOutputStream(imageUri)?.use { outputStream ->
+                    outputStream.write(imageBytes)
+                    success = true
+                }
+                
+                // Mark as completed
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(imageUri, contentValues, null, null)
+                
+                Log.d("ImageDownload", "Image saved successfully to: $imageUri")
+            } else {
+                Log.e("ImageDownload", "Failed to create MediaStore entry")
+            }
         } else {
+            // For Android 9 and below
+            Log.d("ImageDownload", "Using legacy storage for Android 9 and below")
             val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (!downloadsDir.exists()) {
                 downloadsDir.mkdirs()
             }
             val imageFile = File(downloadsDir, fileName)
-            fos = FileOutputStream(imageFile)
+            FileOutputStream(imageFile).use { fos ->
+                fos.write(imageBytes)
+                success = true
+            }
+            Log.d("ImageDownload", "Image saved successfully to: ${imageFile.absolutePath}")
         }
 
-        fos?.use { it.write(imageBytes) }
-        success = true
         withContext(Dispatchers.Main) {
-            Toast.makeText(context, "Image saved to Downloads", Toast.LENGTH_SHORT).show()
+            if (success) {
+                Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Failed to save image", Toast.LENGTH_SHORT).show()
+            }
         }
-    } catch (e: IOException) {
-        e.printStackTrace()
+        return@withContext success
+    } catch (e: Exception) {
+        Log.e("ImageDownload", "Error in downloadImageAndSaveToDevice", e)
         withContext(Dispatchers.Main) {
             Toast.makeText(context, "Error saving image: ${e.message}", Toast.LENGTH_LONG).show()
         }
+        return@withContext false
     }
-    return@withContext success
 }
 
 // Data class to hold model information for the dropdown
@@ -341,12 +389,18 @@ fun ImageGeneratorScreen(
                             )
                             
                             // Download button with improved styling
+                            val storagePermissionState = rememberStoragePermissionState()
                             IconButton(
                                 onClick = {
                                     val imageDataSource = generatedImageData ?: imageUrl
                                     if (imageDataSource != null) {
-                                        coroutineScope.launch {
-                                            downloadImageAndSaveToDevice(context, imageDataSource, prompt.text.ifEmpty { "generated_image" })
+                                        if (storagePermissionState.hasPermission) {
+                                            coroutineScope.launch {
+                                                downloadImageAndSaveToDevice(context, imageDataSource, prompt.text.ifEmpty { "generated_image" })
+                                            }
+                                        } else {
+                                            storagePermissionState.requestPermission()
+                                            Toast.makeText(context, "Storage permission required to download images", Toast.LENGTH_SHORT).show()
                                         }
                                     } else {
                                         Toast.makeText(context, "No image to download", Toast.LENGTH_SHORT).show()
