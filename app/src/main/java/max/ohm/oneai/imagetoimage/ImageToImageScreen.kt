@@ -1,6 +1,7 @@
 package max.ohm.oneai.imagetoimage
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
@@ -10,6 +11,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,8 +64,12 @@ import android.os.Environment
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.io.FileOutputStream
+import java.net.URL
+import java.net.HttpURLConnection
 
 
 //@Composable
@@ -1347,6 +1354,42 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             }
                         )
                         }
+                        "a4f-flux-kontext-dev" -> {
+                            // A4F Flux Kontext Dev specific UI
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "Describe the transformation you want (e.g., change style, add elements, modify scene...)",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 4,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
                         "stability-ai-remove-background" -> {
                             // No prompts needed for background removal
                             Card(
@@ -2410,7 +2453,13 @@ private suspend fun saveGeneratedImage(
     viewModel: UnifiedImageToImageViewModel
 ) {
     try {
-        val bitmap = viewModel.generatedImageBitmap
+        var bitmap = viewModel.generatedImageBitmap
+        
+        // If no bitmap but we have a URL, download the image first
+        if (bitmap == null && viewModel.generatedImageUrl != null) {
+            bitmap = downloadBitmapFromUrl(viewModel.generatedImageUrl!!)
+        }
+        
         if (bitmap != null) {
             val fileName = "AI_Image_${System.currentTimeMillis()}.png"
             
@@ -2419,26 +2468,26 @@ private suspend fun saveGeneratedImage(
                 val contentValues = ContentValues().apply {
                     put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                 }
                 
-                val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
                 uri?.let {
                     resolver.openOutputStream(it)?.use { output ->
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                     }
                 }
+                Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
             } else {
-                val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                if (!imagesDir.exists()) imagesDir.mkdirs()
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!downloadsDir.exists()) downloadsDir.mkdirs()
                 
-                val imageFile = File(imagesDir, fileName)
+                val imageFile = File(downloadsDir, fileName)
                 FileOutputStream(imageFile).use { output ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                 }
+                Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
             }
-            
-            Toast.makeText(context, "Image saved to Gallery and Pictures", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "No image to save", Toast.LENGTH_SHORT).show()
         }
@@ -2452,7 +2501,13 @@ private suspend fun shareGeneratedImage(
     viewModel: UnifiedImageToImageViewModel
 ) {
     try {
-        val bitmap = viewModel.generatedImageBitmap
+        var bitmap = viewModel.generatedImageBitmap
+        
+        // If no bitmap but we have a URL, download the image first
+        if (bitmap == null && viewModel.generatedImageUrl != null) {
+            bitmap = downloadBitmapFromUrl(viewModel.generatedImageUrl!!)
+        }
+        
         if (bitmap != null) {
             val cachePath = File(context.cacheDir, "images")
             cachePath.mkdirs()
@@ -2482,6 +2537,30 @@ private suspend fun shareGeneratedImage(
         }
     } catch (e: Exception) {
         Toast.makeText(context, "Failed to share image: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
+
+// Helper function to download bitmap from URL
+private suspend fun downloadBitmapFromUrl(urlString: String): Bitmap? = withContext(Dispatchers.IO) {
+    try {
+        val url = URL(urlString)
+        val connection = url.openConnection() as HttpURLConnection
+        connection.doInput = true
+        connection.connectTimeout = 30000
+        connection.readTimeout = 30000
+        connection.connect()
+        
+        if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+            val input = connection.inputStream
+            val bitmap = BitmapFactory.decodeStream(input)
+            input.close()
+            connection.disconnect()
+            return@withContext bitmap
+        }
+        null
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }
 
@@ -2652,11 +2731,18 @@ private fun FullscreenImageDialog(
                             onClick = {
                                 coroutineScope.launch {
                                     try {
-                                        val bitmapToSave = if (showOriginal) originalImage else generatedImageBitmap
+                                        var bitmapToSave = if (showOriginal) originalImage else generatedImageBitmap
+                                        
+                                        // If showing generated image and no bitmap but we have URL, download it
+                                        if (!showOriginal && bitmapToSave == null && generatedImageUrl != null) {
+                                            Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
+                                            bitmapToSave = downloadBitmapFromUrl(generatedImageUrl)
+                                        }
+                                        
                                         if (bitmapToSave != null) {
                                             saveImageToDevice(context, bitmapToSave, showOriginal)
                                         } else {
-                                            Toast.makeText(context, "No image to save", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
                                         }
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -2691,11 +2777,18 @@ private fun FullscreenImageDialog(
                             onClick = {
                                 coroutineScope.launch {
                                     try {
-                                        val bitmapToShare = if (showOriginal) originalImage else generatedImageBitmap
+                                        var bitmapToShare = if (showOriginal) originalImage else generatedImageBitmap
+                                        
+                                        // If showing generated image and no bitmap but we have URL, download it
+                                        if (!showOriginal && bitmapToShare == null && generatedImageUrl != null) {
+                                            Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
+                                            bitmapToShare = downloadBitmapFromUrl(generatedImageUrl)
+                                        }
+                                        
                                         if (bitmapToShare != null) {
                                             shareImage(context, bitmapToShare, showOriginal)
                                         } else {
-                                            Toast.makeText(context, "No image to share", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
                                         }
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "Failed to share: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -2749,26 +2842,26 @@ private suspend fun saveImageToDevice(
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
             }
             
-            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
             uri?.let {
                 resolver.openOutputStream(it)?.use { output ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                 }
             }
         } else {
-            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            if (!imagesDir.exists()) imagesDir.mkdirs()
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!downloadsDir.exists()) downloadsDir.mkdirs()
             
-            val imageFile = File(imagesDir, fileName)
+            val imageFile = File(downloadsDir, fileName)
             FileOutputStream(imageFile).use { output ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
             }
         }
         
-        Toast.makeText(context, "Image saved to Pictures folder", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Image saved to Downloads folder", Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
         throw e
     }
