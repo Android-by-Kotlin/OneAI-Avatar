@@ -38,9 +38,33 @@ fun NewVideoGenerationScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Dropdown for model selection
+            var expanded by remember { mutableStateOf(false) }
+            var selectedModel by remember { mutableStateOf("Select Model") }
+            val models = listOf("Model A", "Model B", "Model C")
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { expanded = !expanded }) {
+                    Text(selectedModel)
+                }
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    models.forEach { model ->
+                        DropdownMenuItem(
+                            text = { Text(model) },
+                            onClick = {
+                                selectedModel = model
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 onClick = {
-                    viewModel.generateVideo(prompt)
+                    viewModel.generateVideo(prompt, selectedModel)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading

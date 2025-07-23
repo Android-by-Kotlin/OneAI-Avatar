@@ -34,6 +34,7 @@ import max.ohm.oneai.profile.ProfileScreen
 import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
 import max.ohm.oneai.videogeneration.NewVideoGenerationScreen
+import max.ohm.oneai.videogeneration.EnhancedVideoGenerationScreen
 import max.ohm.oneai.videogeneration.NewVideoGenerationViewModel
 import max.ohm.oneai.videogeneration.VideoPlayerScreen
 import max.ohm.oneai.liveavatar.ui.StreamingScreen
@@ -344,6 +345,18 @@ fun AppNavigation() {
                 }
             }
             NewVideoGenerationScreen(navController = navController)
+        }
+        
+        composable("styledVideoGeneration") { // Add styled video generation destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            EnhancedVideoGenerationScreen(navController = navController)
         }
         
         composable(

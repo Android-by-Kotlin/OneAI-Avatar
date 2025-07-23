@@ -113,7 +113,7 @@ fun EnhancedHomeScreen(
                 icon = Icons.Outlined.VideoLibrary,
                 imageUrl = "https://cdn.pixabay.com/photo/2019/04/24/21/55/cinema-4153289_1280.jpg",
                 gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
-                route = "videoGeneration"
+                route = "styledVideoGeneration"
             ),
             BannerItem(
                 title = "Image Generation",
@@ -395,7 +395,7 @@ fun EnhancedHomeScreen(
                         listOf(
                             QuickAction("Chat", Icons.Outlined.Chat, "chatbot"),
                             QuickAction("Image", Icons.Outlined.Image, "enhancedImageGenerator"),
-                            QuickAction("Video", Icons.Outlined.VideoLibrary, "videoGeneration"),
+                            QuickAction("Video", Icons.Outlined.VideoLibrary, "styledVideoGeneration"),
                             QuickAction("Transform", Icons.Outlined.Transform, "imageToImage"),
                             QuickAction("Avatar", Icons.Outlined.VideoCall, "liveAvatar")
                         )
