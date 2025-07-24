@@ -113,8 +113,8 @@ fun ChatBotScreen(
     // Available model options
     val modelOptions = listOf(
         "gemini-2.0-flash" to "Gemini Flash",
-        "gemini-2.0-pro" to "Gemini Pro",
-        "gpt-4" to "GPT-4",
+//        "gemini-2.0-pro" to "Gemini Pro",
+//        "gpt-4" to "GPT-4",
         "a4f-gpt-4.1-nano" to "A4F GPT-4.1-Nano"
     )
 

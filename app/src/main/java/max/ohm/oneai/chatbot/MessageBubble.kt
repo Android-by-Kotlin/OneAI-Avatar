@@ -462,7 +462,7 @@ fun MessageBubble(
                 
                 // Bot name label
                 Text(
-                    text = "J.A.R.V.I.S",
+                    text = "OneAI",
                     color = JarvisLightBlue,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
