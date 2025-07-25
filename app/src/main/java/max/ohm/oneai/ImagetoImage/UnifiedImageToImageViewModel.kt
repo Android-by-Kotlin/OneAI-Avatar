@@ -133,6 +133,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
     val availableModels = listOf(
         // A4F Models (NEW)
         "a4f-flux-kontext-dev" to "✨ A4F Flux Kontext Dev Edit",
+        "a4f-flux-kontext-pro" to "✨ A4F Flux Kontext Pro Edit",
+        "a4f-flux-kontext-max" to "✨ A4F Flux Kontext Max Edit",
+
         
         // Stability AI Models (Premium)
         "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
@@ -436,6 +439,15 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     // A4F Models
                     "a4f-flux-kontext-dev" -> {
                         performA4FFluxKontextDev(base64Image)
+                    }
+
+                    "a4f-flux-kontext-pro" -> {
+                        performA4FFluxKontextPro(base64Image)
+                    }
+
+
+                    "a4f-flux-kontext-max" -> {
+                        performA4FFluxKontextMax(base64Image)
                     }
                     
                     // Stability AI Models (Premium)
@@ -1556,6 +1568,140 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     }
                 }
                 
+                errorMessage = "A4F API returned no image data"
+            } else {
+                val errorData = if (responseBody != null) {
+                    try {
+                        val errorJson = JSONObject(responseBody)
+                        errorJson.optString("error", responseBody)
+                    } catch (e: Exception) {
+                        responseBody
+                    }
+                } else {
+                    "Unknown error"
+                }
+                errorMessage = "A4F API Error: ${response.code} - $errorData"
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in A4F API call", e)
+            errorMessage = "A4F Error: ${e.message}"
+        }
+    }
+
+
+
+    private suspend fun performA4FFluxKontextPro(base64Image: String) = withContext(Dispatchers.IO) {
+        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+            errorMessage = "Please set your A4F API Key"
+            return@withContext
+        }
+
+        loadingMessage = "Processing with A4F Flux Kontext Pro..."
+
+        try {
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("image", "image.png",
+                    base64ToRequestBody(base64Image))
+                .addFormDataPart("prompt", prompt)
+                .addFormDataPart("model", "provider-6/black-forest-labs-flux-1-kontext-pro")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.a4f.co/v1/images/edits")
+                .addHeader("Authorization", "Bearer $A4F_API_KEY")
+                .post(requestBody)
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            Log.d("UnifiedImg2Img", "A4F Response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "A4F Response body: $responseBody")
+
+            if (response.isSuccessful && responseBody != null) {
+                val jsonResponse = JSONObject(responseBody)
+
+                // Check for data array (A4F format)
+                if (jsonResponse.has("data")) {
+                    val dataArray = jsonResponse.getJSONArray("data")
+                    if (dataArray.length() > 0) {
+                        val firstItem = dataArray.getJSONObject(0)
+                        if (firstItem.has("url")) {
+                            generatedImageUrl = firstItem.getString("url")
+                            Log.d("UnifiedImg2Img", "A4F image URL: $generatedImageUrl")
+                            return@withContext
+                        }
+                    }
+                }
+
+                errorMessage = "A4F API returned no image data"
+            } else {
+                val errorData = if (responseBody != null) {
+                    try {
+                        val errorJson = JSONObject(responseBody)
+                        errorJson.optString("error", responseBody)
+                    } catch (e: Exception) {
+                        responseBody
+                    }
+                } else {
+                    "Unknown error"
+                }
+                errorMessage = "A4F API Error: ${response.code} - $errorData"
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in A4F API call", e)
+            errorMessage = "A4F Error: ${e.message}"
+        }
+    }
+
+
+
+    private suspend fun performA4FFluxKontextMax(base64Image: String) = withContext(Dispatchers.IO) {
+        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+            errorMessage = "Please set your A4F API Key"
+            return@withContext
+        }
+
+        loadingMessage = "Processing with A4F Flux Kontext Max..."
+
+        try {
+            val requestBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("image", "image.png",
+                    base64ToRequestBody(base64Image))
+                .addFormDataPart("prompt", prompt)
+                .addFormDataPart("model", "provider-6/black-forest-labs-flux-1-kontext-max")
+                .build()
+
+            val request = Request.Builder()
+                .url("https://api.a4f.co/v1/images/edits")
+                .addHeader("Authorization", "Bearer $A4F_API_KEY")
+                .post(requestBody)
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            Log.d("UnifiedImg2Img", "A4F Response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "A4F Response body: $responseBody")
+
+            if (response.isSuccessful && responseBody != null) {
+                val jsonResponse = JSONObject(responseBody)
+
+                // Check for data array (A4F format)
+                if (jsonResponse.has("data")) {
+                    val dataArray = jsonResponse.getJSONArray("data")
+                    if (dataArray.length() > 0) {
+                        val firstItem = dataArray.getJSONObject(0)
+                        if (firstItem.has("url")) {
+                            generatedImageUrl = firstItem.getString("url")
+                            Log.d("UnifiedImg2Img", "A4F image URL: $generatedImageUrl")
+                            return@withContext
+                        }
+                    }
+                }
+
                 errorMessage = "A4F API returned no image data"
             } else {
                 val errorData = if (responseBody != null) {
