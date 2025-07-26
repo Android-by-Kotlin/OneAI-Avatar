@@ -127,9 +127,6 @@ class MainActivity : ComponentActivity() {
                     val isConnected = FirebaseUtils.testFirebaseConnection()
                     if (!isConnected) {
                         Log.w(TAG, "Firebase connection test failed")
-                        Toast.makeText(this@MainActivity, 
-                            "Firebase connection issue. Some features may not work properly.", 
-                            Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error testing Firebase connection", e)
@@ -137,17 +134,10 @@ class MainActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing Firebase", e)
-            Toast.makeText(this, 
-                "Failed to initialize Firebase. Please check your internet connection.", 
-                Toast.LENGTH_LONG).show()
             
             // Attempt manual initialization
             lifecycleScope.launch {
-                if (FirebaseDebugger.attemptManualFirebaseInitialization(this@MainActivity)) {
-                    Toast.makeText(this@MainActivity, 
-                        "Manual Firebase initialization successful", 
-                        Toast.LENGTH_LONG).show()
-                }
+                FirebaseDebugger.attemptManualFirebaseInitialization(this@MainActivity)
             }
         }
     }
@@ -165,9 +155,6 @@ class MainActivity : ComponentActivity() {
                     },
                     onFailure = { error ->
                         Log.e(TAG, "Gemini API key test failed", error)
-                        Toast.makeText(this@MainActivity,
-                            "AI model initialization failed: ${error.message}. Chat features may not work properly.",
-                            Toast.LENGTH_LONG).show()
                     }
                 )
             } catch (e: Exception) {
