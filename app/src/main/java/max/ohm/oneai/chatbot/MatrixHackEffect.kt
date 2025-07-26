@@ -96,27 +96,27 @@ fun MatrixHackEffect(
         )
     }
     
-    // Paint for ONEAI text
-    val oneaiPaint = remember {
-        Paint().apply {
-            textSize = with(density) { 72.sp.toPx() }
-            isAntiAlias = true
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
-        }
-    }
-
-    // Animation for ONEAI text glow
-    val infiniteTransition = rememberInfiniteTransition(label = "oneai_glow")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glow_alpha"
-    )
+    // Paint for ONEAI text - COMMENTED OUT
+//    val oneaiPaint = remember {
+//        Paint().apply {
+//            textSize = with(density) { 72.sp.toPx() }
+//            isAntiAlias = true
+//            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+//            textAlign = Paint.Align.CENTER
+//        }
+//    }
+//
+//    // Animation for ONEAI text glow
+//    val infiniteTransition = rememberInfiniteTransition(label = "oneai_glow")
+//    val glowAlpha by infiniteTransition.animateFloat(
+//        initialValue = 0.6f,
+//        targetValue = 1f,
+//        animationSpec = infiniteRepeatable(
+//            animation = tween(2000, easing = LinearEasing),
+//            repeatMode = RepeatMode.Reverse
+//        ),
+//        label = "glow_alpha"
+//    )
 
     // 60 FPS animation ticker
     var frameTime by remember { mutableStateOf(0L) }
@@ -163,34 +163,34 @@ fun MatrixHackEffect(
                 )
             }
             
-            // Draw ONEAI text in the center with glow effect
-            drawContext.canvas.nativeCanvas.apply {
-                // Draw multiple layers for glow effect
-                for (i in 5 downTo 1) {
-                    oneaiPaint.apply {
-                        color = Color(0xFF00FF00).copy(alpha = glowAlpha * 0.15f * i).toArgb()
-                        setShadowLayer(20f * i, 0f, 0f, Color(0xFF00FF00).copy(alpha = 0.3f).toArgb())
-                    }
-                    drawText(
-                        "ONEAI",
-                        canvasWidth / 2f,
-                        canvasHeight / 2f + with(density) { 24.dp.toPx() },
-                        oneaiPaint
-                    )
-                }
-                
-                // Draw main ONEAI text
-                oneaiPaint.apply {
-                    color = Color(0xFF33FF33).copy(alpha = glowAlpha).toArgb()
-                    setShadowLayer(15f, 0f, 0f, Color(0xFF00FF00).toArgb())
-                }
-                drawText(
-                    "ONEAI",
-                    canvasWidth / 2f,
-                    canvasHeight / 2f + with(density) { 24.dp.toPx() },
-                    oneaiPaint
-                )
-            }
+            // Draw ONEAI text in the center with glow effect - COMMENTED OUT
+//            drawContext.canvas.nativeCanvas.apply {
+//                // Draw multiple layers for glow effect
+//                for (i in 5 downTo 1) {
+//                    oneaiPaint.apply {
+//                        color = Color(0xFF00FF00).copy(alpha = glowAlpha * 0.15f * i).toArgb()
+//                        setShadowLayer(20f * i, 0f, 0f, Color(0xFF00FF00).copy(alpha = 0.3f).toArgb())
+//                    }
+//                    drawText(
+//                        "ONEAI",
+//                        canvasWidth / 2f,
+//                        canvasHeight / 2f + with(density) { 24.dp.toPx() },
+//                        oneaiPaint
+//                    )
+//                }
+//                
+//                // Draw main ONEAI text
+//                oneaiPaint.apply {
+//                    color = Color(0xFF33FF33).copy(alpha = glowAlpha).toArgb()
+//                    setShadowLayer(15f, 0f, 0f, Color(0xFF00FF00).toArgb())
+//                }
+//                drawText(
+//                    "ONEAI",   // ONEAI background text
+//                    canvasWidth / 2f,
+//                    canvasHeight / 2f + with(density) { 24.dp.toPx() },
+//                    oneaiPaint
+//                )
+//            }
         }
     }
 }

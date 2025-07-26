@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -278,9 +279,12 @@ fun AiConversationScreen(
                     modifier = Modifier.weight(1f),
                     singleLine = false,
                     maxLines = 5,
-                    enabled = !isLoading && !isGeneratingSpeech
+                    enabled = !isLoading && !isGeneratingSpeech,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    )
                 )
-                
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 Button(

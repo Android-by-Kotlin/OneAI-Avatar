@@ -63,7 +63,7 @@ fun AppNavigation() {
     MainScaffold(navController = navController) {
         NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
-            SplashScreen(navController = navController)
+            SplashScreen(navController = navController, loginViewModel = loginViewModel)
         }
         composable("login") {
             LoginSignupScreen(navController = navController, loginViewModel = loginViewModel)

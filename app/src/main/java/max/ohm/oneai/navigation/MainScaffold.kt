@@ -21,9 +21,7 @@ fun MainScaffold(
     val bottomNavRoutes = listOf(
         "home",
         "chatbot",
-        "videoGeneration", 
-        "imageToImage",
-        "liveAvatar",
+        "videogeneration", 
         "enhancedImageGenerator"
     )
     

@@ -46,8 +46,11 @@ import max.ohm.oneai.imagegeneration.ImageHistoryDataStore
 import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.videogeneration.GeneratedVideo
+import max.ohm.oneai.videogeneration.VideoHistoryDataStore
 import java.text.SimpleDateFormat
 import java.util.*
+import java.io.File
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -57,6 +60,12 @@ import kotlin.random.Random
 // Modern color palette
 private val DarkBackground = Color(0xFF0A0E27)
 private val DarkSecondary = Color(0xFF1A1F3A)
+
+// Sealed class for different creation types
+sealed class CreationItem {
+    data class ImageItem(val image: GeneratedImage) : CreationItem()
+    data class VideoItem(val video: GeneratedVideo) : CreationItem()
+}
 private val AccentPurple = Color(0xFF6366F1)
 private val AccentPink = Color(0xFFEC4899)
 private val AccentCyan = Color(0xFF06B6D4)
@@ -132,13 +141,13 @@ fun EnhancedHomeScreen(
                 route = "imageToImage"
             ),
             BannerItem(
-                title = "Live Avatar",
-                subtitle = "Interactive AI-powered digital avatars",
+                title = "Live Avatar (Coming Soon)",
+                subtitle = "Interactive AI-powered digital avatars - Feature in development",
                 icon = Icons.Outlined.VideoCall,
                 //imageUrl = "https://cdn.pixabay.com/photo/2022/12/01/04/40/backlit-7628307_1280.jpg",
                 imageUrl = "https://miro.medium.com/v2/resize:fit:1400/0*YpJsxi_-9hBsMc9H.gif",
                 gradientColors = listOf(Color(0xFF8EC5FC), Color(0xFFE0C3FC)),
-                route = "liveAvatar"
+                route = "home" // Redirect to home instead of live avatar for now
             )
         )
     }
@@ -163,19 +172,43 @@ fun EnhancedHomeScreen(
     
     // Load image history
     val imageHistoryStore = remember { ImageHistoryDataStore(context) }
-    val persistedHistory by imageHistoryStore.imageHistory.collectAsState(initial = emptyList())
-    var imageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
-    var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
-    var showFullScreen by remember { mutableStateOf(false) }
+    val persistedImageHistory by imageHistoryStore.imageHistory.collectAsState(initial = emptyList())
     
-    LaunchedEffect(persistedHistory) {
-        imageHistory = persistedHistory.take(12).mapNotNull { item ->
+    // Load video history
+    val videoHistoryStore = remember { VideoHistoryDataStore(context) }
+    val persistedVideoHistory by videoHistoryStore.videoHistory.collectAsState(initial = emptyList())
+    
+    var imageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
+    var videoHistory by remember { mutableStateOf(listOf<GeneratedVideo>()) }
+    var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
+    var selectedVideo by remember { mutableStateOf<GeneratedVideo?>(null) }
+    var showFullScreen by remember { mutableStateOf(false) }
+    var showVideoPlayer by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(persistedImageHistory) {
+        imageHistory = persistedImageHistory.take(6).mapNotNull { item ->
             val imageData = imageHistoryStore.getImageData(item)
             if (imageData != null) {
                 GeneratedImage(
                     id = item.id,
                     prompt = item.prompt,
                     imageData = imageData,
+                    timestamp = item.timestamp,
+                    model = item.model
+                )
+            } else null
+        }
+    }
+    
+    LaunchedEffect(persistedVideoHistory) {
+        videoHistory = persistedVideoHistory.take(6).mapNotNull { item ->
+            val videoData = videoHistoryStore.getVideoData(item)
+            if (videoData != null) {
+                GeneratedVideo(
+                    id = item.id,
+                    prompt = item.prompt,
+                    videoUrl = item.videoUrl,
+                    thumbnailPath = item.thumbnailPath,
                     timestamp = item.timestamp,
                     model = item.model
                 )
@@ -345,37 +378,62 @@ fun EnhancedHomeScreen(
                     }
                 }
                 
-                if (imageHistory.isEmpty()) {
+                if (imageHistory.isEmpty() && videoHistory.isEmpty()) {
                     EmptyGalleryState(
                         onCreateClick = { navController.navigate("enhancedImageGenerator") }
                     )
                 } else {
+                    // Combine and sort items by timestamp
+                    val allItems = (imageHistory.map { CreationItem.ImageItem(it) } + 
+                                   videoHistory.map { CreationItem.VideoItem(it) })
+                        .sortedByDescending { 
+                            when (it) {
+                                is CreationItem.ImageItem -> it.image.timestamp
+                                is CreationItem.VideoItem -> it.video.timestamp
+                            }
+                        }
+                    
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(2),
                         modifier = Modifier.heightIn(max = 600.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalItemSpacing = 8.dp
                     ) {
-                        items(imageHistory) { image ->
-                            val aspectRatio = remember { 
-                                // Generate random aspect ratios for variety
-                                when (Random.nextInt(3)) {
-                                    0 -> 1f // Square
-                                    1 -> 0.7f // Portrait
-                                    else -> 1.3f // Landscape
+                        items(allItems) { item ->
+                            when (item) {
+                                is CreationItem.ImageItem -> {
+                                    val aspectRatio = remember { 
+                                        // Generate random aspect ratios for variety
+                                        when (Random.nextInt(3)) {
+                                            0 -> 1f // Square
+                                            1 -> 0.7f // Portrait
+                                            else -> 1.3f // Landscape
+                                        }
+                                    }
+                                    GeneratedImageCard(
+                                        image = item.image,
+                                        aspectRatio = aspectRatio,
+                                        onClick = {
+                                            selectedImage = item.image
+                                            showFullScreen = true
+                                        }
+                                    )
+                                }
+                                is CreationItem.VideoItem -> {
+                                    GeneratedVideoCard(
+                                        video = item.video,
+                                        aspectRatio = 16f/9f, // Standard video aspect ratio
+                                        onClick = {
+                                            selectedVideo = item.video
+                                            showVideoPlayer = true
+                                        }
+                                    )
                                 }
                             }
-                            GeneratedImageCard(
-                                image = image,
-                                aspectRatio = aspectRatio,
-                                onClick = {
-                                    selectedImage = image
-                                    showFullScreen = true
-                                }
-                            )
                         }
                     }
                 }
+                
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
@@ -396,14 +454,23 @@ fun EnhancedHomeScreen(
                             QuickAction("Chat", Icons.Outlined.Chat, "chatbot"),
                             QuickAction("Image", Icons.Outlined.Image, "enhancedImageGenerator"),
                             QuickAction("Video", Icons.Outlined.VideoLibrary, "styledVideoGeneration"),
-                            QuickAction("Transform", Icons.Outlined.Transform, "imageToImage"),
-                            QuickAction("Avatar", Icons.Outlined.VideoCall, "liveAvatar")
+                            QuickAction("Transform", Icons.Outlined.Transform, "imageToImage")
                         )
                     ) { action ->
                         QuickActionCard(
                             title = action.title,
                             icon = action.icon,
                             onClick = { navController.navigate(action.route) }
+                        )
+                    }
+                    
+                    // Special "Coming Soon" item for Avatar
+                    item {
+                        ComingSoonQuickActionCard(
+                            title = "Avatar",
+                            subtitle = "Soon",
+                            icon = Icons.Outlined.VideoCall,
+                            onClick = { /* Show coming soon message */ }
                         )
                     }
                 }
@@ -418,6 +485,15 @@ fun EnhancedHomeScreen(
         FullScreenImageViewer(
             image = selectedImage!!,
             onDismiss = { showFullScreen = false }
+        )
+    }
+    
+    // Video player dialog
+    if (showVideoPlayer && selectedVideo != null) {
+        VideoPlayerDialog(
+            video = selectedVideo!!,
+            onDismiss = { showVideoPlayer = false },
+            navController = navController
         )
     }
 }
@@ -674,6 +750,215 @@ private fun EmptyGalleryState(
                 Text("Create Now")
             }
         }
+    }
+}
+
+@Composable
+private fun ComingSoonQuickActionCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .width(100.dp)
+            .height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFE082).copy(alpha = 0.8f)
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = Color(0xFFFF9800).copy(alpha = 0.3f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        Color(0xFFFF9800).copy(alpha = 0.1f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color(0xFF37474F),
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = title,
+                color = Color(0xFF37474F),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+            
+            Text(
+                text = subtitle,
+                color = Color(0xFF6C757D),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
+    }
+}
+
+@Composable
+private fun GeneratedVideoCard(
+    video: GeneratedVideo,
+    aspectRatio: Float = 16f / 9f,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(aspectRatio)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box {
+            // Video thumbnail or placeholder
+            if (video.thumbnailPath != null && File(video.thumbnailPath).exists()) {
+                // Display actual video thumbnail
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(File(video.thumbnailPath))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Video thumbnail",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Fallback gradient background
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF4C1D95),
+                                    Color(0xFF7C3AED)
+                                )
+                            )
+                        )
+                )
+            }
+            
+            // Dark overlay for better contrast
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.2f))
+            )
+            
+            // Play button overlay
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .align(Alignment.Center)
+                    .background(
+                        Color.Black.copy(alpha = 0.7f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Play Video",
+                    tint = Color.White,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+            
+            // Gradient overlay for text
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.9f)
+                            ),
+                            startY = 150f
+                        )
+                    )
+            )
+            
+            // Video info
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.VideoLibrary,
+                        contentDescription = null,
+                        tint = AccentPink,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = video.model,
+                        color = AccentPink,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = video.prompt,
+                    color = TextPrimary,
+                    fontSize = 12.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 16.sp
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+                        .format(Date(video.timestamp)),
+                    color = TextSecondary,
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoPlayerDialog(
+    video: GeneratedVideo,
+    onDismiss: () -> Unit,
+    navController: NavController
+) {
+    // Simple dialog that navigates to video player screen
+    LaunchedEffect(video) {
+        // Navigate to video player with video URL
+        val encodedUrl = java.net.URLEncoder.encode(video.videoUrl, "UTF-8")
+        navController.navigate("videoPlayer?videoUrl=$encodedUrl")
+        onDismiss()
     }
 }
 

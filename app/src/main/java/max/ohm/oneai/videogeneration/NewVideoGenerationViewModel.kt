@@ -2,6 +2,7 @@ package max.ohm.oneai.videogeneration
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -10,41 +11,53 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import max.ohm.oneai.a4f.A4FClient
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
-import android.util.Base64
-import java.io.File
-import java.io.FileOutputStream
 import max.ohm.oneai.videogeneration.network.VideoApiClient
 import max.ohm.oneai.videogeneration.network.VideoGenerationRequest
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.*
+import org.json.JSONObject
+import android.os.Environment
+import android.util.Base64
+import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
+import max.ohm.oneai.a4f.A4FClient
 import max.ohm.oneai.videogeneration.VideoGenApiKey
+import max.ohm.oneai.videogeneration.VideoThumbnailGenerator
 import android.net.Uri
 
 data class VideoGenerationState(
     val isLoading: Boolean = false,
     val videoUrl: String? = null,
     val error: String? = null,
-    val generationId: String? = null
+    val generationId: String? = null,
+    val currentPrompt: String? = null,
+    val currentModel: String? = null
 )
 
-class NewVideoGenerationViewModel : ViewModel() {
+class NewVideoGenerationViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(VideoGenerationState())
     val state: StateFlow<VideoGenerationState> = _state
+    
+    private val videoHistoryStore = VideoHistoryDataStore(application.applicationContext)
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     fun generateVideo(prompt: String, model: String) {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null, videoUrl = null)
+            _state.value = _state.value.copy(
+                isLoading = true, 
+                error = null, 
+                videoUrl = null,
+                currentPrompt = prompt,
+                currentModel = model
+            )
             
             // Check if it's the original API model
             if (model == "T2V-01-Director") {
@@ -99,6 +112,8 @@ class NewVideoGenerationViewModel : ViewModel() {
                                     // Save base64 video to file and get local path
                                     val videoPath = saveBase64VideoToFile(base64Video)
                                     if (videoPath != null) {
+                                        // Save to video history
+                                        saveVideoToHistory(prompt, videoPath, model)
                                         _state.value = _state.value.copy(
                                             isLoading = false,
                                             videoUrl = videoPath
@@ -124,6 +139,8 @@ class NewVideoGenerationViewModel : ViewModel() {
                             // Direct URL in JSON
                             val videoUrl = responseBody.getString("url")
                             android.util.Log.d("VideoGen", "Video URL from JSON: $videoUrl")
+                            // Save to video history
+                            saveVideoToHistory(prompt, videoUrl, model)
                             _state.value = _state.value.copy(
                                 isLoading = false,
                                 videoUrl = videoUrl
@@ -139,6 +156,8 @@ class NewVideoGenerationViewModel : ViewModel() {
                         val videoUrl = responseBodyString.trim().removeSurrounding("\"")
                         if (videoUrl.startsWith("http")) {
                             android.util.Log.d("VideoGen", "Video URL as string: $videoUrl")
+                            // Save to video history
+                            saveVideoToHistory(prompt, videoUrl, model)
                             _state.value = _state.value.copy(
                                 isLoading = false,
                                 videoUrl = videoUrl
@@ -195,6 +214,11 @@ class NewVideoGenerationViewModel : ViewModel() {
                             when (jsonResponse.getString("status")) {
                                 "completed" -> {
                                     val videoUrl = jsonResponse.getString("url")
+                                    val currentState = _state.value
+                                    // Save to video history using stored prompt and model
+                                    if (currentState.currentPrompt != null && currentState.currentModel != null) {
+                                        saveVideoToHistory(currentState.currentPrompt, videoUrl, currentState.currentModel)
+                                    }
                                     _state.value = _state.value.copy(
                                         isLoading = false,
                                         videoUrl = videoUrl
@@ -399,6 +423,11 @@ class NewVideoGenerationViewModel : ViewModel() {
                         }
                         
                         android.util.Log.d("VideoGen", "Final video URL: $decodedUrl")
+                        // Save to video history using stored prompt and model
+                        val currentState = _state.value
+                        if (currentState.currentPrompt != null && currentState.currentModel != null) {
+                            saveVideoToHistory(currentState.currentPrompt, decodedUrl, currentState.currentModel)
+                        }
                         _state.value = _state.value.copy(
                             isLoading = false,
                             videoUrl = decodedUrl
@@ -421,6 +450,32 @@ class NewVideoGenerationViewModel : ViewModel() {
                     error = "Error retrieving video: ${e.message}"
                 )
             }
+        }
+    }
+    
+    private suspend fun saveVideoToHistory(prompt: String, videoUrl: String, model: String) {
+        try {
+            // Generate thumbnail for the video
+            val videoId = java.util.UUID.randomUUID().toString()
+            val thumbnailPath = VideoThumbnailGenerator.generateThumbnail(
+                context = getApplication(),
+                videoUrl = videoUrl,
+                videoId = videoId
+            )
+            
+            // Save video to history with thumbnail - always show "Wan 2.1" as the provider
+            videoHistoryStore.addVideo(
+                prompt = prompt,
+                videoUrl = videoUrl,
+                model = "Wan 2.1", // Display consistent provider name instead of technical model
+                thumbnailPath = thumbnailPath
+            )
+            
+            android.util.Log.d("VideoGen", "Video saved to history with thumbnail: $thumbnailPath")
+        } catch (e: Exception) {
+            android.util.Log.e("VideoGen", "Error saving video to history", e)
+            // Save without thumbnail if thumbnail generation fails
+            videoHistoryStore.addVideo(prompt, videoUrl, "Wan 2.1")
         }
     }
 }

@@ -165,6 +165,28 @@ fun SimpleHomeScreen(
                 }
             }
             
+            // "Upcoming" Banner for Live Avatar
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE082))
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Live Avatar Feature Coming Soon!",
+                        color = Color(0xFF37474F),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             // Tasks Grid Title
             Text(
                 text = "AI Tools",
@@ -283,12 +305,12 @@ fun SimpleHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                FeatureButton(
+                ComingSoonFeatureButton(
                     icon = Icons.Default.VideoCall,
                     title = "Live Avatar",
-                    description = "Interactive AI avatar",
+                    description = "Coming Soon",
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("liveAvatar") }
+                    onClick = { /* No action for now */ }
                 )
                 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -534,6 +556,59 @@ fun SimpleHomeScreen(
         }
     }
 }
+
+@Composable
+fun ComingSoonFeatureButton(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .aspectRatio(1f)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFE082)
+        ),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color(0xFF37474F),
+                modifier = Modifier.size(40.dp)
+            )
+            
+            
+            Text(
+                text = title,
+                color = Color(0xFF37474F),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            Text(
+                text = description,
+                color = Color(0xFF6C757D),
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
 
 @Composable
 fun FeatureButton(

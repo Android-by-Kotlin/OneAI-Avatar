@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,7 +83,8 @@ private val animatedMessages = mutableSetOf<Long>()
 fun MessageBubble(
     message: Message,
     isNewMessage: Boolean = false,
-    isTyping: Boolean = false
+    isTyping: Boolean = false,
+    isTypingSoundEnabled: Boolean = true
 ) {
     val isBot = !message.isUser
     val context = LocalContext.current
@@ -129,39 +131,43 @@ fun MessageBubble(
     var displayedText by remember { mutableStateOf(if (shouldAnimate) "" else message.text) }
     var isLocalTyping by remember { mutableStateOf(shouldAnimate) }
     
-    // MediaPlayer for typing sound effects
-    val mediaPlayer = remember {
-        try {
-            // First check if the resource exists
-            val resourceId = R.raw.typing_sound
-            android.util.Log.d("MessageBubble", "Attempting to load typing sound with resource ID: $resourceId")
-            
-            MediaPlayer.create(context, resourceId)?.apply {
-                isLooping = true
-                setVolume(0.7f, 0.7f)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                        .build()
-                )
-                setOnPreparedListener {
-                    android.util.Log.d("MessageBubble", "MediaPlayer prepared successfully")
+    // MediaPlayer for typing sound effects (only if sound is enabled)
+    val mediaPlayer = remember(isTypingSoundEnabled) {
+        if (!isTypingSoundEnabled) {
+            null
+        } else {
+            try {
+                // First check if the resource exists
+                val resourceId = R.raw.scifi_type
+                android.util.Log.d("MessageBubble", "Attempting to load sci-fi typing sound with resource ID: $resourceId")
+                
+                MediaPlayer.create(context, resourceId)?.apply {
+                    isLooping = true
+                    setVolume(0.7f, 0.7f)
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                            .build()
+                    )
+                    setOnPreparedListener {
+                        android.util.Log.d("MessageBubble", "MediaPlayer prepared successfully")
+                    }
+                    setOnErrorListener { mp, what, extra ->
+                        android.util.Log.e("MessageBubble", "MediaPlayer error: what=$what, extra=$extra")
+                        false
+                    }
+                    setOnCompletionListener {
+                        android.util.Log.d("MessageBubble", "Typing sound completed one loop")
+                    }
+                } ?: run {
+                    android.util.Log.e("MessageBubble", "MediaPlayer.create returned null")
+                    null
                 }
-                setOnErrorListener { mp, what, extra ->
-                    android.util.Log.e("MessageBubble", "MediaPlayer error: what=$what, extra=$extra")
-                    false
-                }
-                setOnCompletionListener {
-                    android.util.Log.d("MessageBubble", "Typing sound completed one loop")
-                }
-            } ?: run {
-                android.util.Log.e("MessageBubble", "MediaPlayer.create returned null")
+            } catch (e: Exception) {
+                android.util.Log.e("MessageBubble", "Exception creating MediaPlayer: ${e.message}", e)
                 null
             }
-        } catch (e: Exception) {
-            android.util.Log.e("MessageBubble", "Exception creating MediaPlayer: ${e.message}", e)
-            null
         }
     }
     
@@ -250,19 +256,19 @@ fun MessageBubble(
             for (i in message.text.indices) {
                 displayedText = message.text.substring(0, i + 1)
                 
-                delay(15) // Adjust typing speed (15ms per character for smoother effect)
+                delay(3) // Very fast typing speed (3ms per character)
 
-                // Natural pauses for punctuation
+                // Minimal pauses for punctuation
                 when (message.text[i]) {
-                    '.', '!', '?' -> delay(100) // Pause at sentence ends
-                    ',' -> delay(50) // Small pause at commas
-                    ';', ':' -> delay(40) // Medium pause
-                    ' ' -> delay(10) // Tiny pause at spaces
+                    '.', '!', '?' -> delay(10) // Very short pause at sentence ends
+                    ',' -> delay(5) // Minimal pause at commas
+                    ';', ':' -> delay(5) // Minimal pause
+                    ' ' -> delay(1) // Almost no pause at spaces
                 }
                 
-                // Additional pause every 50 characters for readability
+                // Minimal additional pause every 50 characters
                 if (i % 50 == 0 && i > 0) {
-                    delay(30)
+                    delay(5)
                 }
             }
             
@@ -671,41 +677,47 @@ fun MessageBubble(
                             // Parse and display formatted response for bot messages
                             val sections = ResponseParser.parseResponse(displayedText)
                             if (sections.isNotEmpty() && sections.any { it.type != SectionType.PARAGRAPH }) {
-                                // Use formatted response
-                                FormattedBotResponse(sections = sections)
+                                // Use formatted response with text selection
+                                SelectionContainer {
+                                    FormattedBotResponse(sections = sections)
+                                }
                             } else {
                                 // Fallback to plain text for simple messages with JARVIS styling
+                                SelectionContainer {
+                                    Text(
+                                        text = displayedText,
+                                        color = if (message.isUser) Color.White else JarvisLightBlue,
+                                        style = TextStyle(
+                                            fontSize = 16.sp, 
+                                            lineHeight = 22.sp,
+                                            fontFamily = if (!message.isUser) FontFamily.Monospace else FontFamily.Default,
+                                            fontWeight = if (!message.isUser) FontWeight.Medium else FontWeight.Normal
+                                        ),
+                                        modifier = if (!message.isUser) {
+                                            Modifier.shadow(
+                                                elevation = 0.dp,
+                                                shape = RoundedCornerShape(0.dp),
+                                                ambientColor = JarvisLightBlue.copy(alpha = 0.3f),
+                                                spotColor = JarvisLightBlue.copy(alpha = 0.3f)
+                                            )
+                                        } else Modifier
+                                    )
+                                }
+                            }
+                        } else {
+                            // User messages and typing animation with text selection
+                            SelectionContainer {
                                 Text(
-                                    text = displayedText,
+                                    text = if (isBot) displayedText else message.text,
                                     color = if (message.isUser) Color.White else JarvisLightBlue,
                                     style = TextStyle(
                                         fontSize = 16.sp, 
                                         lineHeight = 22.sp,
                                         fontFamily = if (!message.isUser) FontFamily.Monospace else FontFamily.Default,
                                         fontWeight = if (!message.isUser) FontWeight.Medium else FontWeight.Normal
-                                    ),
-                                    modifier = if (!message.isUser) {
-                                        Modifier.shadow(
-                                            elevation = 0.dp,
-                                            shape = RoundedCornerShape(0.dp),
-                                            ambientColor = JarvisLightBlue.copy(alpha = 0.3f),
-                                            spotColor = JarvisLightBlue.copy(alpha = 0.3f)
-                                        )
-                                    } else Modifier
+                                    )
                                 )
                             }
-                        } else {
-                            // User messages and typing animation
-                            Text(
-                                text = if (isBot) displayedText else message.text,
-                                color = if (message.isUser) Color.White else JarvisLightBlue,
-                                style = TextStyle(
-                                    fontSize = 16.sp, 
-                                    lineHeight = 22.sp,
-                                    fontFamily = if (!message.isUser) FontFamily.Monospace else FontFamily.Default,
-                                    fontWeight = if (!message.isUser) FontWeight.Medium else FontWeight.Normal
-                                )
-                            )
 
                             // Show blinking cursor at the end while typing
                             if (isBot && isTyping) {

@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
@@ -115,7 +119,7 @@ fun ChatBotScreen(
         "gemini-2.0-flash" to "Gemini Flash",
 //        "gemini-2.0-pro" to "Gemini Pro",
 //        "gpt-4" to "GPT-4",
-        "a4f-gpt-4.1-nano" to "A4F GPT-4.1-Nano"
+        "a4f-gpt-4.1-nano" to "GPT-4.1-Nano"
     )
 
     LaunchedEffect(initialModelType) {
@@ -221,7 +225,9 @@ fun ChatBotScreen(
                 },
                 onDeleteChatClicked = { chat ->
                     unifiedChatBotViewModel.deleteChat(chat.id)
-                }
+                },
+                isTypingSoundEnabled = unifiedChatBotViewModel.isTypingSoundEnabled,
+                onToggleTypingSound = { unifiedChatBotViewModel.toggleTypingSound() }
             )
         },
         content = {
@@ -234,7 +240,7 @@ fun ChatBotScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -365,7 +371,8 @@ fun ChatBotScreen(
                                 
                                 MessageBubble(
                                     message = message,
-                                    isNewMessage = isRecentMessage
+                                    isNewMessage = isRecentMessage,
+                                    isTypingSoundEnabled = unifiedChatBotViewModel.isTypingSoundEnabled
                                 )
                             }
                             
@@ -394,7 +401,7 @@ fun ChatBotScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(DarkGreen)
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     // Image preview
                     selectedImage?.let { bitmap ->
@@ -431,82 +438,77 @@ fun ChatBotScreen(
                         }
                     }
                     
-                    // Custom text field with integrated buttons
-                    Box(
+                        // Input area with OutlinedTextField
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Text field with rounded corners
-                        Box(
+                        // Image picker button
+                        IconButton(
+                            onClick = { imagePickerLauncher.launch("image/*") },
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MediumGreen)
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .size(48.dp)
+                                .background(MediumGreen, CircleShape)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Image picker button inside text field
-                                IconButton(
-                                    onClick = { imagePickerLauncher.launch("image/*") },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Image,
-                                        contentDescription = "Add Image",
-                                        tint = Color.White
-                                    )
-                                }
-                                
-                                // Text input
-                                BasicTextField(
-                                    value = inputText,
-                                    onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 8.dp),
-                                    textStyle = TextStyle(
-                                        color = Color.White,
-                                        fontSize = 16.sp
-                                    ),
-                                    cursorBrush = SolidColor(Color.White),
-                                    decorationBox = { innerTextField ->
-                                        Box {
-                                            if (inputText.text.isEmpty()) {
-                                                Text(
-                                                    text = "Type a message...",
-                                                    color = Color.White.copy(alpha = 0.6f),
-                                                    fontSize = 16.sp
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = "Add Image",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        // OutlinedTextField
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
+                            placeholder = {
+                                Text(
+                                    text = "Type a message...",
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    fontSize = 16.sp
                                 )
-                                
-                                // Send button
-                                IconButton(
-                                    onClick = { 
-                                        if (inputText.text.isNotEmpty() || selectedImage != null) {
-                                            unifiedChatBotViewModel.sendMessage()
-                                        }
-                                    },
-                                    enabled = !isLoading && (inputText.text.isNotEmpty() || selectedImage != null),
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(AccentGreen, CircleShape)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Send,
-                                        contentDescription = "Send Message",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(15.dp)
-                                    )
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = Color.White,
+                                focusedContainerColor = MediumGreen,
+                                unfocusedContainerColor = MediumGreen
+                            ),
+                            shape = RoundedCornerShape(24.dp),
+                            maxLines = 5,
+                            singleLine = false
+                        )
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        // Send button
+                        IconButton(
+                            onClick = { 
+                                if (inputText.text.isNotEmpty() || selectedImage != null) {
+                                    unifiedChatBotViewModel.sendMessage()
                                 }
-                            }
+                            },
+                            enabled = !isLoading && (inputText.text.isNotEmpty() || selectedImage != null),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(AccentGreen, CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Send,
+                                contentDescription = "Send Message",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -521,7 +523,9 @@ fun ConversationsDrawer(
     currentChatId: String?,
     onChatSelected: (Chat) -> Unit,
     onNewChatClicked: () -> Unit,
-    onDeleteChatClicked: (Chat) -> Unit
+    onDeleteChatClicked: (Chat) -> Unit,
+    isTypingSoundEnabled: Boolean = true,
+    onToggleTypingSound: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -546,18 +550,42 @@ fun ConversationsDrawer(
                 fontWeight = FontWeight.Bold
             )
 
-            // New chat button
-            IconButton(
-                onClick = onNewChatClicked,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(AccentGreen, CircleShape)
+            // Sound toggle and New chat buttons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "New Conversation",
-                    tint = Color.White
-                )
+                // Sound toggle button
+                IconButton(
+                    onClick = onToggleTypingSound,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            if (isTypingSoundEnabled) AccentGreen else MediumGreen,
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = if (isTypingSoundEnabled) 
+                            Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                        contentDescription = if (isTypingSoundEnabled) 
+                            "Disable typing sound" else "Enable typing sound",
+                        tint = Color.White
+                    )
+                }
+                
+                // New chat button
+                IconButton(
+                    onClick = onNewChatClicked,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(AccentGreen, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "New Conversation",
+                        tint = Color.White
+                    )
+                }
             }
         }
 

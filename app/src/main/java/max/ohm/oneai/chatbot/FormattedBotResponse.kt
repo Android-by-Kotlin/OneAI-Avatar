@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -94,26 +95,30 @@ fun FormattedBotResponse(
 
 @Composable
 private fun TitleSection(title: String) {
-    Text(
-        text = title,
-        color = JarvisLightBlue,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Monospace,
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
+    SelectionContainer {
+        Text(
+            text = title,
+            color = JarvisLightBlue,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+    }
 }
 
 @Composable
 private fun ParagraphSection(text: String) {
-    Text(
-        text = text,
-        color = JarvisLightBlue.copy(alpha = 0.9f),
-        fontSize = 15.sp,
-        lineHeight = 22.sp,
-        fontFamily = FontFamily.Monospace,
-        modifier = Modifier.padding(vertical = 2.dp)
-    )
+    SelectionContainer {
+        Text(
+            text = text,
+            color = JarvisLightBlue.copy(alpha = 0.9f),
+            fontSize = 15.sp,
+            lineHeight = 22.sp,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.padding(vertical = 2.dp)
+        )
+    }
 }
 
 @Composable
@@ -152,12 +157,14 @@ private fun PrerequisitesSection(items: List<String>) {
                             .padding(top = 2.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = item,
-                        color = TextPrimary,
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp
-                    )
+                    SelectionContainer {
+                        Text(
+                            text = item,
+                            color = TextPrimary,
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        )
+                    }
                 }
             }
         }
@@ -169,19 +176,23 @@ private fun StepSection(stepTitle: String, content: String) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = stepTitle,
-            color = AccentBlue,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(bottom = 6.dp)
-        )
-        Text(
-            text = content,
-            color = TextPrimary,
-            fontSize = 14.sp,
-            lineHeight = 21.sp
-        )
+        SelectionContainer {
+            Text(
+                text = stepTitle,
+                color = AccentBlue,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+        }
+        SelectionContainer {
+            Text(
+                text = content,
+                color = TextPrimary,
+                fontSize = 14.sp,
+                lineHeight = 21.sp
+            )
+        }
     }
 }
 
@@ -252,12 +263,14 @@ private fun CodeBlockSection(
                     .horizontalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                Text(
-                    text = highlightCode(code, language),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp,
-                    lineHeight = 20.sp
-                )
+                SelectionContainer {
+                    Text(
+                        text = highlightCode(code, language),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp
+                    )
+                }
             }
         }
     }
@@ -406,12 +419,14 @@ private fun BulletListSection(items: List<String>) {
                     fontSize = 16.sp,
                     modifier = Modifier.padding(end = 8.dp)
                 )
-                Text(
-                    text = item,
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
+                SelectionContainer {
+                    Text(
+                        text = item,
+                        color = TextPrimary,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                }
             }
         }
     }
@@ -439,12 +454,14 @@ private fun NoteSection(content: String) {
                 fontSize = 16.sp,
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text(
-                text = content,
-                color = TextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 20.sp
-            )
+            SelectionContainer {
+                Text(
+                    text = content,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
+            }
         }
     }
 }
@@ -471,12 +488,14 @@ private fun WarningSection(content: String) {
                 fontSize = 16.sp,
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text(
-                text = content,
-                color = TextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 20.sp
-            )
+            SelectionContainer {
+                Text(
+                    text = content,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
+            }
         }
     }
 }

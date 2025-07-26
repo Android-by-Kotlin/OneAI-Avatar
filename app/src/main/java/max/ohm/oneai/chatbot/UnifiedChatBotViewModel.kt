@@ -57,6 +57,10 @@ class UnifiedChatBotViewModel : ViewModel() {
     private val _chats = MutableStateFlow<List<Chat>>(emptyList())
     val chats: StateFlow<List<Chat>> = _chats
 
+    // Typing sound enabled state
+    var isTypingSoundEnabled by mutableStateOf(true)
+        private set
+
     // Loading state for chats
     var isLoadingChats by mutableStateOf(false)
         private set
@@ -143,6 +147,10 @@ class UnifiedChatBotViewModel : ViewModel() {
     
     fun toggleChatDrawer() {
         showChatDrawer = !showChatDrawer
+    }
+
+    fun toggleTypingSound() {
+        isTypingSoundEnabled = !isTypingSoundEnabled
     }
 
     fun loadChats() {

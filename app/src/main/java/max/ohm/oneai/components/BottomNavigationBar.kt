@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -50,27 +51,27 @@ fun BottomNavigationBar(
     val items = listOf(
         BottomNavItem(
             route = "chatbot",
-            icon = Icons.Outlined.Chat,
-            selectedIcon = Icons.Filled.Chat,
+            icon = Icons.Outlined.QuestionAnswer,
+            selectedIcon = Icons.Filled.QuestionAnswer,
             label = "Chat"
         ),
         BottomNavItem(
+            route = "enhancedImageGenerator",
+            icon = Icons.Outlined.Image,
+            selectedIcon = Icons.Filled.Image,
+            label = "Generate"
+        ),
+        BottomNavItem(
             route = "videogeneration",
-            icon = Icons.Outlined.VideoLibrary,
-            selectedIcon = Icons.Filled.VideoLibrary,
+            icon = Icons.Outlined.PlayCircle,
+            selectedIcon = Icons.Filled.PlayCircle,
             label = "Video"
         ),
         BottomNavItem(
             route = "imageToImage",
-            icon = Icons.Outlined.Transform,
-            selectedIcon = Icons.Filled.Transform,
+            icon = Icons.Outlined.AutoFixHigh,
+            selectedIcon = Icons.Filled.AutoFixHigh,
             label = "Transform"
-        ),
-        BottomNavItem(
-            route = "liveAvatar",
-            icon = Icons.Outlined.Person,
-            selectedIcon = Icons.Filled.Person,
-            label = "Avatar"
         )
     )
     
@@ -83,23 +84,24 @@ fun BottomNavigationBar(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .shadow(
-                    elevation = 12.dp,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    clip = false
+                .border(
+                    width = 0.5.dp,
+                    color = Color.White.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color(0xFF1A1F3A) // Dark secondary color matching home screen
+            color = Color(0xFF1A1F3A), // Dark secondary color matching home screen
+            shadowElevation = 2.dp
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left side items
-                items.take(2).forEach { item ->
+                // All 4 items evenly distributed
+                items.forEach { item ->
                     NavBarItem(
                         item = item,
                         isSelected = currentRoute == item.route,
@@ -113,52 +115,6 @@ fun BottomNavigationBar(
                         }
                     )
                 }
-                
-                // Center FAB placeholder
-                Spacer(modifier = Modifier.width(72.dp))
-                
-                // Right side items
-                items.takeLast(2).forEach { item ->
-                    NavBarItem(
-                        item = item,
-                        isSelected = currentRoute == item.route,
-                        onClick = {
-                            if (currentRoute != item.route) {
-                                navController.navigate(item.route) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        
-// Center FAB with plus button for creating
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-20).dp)
-        ) {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("enhancedImageGenerator") {
-                        launchSingleTop = true
-                    }
-                },
-                modifier = Modifier
-                    .size(64.dp)
-                    .shadow(8.dp, CircleShape),
-                containerColor = Color(0xFF6366F1),
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Create AI Art",
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
             }
         }
     }
@@ -185,13 +141,12 @@ fun NavBarItem(
     
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(bounded = true, radius = 30.dp),
+                indication = rememberRipple(bounded = false, radius = 32.dp),
                 onClick = onClick
             )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(

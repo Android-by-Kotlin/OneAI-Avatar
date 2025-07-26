@@ -37,10 +37,14 @@ fun SplashScreen(
     navController: NavController,
     loginViewModel: LoginViewModel = viewModel()
 ) {
-    val alpha = remember { Animatable(0f) }
+    // Animation states for sequence
+    val logoAlpha = remember { Animatable(0f) }
+    val logoScale = remember { Animatable(0.5f) }
+    val textAlpha = remember { Animatable(0f) }
+    val taglineAlpha = remember { Animatable(0f) }
     val loginState by loginViewModel.loginState.collectAsState()
     
-    // Animation states
+    // Background animation states
     val infiniteTransition = rememberInfiniteTransition(label = "background")
     val floatingAnimation by infiniteTransition.animateFloat(
         initialValue = -10f,
@@ -73,11 +77,33 @@ fun SplashScreen(
     )
 
     LaunchedEffect(key1 = true) {
-        alpha.animateTo(
+        // Step 1: Show the logo in center (0.2s)
+        logoAlpha.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 1500)
+            animationSpec = tween(durationMillis = 200)
         )
-        delay(3000)
+        logoScale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+        )
+        
+        delay(100) // Small delay
+        
+        // Step 2: Show "ONEAI" text below the logo (0.15s)
+        textAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 150)
+        )
+        
+        delay(50) // Small delay
+        
+        // Step 3: Show tagline below the text (0.15s)
+        taglineAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 150)
+        )
+        
+        delay(100) // Final wait
         
         // Navigate based on authentication state
         if (loginState is LoginState.Success) {
@@ -163,17 +189,20 @@ fun SplashScreen(
             )
         }
         
-        // Main content
+        // Main content - Column for centered layout
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .alpha(alpha.value)
-                .padding(32.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Animated logo container
+            // Logo appears centered with glow effects
             Box(
                 modifier = Modifier
-                    .size(180.dp)
+                    .size(120.dp)
+                    .alpha(logoAlpha.value)
+                    .scale(logoScale.value)
                     .offset(y = floatingAnimation.dp)
             ) {
                 // Rotating background circle
@@ -198,7 +227,7 @@ fun SplashScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(10.dp)
+                        .padding(8.dp)
                         .scale(pulseAnimation)
                         .background(
                             Brush.radialGradient(
@@ -211,68 +240,56 @@ fun SplashScreen(
                         )
                 )
                 
-                // Logo background with glass effect
+                // Brain logo with glass effect background
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp)
+                        .padding(15.dp)
                         .background(
                             color = Color.White.copy(alpha = 0.1f),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "App Logo",
+                    Image(
+                        painter = painterResource(id = R.drawable.brain_logo),
+                        contentDescription = "OneAI Brain Logo",
                         modifier = Modifier
                             .size(80.dp)
-                            .scale(pulseAnimation),
-                        tint = Color.White
+                            .scale(pulseAnimation)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Use letter drop animation for the title
-            LetterDropAnimation(
-                text = "ONE AI",
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                dropHeight = 400f,
-                staggerDelay = 80,
-                animationDuration = 1000
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Use letter drop animation for the subtitle with delay
-            LetterDropAnimation(
-                text = "Transform Your Vision",
-                textStyle = TextStyle(
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Light
-                ),
-                dropHeight = 200f,
-                staggerDelay = 40,
-                animationDuration = 800
-            )
-            
-            Spacer(modifier = Modifier.height(60.dp))
-            
-            // Loading indicator
-            CircularProgressIndicator(
-                color = Color(0xFF6366F1),
-                modifier = Modifier
-                    .size(48.dp)
-                    .alpha(alpha.value),
-                strokeWidth = 3.dp
-            )
+            // Text appears below logo with separate animations
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.offset(y = floatingAnimation.dp)
+            ) {
+                // ONEAI title appears first
+                Text(
+                    text = "ONEAI",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.alpha(textAlpha.value)
+                )
+                
+                // Tagline appears after the title
+                Text(
+                    text = "One New Era of AI",
+                    style = TextStyle(
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Light
+                    ),
+                    modifier = Modifier.alpha(taglineAlpha.value)
+                )
+            }
         }
     }
 }

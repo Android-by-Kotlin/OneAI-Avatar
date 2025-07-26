@@ -11,7 +11,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import android.view.View
+import android.view.WindowManager
 import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.launch
 import max.ohm.oneai.navigationsystem.AppNavigation
@@ -36,20 +39,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Make the app draw edge-to-edge
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Configure full-screen immersive UI
+        configureSystemUI()
         
-        // Request required permissions
-        requestPermissions()
-        
-        // Initialize and check Firebase
-        initializeFirebase()
-        
-        // Test Gemini API key
-        testGeminiApiKey()
-        
+        // Set content immediately to show splash screen
         try {
-            // Set content with error handling
             setContent {
                 OneAITheme {
                     AppNavigation()
@@ -68,6 +62,48 @@ class MainActivity : ComponentActivity() {
                 Log.e(TAG, "Second attempt to set content failed: ${e2.message}", e2)
             }
         }
+        
+        // Initialize other components in background after UI is shown
+        lifecycleScope.launch {
+            // Request required permissions
+            requestPermissions()
+            
+            // Initialize and check Firebase
+            initializeFirebase()
+            
+            // Test Gemini API key
+            testGeminiApiKey()
+        }
+    }
+    
+    private fun configureSystemUI() {
+        // Make the app draw edge-to-edge
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
+        // Set status bar and navigation bar colors to match app theme
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.statusBarColor = android.graphics.Color.parseColor("#FF1A1F3A") // Match bottom nav color
+            window.navigationBarColor = android.graphics.Color.parseColor("#FF1A1F3A")
+        }
+        
+        // Configure window controller for immersive experience
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController?.let { controller ->
+            // Set status bar content to light (white icons/text) since we're using dark background
+            controller.isAppearanceLightStatusBars = false
+            controller.isAppearanceLightNavigationBars = false
+            
+            // Enable immersive mode with sticky system bars
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        
+        // Additional flags for full immersive experience
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        
+        // Keep screen on while app is active (optional - remove if not needed)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
     
     private fun initializeFirebase() {
