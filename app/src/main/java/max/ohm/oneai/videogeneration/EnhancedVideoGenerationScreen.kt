@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 // Enhanced color scheme matching AI Art Studio
 private val DarkBackground = Color(0xFF0A0E27)
@@ -86,6 +88,9 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
         ),
         label = "gradient_rotation"
     )
+
+    // Set status bar color for video generation screen
+    SetStatusBarColor(StatusBarUtils.VideoGenerationStatusBarColor)
 
     Box(
         modifier = Modifier

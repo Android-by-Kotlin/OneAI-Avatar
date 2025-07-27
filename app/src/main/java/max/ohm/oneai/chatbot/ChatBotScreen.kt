@@ -76,6 +76,8 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import max.ohm.oneai.data.model.Chat
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 // Define the color scheme based on the HTML design
 private val DarkGreen = Color(0xFF10231c)
@@ -205,6 +207,9 @@ fun ChatBotScreen(
         }
     }
 
+    // Set status bar color for chatbot screen
+    SetStatusBarColor(StatusBarUtils.ChatBotStatusBarColor)
+    
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {

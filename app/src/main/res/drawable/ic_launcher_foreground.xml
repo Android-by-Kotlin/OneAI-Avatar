@@ -1,20 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    
-    <!-- Brain icon for launcher -->
-    <path
-        android:pathData="M54,36C40.74,36 30,46.74 30,60C30,73.26 40.74,84 54,84C67.26,84 78,73.26 78,60C78,46.74 67.26,36 54,36ZM69,56C69,54.34 67.66,53 66,53C64.34,53 63,54.34 63,56C63,57.66 64.34,59 66,59C67.66,59 69,57.66 69,56ZM54,76C49.58,76 46,72.42 46,68C46,63.58 49.58,60 54,60C58.42,60 62,63.58 62,68C62,72.42 58.42,76 54,76ZM39,56C39,54.34 40.34,53 42,53C43.66,53 45,54.34 45,56C45,57.66 43.66,59 42,59C40.34,59 39,57.66 39,56ZM54,44C56.21,44 58,45.79 58,48C58,50.21 56.21,52 54,52C51.79,52 50,50.21 50,48C50,45.79 51.79,44 54,44Z"
-        android:fillColor="#9C27B0"/>
-    
-    <!-- Circuit lines -->
-    <path
-        android:pathData="M54,36L54,44M30,60L38,60M54,76L54,84M70,60L78,60M38.78,38.78L44.24,44.24M69.22,38.78L63.76,44.24M38.78,81.22L44.24,75.76M69.22,81.22L63.76,75.76"
-        android:strokeWidth="2"
-        android:strokeColor="#5E35B1"
-        android:strokeLineCap="round"/>
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/brain_logo"
+    android:gravity="center" />

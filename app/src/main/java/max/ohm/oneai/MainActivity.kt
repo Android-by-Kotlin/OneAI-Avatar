@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.lifecycleScope
 import android.view.View
 import android.view.WindowManager
@@ -22,6 +23,7 @@ import max.ohm.oneai.ui.theme.OneAITheme
 import max.ohm.oneai.utils.FirebaseDebugger
 import max.ohm.oneai.utils.FirebaseUtils
 import max.ohm.oneai.utils.GeminiUtils
+import max.ohm.oneai.utils.StatusBarUtils
 
 
 class MainActivity : ComponentActivity() {
@@ -82,8 +84,8 @@ class MainActivity : ComponentActivity() {
         
         // Set status bar and navigation bar colors to match app theme
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.statusBarColor = android.graphics.Color.parseColor("#FF1A1F3A") // Match bottom nav color
-            window.navigationBarColor = android.graphics.Color.parseColor("#FF1A1F3A")
+            window.statusBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()
+            window.navigationBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()
         }
         
         // Configure window controller for immersive experience

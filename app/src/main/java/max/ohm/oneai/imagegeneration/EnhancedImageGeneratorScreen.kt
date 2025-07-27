@@ -63,6 +63,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.collectAsState
 import android.util.Log
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 // Enhanced color scheme
 private val DarkBackground = Color(0xFF0A0E27)
@@ -205,6 +207,9 @@ fun EnhancedImageGeneratorScreen(
         }
     }
     
+    // Set status bar color for image generation screen
+    SetStatusBarColor(StatusBarUtils.ImageGenerationStatusBarColor)
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -270,15 +275,15 @@ fun EnhancedImageGeneratorScreen(
                             }
                         }
                         
-                        IconButton(
-                            onClick = { /* Theme toggle */ }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.DarkMode,
-                                contentDescription = "Toggle Theme",
-                                tint = TextPrimary
-                            )
-                        }
+//                        IconButton(
+//                            onClick = { /* Theme toggle */ }
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Outlined.DarkMode,
+//                                contentDescription = "Toggle Theme",
+//                                tint = TextPrimary
+//                            )
+//                        }
                     }
                 }
             }

@@ -52,6 +52,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import android.util.Log
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 // Define the color scheme based on the HTML design
 private val DarkGreen = Color(0xFF10231c)
@@ -278,6 +280,9 @@ fun ImageGeneratorScreen(
             unifiedImageViewModel.clearErrorMessage() // Clear message after showing
         }
     }
+
+    // Set status bar color for image generation screen
+    SetStatusBarColor(StatusBarUtils.ImageGenerationStatusBarColor)
 
     Column(
         modifier = Modifier

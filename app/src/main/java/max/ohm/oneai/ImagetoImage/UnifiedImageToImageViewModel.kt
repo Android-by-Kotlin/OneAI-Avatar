@@ -132,54 +132,59 @@ class UnifiedImageToImageViewModel : ViewModel() {
     // Available models
     val availableModels = listOf(
         // A4F Models (NEW)
-        "a4f-flux-kontext-dev" to "✨ A4F Flux Kontext Dev Edit",
-        "a4f-flux-kontext-pro" to "✨ A4F Flux Kontext Pro Edit",
-        "a4f-flux-kontext-max" to "✨ A4F Flux Kontext Max Edit",
+//        "a4f-flux-kontext-dev" to "✨ A4F Flux Kontext Dev Edit",
+//        "a4f-flux-kontext-pro" to "✨ A4F Flux Kontext Pro Edit",
+//        "a4f-flux-kontext-max" to "✨ A4F Flux Kontext Max Edit",
+
+
+        "a4f-flux-kontext-dev" to "✨ Dev Edit",
+        "a4f-flux-kontext-pro" to "✨ Pro Edit",
+        "a4f-flux-kontext-max" to "✨ Max Edit",
 
         
         // Stability AI Models (Premium)
-        "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
-        "stability-ai-sketch" to "🎨 Stability AI Sketch-to-Image",
-        "stability-ai-structure" to "🏗️ Stability AI Structure Control",
-        "stability-ai-style" to "🎨 Stability AI Style Control",
-        "stability-ai-style-transfer" to "🎨 Stability AI Style Transfer",
-        "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
-        "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
-        "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
-        "stability-ai-replace-background-relight" to "🚀 Stability AI Replace Background & Relight",
-        "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
-        "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
-        "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
-        "stability-ai-upscale" to "🚀 Stability AI Conservative Upscale",
-        
-        // Standard Image-to-Image Models
-        "flux-img2img" to "Flux Image-to-Image",
-        "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
-        "sdxl-img2img" to "SDXL Image-to-Image",
-        
-        // Style Transfer Models
-        "ghibli-style" to "Ghibli Studio Style",
-        "headshot-img2img" to "Headshot",
-        "Enhance-img2img" to "Enhance",
-        "Remove-img2img" to "Remove Background",
-        "Sketch Img2Img" to "Sketch to Realistic",
-        "anime-style" to "Anime Style Transfer",
-        "oil-painting" to "Oil Painting Style",
-        "watercolor" to "Watercolor Style",
-
-        "cyberpunk-style" to "Cyberpunk Style",
-        "fantasy-art" to "Fantasy Art Style",
-        
-        // Specialized Models
-        "photo-enhance" to "Photo Enhancement",
-        "colorize" to "Black & White Colorization",
-        "super-resolution" to "Super Resolution Upscale",
-
-        
-        // NEW: Batch Processing Models
-        "batch-style-transfer" to "🔄 Batch Style Transfer",
-        "batch-enhancement" to "🔄 Batch Enhancement",
-        "batch-upscale" to "🔄 Batch Upscale"
+       // "stability-ai-img2img" to "🚀 Stability AI Image-to-Image",
+//        "stability-ai-sketch" to "🎨 Stability AI Sketch-to-Image",
+//        "stability-ai-structure" to "🏗️ Stability AI Structure Control",
+//        "stability-ai-style" to "🎨 Stability AI Style Control",
+//        "stability-ai-style-transfer" to "🎨 Stability AI Style Transfer",
+//        "stability-ai-search-replace" to "🚀 Stability AI Search & Replace",
+//        "stability-ai-search-recolor" to "🚀 Stability AI Search & Recolor",
+//        "stability-ai-remove-background" to "🚀 Stability AI Remove Background",
+//        "stability-ai-replace-background-relight" to "🚀 Stability AI Replace Background & Relight",
+//        "stability-ai-mask-erase" to "🚀 Stability AI Mask Erase",
+//        "stability-ai-inpaint" to "🚀 Stability AI Inpaint",
+//        "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
+//        "stability-ai-upscale" to "🚀 Stability AI Conservative Upscale",
+//
+//        // Standard Image-to-Image Models
+//        "flux-img2img" to "Flux Image-to-Image",
+//        "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
+//        "sdxl-img2img" to "SDXL Image-to-Image",
+//
+//        // Style Transfer Models
+//        "ghibli-style" to "Ghibli Studio Style",
+//        "headshot-img2img" to "Headshot",
+//        "Enhance-img2img" to "Enhance",
+//        "Remove-img2img" to "Remove Background",
+//        "Sketch Img2Img" to "Sketch to Realistic",
+//        "anime-style" to "Anime Style Transfer",
+//        "oil-painting" to "Oil Painting Style",
+//        "watercolor" to "Watercolor Style",
+//
+//        "cyberpunk-style" to "Cyberpunk Style",
+//        "fantasy-art" to "Fantasy Art Style",
+//
+//        // Specialized Models
+//        "photo-enhance" to "Photo Enhancement",
+//        "colorize" to "Black & White Colorization",
+//        "super-resolution" to "Super Resolution Upscale",
+//
+//
+//        // NEW: Batch Processing Models
+//        "batch-style-transfer" to "🔄 Batch Style Transfer",
+//        "batch-enhancement" to "🔄 Batch Enhancement",
+//        "batch-upscale" to "🔄 Batch Upscale"
     )
 
     fun setContext(context: Context) {

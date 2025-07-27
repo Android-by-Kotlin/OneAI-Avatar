@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import androidx.navigation.NavController
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,6 +20,9 @@ fun NewVideoGenerationScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var prompt by remember { mutableStateOf("") }
+
+    // Set status bar color for video generation screen
+    SetStatusBarColor(StatusBarUtils.VideoGenerationStatusBarColor)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }

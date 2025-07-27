@@ -38,6 +38,8 @@ import max.ohm.oneai.stabilityai.ui.ImageComparisonView
 import androidx.compose.runtime.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -306,6 +308,9 @@ fun ImageToImageScreen(
         }
     }
     
+    // Set status bar color for image to image screen
+    SetStatusBarColor(StatusBarUtils.ImageToImageStatusBarColor)
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -334,7 +339,7 @@ fun ImageToImageScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                "AI Image Studio Pro",
+                                "OneAI Image Studio Pro",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 20.sp
                             )
@@ -358,24 +363,24 @@ fun ImageToImageScreen(
                         containerColor = Color.Transparent,
                         titleContentColor = Color.White
                     ),
-                    actions = {
-                        // Gallery button
-                        IconButton(
-                            onClick = onNavigateToGallery,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    Color(0xFFEC4899).copy(alpha = 0.2f),
-                                    CircleShape
-                                )
-                        ) {
-                            Icon(
-                                Icons.Outlined.PhotoLibrary,
-                                contentDescription = "Gallery",
-                                tint = Color(0xFFEC4899)
-                            )
-                        }
-                    }
+//                    actions = {
+//                        // Gallery button
+//                        IconButton(
+//                            onClick = onNavigateToGallery,
+//                            modifier = Modifier
+//                                .size(40.dp)
+//                                .background(
+//                                    Color(0xFFEC4899).copy(alpha = 0.2f),
+//                                    CircleShape
+//                                )
+//                        ) {
+//                            Icon(
+//                                Icons.Outlined.PhotoLibrary,
+//                                contentDescription = "Gallery",
+//                                tint = Color(0xFFEC4899)
+//                            )
+//                        }
+//                    }
                 )
             }
         ) { paddingValues ->
