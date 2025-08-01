@@ -338,6 +338,21 @@ fun ImageToImageScreen(
         }
     }
     
+    // Target image picker launcher for face swap
+    val targetImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                viewModel.updateTargetImage(bitmap)
+                Toast.makeText(context, "Target face image selected", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                viewModel.errorMessage = "Failed to load target image: ${e.message}"
+            }
+        }
+    }
+    
     // Set status bar color for image to image screen
     SetStatusBarColor(StatusBarUtils.ImageToImageStatusBarColor)
     
@@ -1731,6 +1746,124 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     )
                                 }
                             )
+                        }
+                        "multiple-face-swap" -> {
+                            // Target image picker for face swap
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable { targetImagePickerLauncher.launch("image/*") },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (viewModel.targetImage != null) 
+                                        Color(0xFF10B981) else Color(0xFFEF4444)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Target Face Image (Required)",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (viewModel.targetImage != null) {
+                                            IconButton(
+                                                onClick = { viewModel.updateTargetImage(null) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove target image",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (viewModel.targetImage != null) {
+                                        // Show preview of target image
+                                        Image(
+                                            bitmap = viewModel.targetImage!!.asImageBitmap(),
+                                            contentDescription = "Target face",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(top = 8.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Show upload prompt
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Face,
+                                                contentDescription = null,
+                                                tint = Color(0xFF6366F1),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Tap to select target face image",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Info card about multiple face swap
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF6366F1).copy(alpha = 0.2f)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "This will swap all faces in the main image with the face from the target image",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
                         }
                         "fashion-try-on" -> {
                             // Clothing image picker for fashion try-on

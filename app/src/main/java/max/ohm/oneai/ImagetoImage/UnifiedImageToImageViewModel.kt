@@ -78,6 +78,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
     var secondImage by mutableStateOf<Bitmap?>(null)
         private set
     
+    // Target image for face swap
+    var targetImage by mutableStateOf<Bitmap?>(null)
+        private set
+    
     // Clothing image for fashion try-on
     var clothingImage by mutableStateOf<Bitmap?>(null)
         private set
@@ -171,6 +175,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "flux-img2img" to "Flux Image-to-Image",
         "flux-kontext-pro-img2img" to "Flux Kontext Pro Image-to-Image",
         "flux-kontext-dev-dual" to "Flux Kontext Dev Dual Images",
+        "multiple-face-swap" to "🎭 Multiple Face Swap",
         "fashion-try-on" to "👗 Fashion Try-On",
         "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
         "sdxl-img2img" to "SDXL Image-to-Image",
@@ -249,6 +254,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     fun updateSecondImage(bitmap: Bitmap?) {
         secondImage = bitmap
+    }
+    
+    fun updateTargetImage(bitmap: Bitmap?) {
+        targetImage = bitmap
     }
     
     fun updateClothingImage(bitmap: Bitmap?) {
@@ -460,6 +469,14 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
         }
         
+        // Validate multiple face swap model
+        if (selectedModel == "multiple-face-swap") {
+            if (targetImage == null) {
+                errorMessage = "Please select a target image with the face you want to swap"
+                return
+            }
+        }
+        
         // Validate Stability AI requirements
         if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint" || selectedModel == "stability-ai-style" || selectedModel == "stability-ai-style-transfer" || selectedModel == "stability-ai-upscale") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
@@ -659,6 +676,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             bitmapToBase64(resizedBitmap)
                         }
                         performFashionTryOn(base64Image, base64ClothingImage)
+                    }
+                    
+                    "multiple-face-swap" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert target image to base64
+                        val base64TargetImage = withContext(Dispatchers.IO) {
+                            val resizedBitmap = resizeBitmapIfNeeded(targetImage!!)
+                            bitmapToBase64(resizedBitmap)
+                        }
+                        performMultipleFaceSwap(base64Image, base64TargetImage)
                     }
 
 
@@ -1467,6 +1498,39 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in fashion try-on", e)
             errorMessage = "Fashion Try-On Error: ${e.message}"
+        }
+    }
+    
+    private suspend fun performMultipleFaceSwap(base64InitImage: String, base64TargetImage: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing multiple face swap..."
+        
+        try {
+            Log.d("UnifiedImg2Img", "Starting Multiple Face Swap")
+            Log.d("UnifiedImg2Img", "Init image size: ${base64InitImage.length} chars")
+            Log.d("UnifiedImg2Img", "Target image size: ${base64TargetImage.length} chars")
+            
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("init_image", base64InitImage)
+                put("target_image", base64TargetImage)
+                put("base64", true)
+                put("webhook", null)
+                put("track_id", null)
+            }
+            
+            Log.d("UnifiedImg2Img", "Request JSON created for multiple face swap")
+            
+            val result = makeApiCallWithPolling(
+                url = "https://modelslab.com/api/v6/deepfake/multiple_face_swap",
+                jsonBody = jsonBody,
+                modelName = "Multiple Face Swap"
+            )
+            
+            processApiResult(result)
+            
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in multiple face swap", e)
+            errorMessage = "Multiple Face Swap Error: ${e.message}"
         }
     }
 
