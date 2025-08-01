@@ -308,6 +308,36 @@ fun ImageToImageScreen(
         }
     }
     
+    // Second image picker launcher for dual image models
+    val secondImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                viewModel.updateSecondImage(bitmap)
+                Toast.makeText(context, "Second image selected", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                viewModel.errorMessage = "Failed to load second image: ${e.message}"
+            }
+        }
+    }
+    
+    // Clothing image picker launcher for fashion try-on
+    val clothingImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                viewModel.updateClothingImage(bitmap)
+                Toast.makeText(context, "Clothing image selected", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                viewModel.errorMessage = "Failed to load clothing image: ${e.message}"
+            }
+        }
+    }
+    
     // Set status bar color for image to image screen
     SetStatusBarColor(StatusBarUtils.ImageToImageStatusBarColor)
     
@@ -1580,6 +1610,312 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     }
                                 }
                             }
+                        }
+                        "flux-kontext-dev-dual" -> {
+                            // Second image picker for dual image model
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable { secondImagePickerLauncher.launch("image/*") },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (viewModel.secondImage != null) 
+                                        Color(0xFF10B981) else Color(0xFFEF4444)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Second Image (Required)",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (viewModel.secondImage != null) {
+                                            IconButton(
+                                                onClick = { viewModel.updateSecondImage(null) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove second image",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (viewModel.secondImage != null) {
+                                        // Show preview of second image
+                                        Image(
+                                            bitmap = viewModel.secondImage!!.asImageBitmap(),
+                                            contentDescription = "Second image",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(top = 8.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Show upload prompt
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.AddPhotoAlternate,
+                                                contentDescription = null,
+                                                tint = Color(0xFF6366F1),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Tap to select second image",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Prompt for dual image combination
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "Describe how to combine the two images (e.g., 'the girl in image one and the girl in image two in one frame')",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 4,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.GroupAdd,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
+                        "fashion-try-on" -> {
+                            // Clothing image picker for fashion try-on
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp)
+                                    .clickable { clothingImagePickerLauncher.launch("image/*") },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(
+                                    width = 1.dp,
+                                    color = if (viewModel.clothingImage != null) 
+                                        Color(0xFF10B981) else Color(0xFFEF4444)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "Clothing Image (Required)",
+                                            color = Color.White,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (viewModel.clothingImage != null) {
+                                            IconButton(
+                                                onClick = { viewModel.updateClothingImage(null) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove clothing image",
+                                                    tint = Color(0xFFEF4444),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (viewModel.clothingImage != null) {
+                                        // Show preview of clothing image
+                                        Image(
+                                            bitmap = viewModel.clothingImage!!.asImageBitmap(),
+                                            contentDescription = "Clothing image",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(top = 8.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        // Show upload prompt
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 8.dp),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Checkroom,
+                                                contentDescription = null,
+                                                tint = Color(0xFF6366F1),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Tap to select clothing image",
+                                                color = Color.White.copy(alpha = 0.7f),
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Cloth type selector
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF0A0E27).copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        "Clothing Type",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        // Upper body button
+                                        Button(
+                                            onClick = { viewModel.updateClothType("upper_body") },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (viewModel.clothType == "upper_body") 
+                                                    Color(0xFF6366F1) else Color(0xFF374151)
+                                            ),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.weight(1f).padding(end = 4.dp)
+                                        ) {
+                                            Text(
+                                                "Upper Body",
+                                                fontSize = 12.sp,
+                                                color = Color.White
+                                            )
+                                        }
+                                        
+                                        // Lower body button
+                                        Button(
+                                            onClick = { viewModel.updateClothType("lower_body") },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (viewModel.clothType == "lower_body") 
+                                                    Color(0xFF6366F1) else Color(0xFF374151)
+                                            ),
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier.weight(1f).padding(start = 4.dp)
+                                        ) {
+                                            Text(
+                                                "Lower Body",
+                                                fontSize = 12.sp,
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Prompt for fashion try-on
+                            OutlinedTextField(
+                                value = viewModel.prompt,
+                                onValueChange = { viewModel.prompt = it },
+                                placeholder = { 
+                                    Text(
+                                        "Describe the desired result (e.g., 'A realistic photo of a model wearing a beautiful t-shirt')",
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    ) 
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    focusedBorderColor = Color(0xFF6366F1),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
+                                    unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                                    cursorColor = Color(0xFF6366F1)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                minLines = 2,
+                                maxLines = 4,
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Checkroom,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
                         }
                         "stability-ai-style-transfer" -> {
                             // Style reference image picker (required)

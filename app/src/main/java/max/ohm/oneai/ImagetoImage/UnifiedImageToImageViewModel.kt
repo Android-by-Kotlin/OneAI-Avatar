@@ -1145,13 +1145,11 @@ class UnifiedImageToImageViewModel : ViewModel() {
         Log.d("UnifiedImg2Img", "Image 1 size: ${base64Image1.length} chars")
         Log.d("UnifiedImg2Img", "Image 2 size: ${base64Image2.length} chars")
         Log.d("UnifiedImg2Img", "Prompt: $prompt")
-        Log.d("UnifiedImg2Img", "API Key length: ${MODELSLAB_API_KEY.length}")
         
-        // First, let's try with direct API call without polling to see the exact response
         val jsonBody = JSONObject().apply {
             put("key", MODELSLAB_API_KEY)
-            put("init_image", base64Image1)
-            put("init_image_2", base64Image2)
+            put("init_image", base64Image1)  // Send base64 directly
+            put("init_image_2", base64Image2)  // Send base64 directly
             put("prompt", prompt)
             put("negative_prompt", negativePrompt)
             put("model_id", "flux-kontext-dev")
@@ -1160,12 +1158,15 @@ class UnifiedImageToImageViewModel : ViewModel() {
             put("scheduler", "DPMSolverMultistepScheduler")
             put("guidance", "2.5")
             put("enhance_prompt", null)
+            put("base64", true)  // Indicate we're sending base64 data
+            put("webhook", null)
+            put("track_id", null)
         }
         
-        Log.d("UnifiedImg2Img", "Request JSON keys: ${jsonBody.keys()}")
+        Log.d("UnifiedImg2Img", "Request JSON created with base64 images")
         
-        // Use makeApiCall first to see the exact error
-        val result = makeApiCall(
+        // Use makeApiCallWithPolling for better handling
+        val result = makeApiCallWithPolling(
             url = "https://modelslab.com/api/v6/images/img2img",
             jsonBody = jsonBody,
             modelName = "Flux Kontext Dev Dual"
