@@ -73,6 +73,19 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     var styleReferenceImage by mutableStateOf<Bitmap?>(null)
         private set
+    
+    // Second image for dual image models (like Flux Kontext Dev Dual)
+    var secondImage by mutableStateOf<Bitmap?>(null)
+        private set
+    
+    // Clothing image for fashion try-on
+    var clothingImage by mutableStateOf<Bitmap?>(null)
+        private set
+    
+    // Cloth type for fashion try-on
+    var clothType by mutableStateOf("upper_body")
+        private set
+    
     // Stability AI specific parameters
     var imageStrength by mutableStateOf(0.35f)
     var cfgScale by mutableStateOf(7)
@@ -157,6 +170,8 @@ class UnifiedImageToImageViewModel : ViewModel() {
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
         "flux-kontext-pro-img2img" to "Flux Kontext Pro Image-to-Image",
+        "flux-kontext-dev-dual" to "Flux Kontext Dev Dual Images",
+        "fashion-try-on" to "👗 Fashion Try-On",
         "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
         "sdxl-img2img" to "SDXL Image-to-Image",
 
@@ -230,6 +245,18 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     fun updateStyleReferenceImage(bitmap: Bitmap?) {
         styleReferenceImage = bitmap
+    }
+    
+    fun updateSecondImage(bitmap: Bitmap?) {
+        secondImage = bitmap
+    }
+    
+    fun updateClothingImage(bitmap: Bitmap?) {
+        clothingImage = bitmap
+    }
+    
+    fun updateClothType(type: String) {
+        clothType = type
     }
     
     fun updateOutpaintLeft(value: Int) {
@@ -409,6 +436,30 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
         }
         
+        // Validate dual image model
+        if (selectedModel == "flux-kontext-dev-dual") {
+            if (secondImage == null) {
+                errorMessage = "Please select a second image for dual image processing"
+                return
+            }
+            if (prompt.isBlank()) {
+                errorMessage = "Please enter a prompt describing how to combine the images"
+                return
+            }
+        }
+        
+        // Validate fashion try-on model
+        if (selectedModel == "fashion-try-on") {
+            if (clothingImage == null) {
+                errorMessage = "Please select a clothing image"
+                return
+            }
+            if (prompt.isBlank()) {
+                errorMessage = "Please enter a prompt describing the desired result"
+                return
+            }
+        }
+        
         // Validate Stability AI requirements
         if (selectedModel == "stability-ai-img2img" || selectedModel == "stability-ai-sketch" || selectedModel == "stability-ai-structure" || selectedModel == "stability-ai-search-replace" || selectedModel == "stability-ai-search-recolor" || selectedModel == "stability-ai-remove-background" || selectedModel == "stability-ai-replace-background-relight" || selectedModel == "stability-ai-mask-erase" || selectedModel == "stability-ai-inpaint" || selectedModel == "stability-ai-outpaint" || selectedModel == "stability-ai-style" || selectedModel == "stability-ai-style-transfer" || selectedModel == "stability-ai-upscale") {
             if (STABILITY_API_KEY == "YOUR_STABILITY_API_KEY_HERE" || STABILITY_API_KEY.isBlank()) {
@@ -554,6 +605,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
                         performFluxKontextProImg2Img(base64Image)
                     }
                     
+                    "flux-kontext-dev-dual" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert second image to base64
+                        val base64SecondImage = withContext(Dispatchers.IO) {
+                            val resizedBitmap = resizeBitmapIfNeeded(secondImage!!)
+                            bitmapToBase64(resizedBitmap)
+                        }
+                        performFluxKontextDevDual(base64Image, base64SecondImage)
+                    }
+                    
                     "stable-diffusion-img2img" -> {
                         if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
                             errorMessage = "Please set your ModelsLab API Key"
@@ -580,6 +645,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performGhibliStyle(base64Image)
+                    }
+                    
+                    "fashion-try-on" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert clothing image to base64
+                        val base64ClothingImage = withContext(Dispatchers.IO) {
+                            val resizedBitmap = resizeBitmapIfNeeded(clothingImage!!)
+                            bitmapToBase64(resizedBitmap)
+                        }
+                        performFashionTryOn(base64Image, base64ClothingImage)
                     }
 
 
@@ -1058,6 +1137,42 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
         processApiResult(result)
     }
+    
+    private suspend fun performFluxKontextDevDual(base64Image1: String, base64Image2: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Flux Kontext Dev Dual Images..."
+        
+        Log.d("UnifiedImg2Img", "Starting Flux Kontext Dev Dual with:")
+        Log.d("UnifiedImg2Img", "Image 1 size: ${base64Image1.length} chars")
+        Log.d("UnifiedImg2Img", "Image 2 size: ${base64Image2.length} chars")
+        Log.d("UnifiedImg2Img", "Prompt: $prompt")
+        Log.d("UnifiedImg2Img", "API Key length: ${MODELSLAB_API_KEY.length}")
+        
+        // First, let's try with direct API call without polling to see the exact response
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("init_image", base64Image1)
+            put("init_image_2", base64Image2)
+            put("prompt", prompt)
+            put("negative_prompt", negativePrompt)
+            put("model_id", "flux-kontext-dev")
+            put("num_inference_steps", "28")
+            put("strength", "0.5")
+            put("scheduler", "DPMSolverMultistepScheduler")
+            put("guidance", "2.5")
+            put("enhance_prompt", null)
+        }
+        
+        Log.d("UnifiedImg2Img", "Request JSON keys: ${jsonBody.keys()}")
+        
+        // Use makeApiCall first to see the exact error
+        val result = makeApiCall(
+            url = "https://modelslab.com/api/v6/images/img2img",
+            jsonBody = jsonBody,
+            modelName = "Flux Kontext Dev Dual"
+        )
+        
+        processApiResult(result)
+    }
 
     private suspend fun performSDImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
         loadingMessage = "Processing with Stable Diffusion..."
@@ -1315,6 +1430,43 @@ class UnifiedImageToImageViewModel : ViewModel() {
         )
 
         processApiResult(result)
+    }
+    
+    private suspend fun performFashionTryOn(base64PersonImage: String, base64ClothingImage: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing fashion try-on..."
+        
+        try {
+            Log.d("UnifiedImg2Img", "Starting Fashion Try-On with base64 images")
+            Log.d("UnifiedImg2Img", "Cloth type: $clothType")
+            Log.d("UnifiedImg2Img", "Prompt: $prompt")
+            
+            // Try sending base64 images directly
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("init_image", base64PersonImage)  // Send base64 directly
+                put("cloth_image", base64ClothingImage)  // Send base64 directly
+                put("cloth_type", clothType)
+                put("prompt", prompt.ifBlank { "A realistic photo of a model wearing a beautiful t-shirt" })
+                put("negative_prompt", negativePrompt.ifBlank { "Low quality, unrealistic, bad cloth, warped cloth" })
+                put("base64", true) // Indicate we're sending base64 data
+                put("webhook", null)
+                put("track_id", null)
+            }
+            
+            Log.d("UnifiedImg2Img", "Request JSON created with base64 images")
+            
+            val result = makeApiCallWithPolling(
+                url = "https://modelslab.com/api/v6/image_editing/fashion",
+                jsonBody = jsonBody,
+                modelName = "Fashion Try-On"
+            )
+            
+            processApiResult(result)
+            
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in fashion try-on", e)
+            errorMessage = "Fashion Try-On Error: ${e.message}"
+        }
     }
 
 
@@ -1731,6 +1883,52 @@ class UnifiedImageToImageViewModel : ViewModel() {
         }
     }
     
+    // Helper method to upload image to ModelsLab and get URL
+    private suspend fun uploadImageToModelsLab(base64Image: String, imageType: String): String? = withContext(Dispatchers.IO) {
+        try {
+            Log.d("UnifiedImg2Img", "Uploading $imageType image to ModelsLab...")
+            
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("image", base64Image)
+            }
+            
+            val requestBody = jsonBody.toString()
+                .toRequestBody("application/json".toMediaType())
+            
+            val request = Request.Builder()
+                .url("https://modelslab.com/api/v6/image/upload")
+                .post(requestBody)
+                .build()
+            
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+            
+            if (response.isSuccessful && responseBody != null) {
+                val jsonResponse = JSONObject(responseBody)
+                val status = jsonResponse.optString("status", "")
+                
+                if (status == "success") {
+                    val imageUrl = jsonResponse.optString("link", "")
+                    if (imageUrl.isNotEmpty()) {
+                        Log.d("UnifiedImg2Img", "$imageType image uploaded successfully: $imageUrl")
+                        return@withContext imageUrl
+                    }
+                }
+                
+                Log.e("UnifiedImg2Img", "Upload failed: $responseBody")
+            } else {
+                Log.e("UnifiedImg2Img", "Upload failed with code: ${response.code}")
+                Log.e("UnifiedImg2Img", "Response: $responseBody")
+            }
+            
+            null
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error uploading $imageType image", e)
+            null
+        }
+    }
+    
     // Helper method to convert base64 to RequestBody
     private fun base64ToRequestBody(base64String: String): okhttp3.RequestBody {
         val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
@@ -1844,10 +2042,13 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
             val response = client.newCall(request).execute()
             val responseBody = response.body?.string()
+            
+            Log.d("UnifiedImg2Img", "$modelName Response code: ${response.code}")
+            Log.d("UnifiedImg2Img", "$modelName Response body: $responseBody")
 
             if (response.isSuccessful && responseBody != null) {
                 val jsonResponse = JSONObject(responseBody)
-                val status = jsonResponse.getString("status")
+                val status = jsonResponse.optString("status", "")
                 
                 // Check if we already have output
                 if (jsonResponse.has("output")) {
@@ -1942,7 +2143,22 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     }
                 }
             } else {
-                errorMessage = "$modelName HTTP Error: ${response.code}"
+                Log.e("UnifiedImg2Img", "$modelName HTTP Error: ${response.code}")
+                Log.e("UnifiedImg2Img", "$modelName Error Response: $responseBody")
+                
+                // Try to parse error message from response
+                if (responseBody != null) {
+                    try {
+                        val errorJson = JSONObject(responseBody)
+                        val errorMsg = errorJson.optString("message", 
+                            errorJson.optString("error", "HTTP Error ${response.code}"))
+                        errorMessage = "$modelName Error: $errorMsg"
+                    } catch (e: Exception) {
+                        errorMessage = "$modelName HTTP Error: ${response.code} - ${response.message}"
+                    }
+                } else {
+                    errorMessage = "$modelName HTTP Error: ${response.code} - ${response.message}"
+                }
             }
             
             null
