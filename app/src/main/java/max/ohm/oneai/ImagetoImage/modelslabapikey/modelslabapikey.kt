@@ -1,3 +1,3 @@
 package max.ohm.oneai.imagetoimage.modelslabapikey
 
-  const val MODELSLAB_API_KEY = "rZemSgsGRVrOvgK1xd091UDyYWw7EKiBsb0EVihIpfkPhZxNNVysxG1Ss0Me"
+  const val MODELSLAB_API_KEY = "0ihyp1prSphXcexPXOwm1DMvpsvLOq995x7gXRAkNmccQ7HRFGcb9stRuDvm"

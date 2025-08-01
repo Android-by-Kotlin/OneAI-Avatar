@@ -137,9 +137,6 @@ class UnifiedImageToImageViewModel : ViewModel() {
 //        "a4f-flux-kontext-max" to "✨ A4F Flux Kontext Max Edit",
 
 
-        "a4f-flux-kontext-dev" to "✨ Dev Edit",
-        "a4f-flux-kontext-pro" to "✨ Pro Edit",
-        "a4f-flux-kontext-max" to "✨ Max Edit",
 
         
         // Stability AI Models (Premium)
@@ -157,28 +154,28 @@ class UnifiedImageToImageViewModel : ViewModel() {
 //        "stability-ai-outpaint" to "🚀 Stability AI Outpaint",
 //        "stability-ai-upscale" to "🚀 Stability AI Conservative Upscale",
 //
-//        // Standard Image-to-Image Models
-//        "flux-img2img" to "Flux Image-to-Image",
-//        "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
-//        "sdxl-img2img" to "SDXL Image-to-Image",
-//
-//        // Style Transfer Models
-//        "ghibli-style" to "Ghibli Studio Style",
-//        "headshot-img2img" to "Headshot",
-//        "Enhance-img2img" to "Enhance",
-//        "Remove-img2img" to "Remove Background",
-//        "Sketch Img2Img" to "Sketch to Realistic",
-//        "anime-style" to "Anime Style Transfer",
-//        "oil-painting" to "Oil Painting Style",
-//        "watercolor" to "Watercolor Style",
-//
-//        "cyberpunk-style" to "Cyberpunk Style",
-//        "fantasy-art" to "Fantasy Art Style",
-//
-//        // Specialized Models
-//        "photo-enhance" to "Photo Enhancement",
-//        "colorize" to "Black & White Colorization",
-//        "super-resolution" to "Super Resolution Upscale",
+        // Standard Image-to-Image Models
+        "flux-img2img" to "Flux Image-to-Image",
+        "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
+        "sdxl-img2img" to "SDXL Image-to-Image",
+
+        // Style Transfer Models
+        "ghibli-style" to "Ghibli Studio Style",
+        "headshot-img2img" to "Headshot",
+        "Enhance-img2img" to "Enhance",
+        "Remove-img2img" to "Remove Background",
+        "Sketch Img2Img" to "Sketch to Realistic",
+        "anime-style" to "Anime Style Transfer",
+        "oil-painting" to "Oil Painting Style",
+        "watercolor" to "Watercolor Style",
+
+        "cyberpunk-style" to "Cyberpunk Style",
+        "fantasy-art" to "Fantasy Art Style",
+
+        // Specialized Models
+        "photo-enhance" to "Photo Enhancement",
+        "colorize" to "Black & White Colorization",
+        "super-resolution" to "Super Resolution Upscale",
 //
 //
 //        // NEW: Batch Processing Models
@@ -604,6 +601,19 @@ class UnifiedImageToImageViewModel : ViewModel() {
                     }
                         performRemoveImg2Img(base64Image)
                     }
+
+
+                    "Sketch`" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        performSketchImg2Img(base64Image)
+                    }
+
+
+
 
 
                     "Sketch Img2Img" -> {
@@ -1278,61 +1288,22 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
 
     private suspend fun performSketchImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
-        loadingMessage = "Processing with Sketch..."
-
-
-//
-//        {
-//            "key":"<your-key>",
-//            "model_id": "boziorealvisxlv4",
-//            "init_image":"<base64-image>",
-//            "prompt": "hyper realistic, beautiful girl, wearing blue dress, blue eyes, black hair, looking at camera, pose like model",
-//            "negative_prompt": "(normal quality), (low quality), (worst quality), Living Room paintings, sketches, fog, signature, soft, blurry, drawing, sketch, poor quality, ugly text, type, word, logo, pixelated, low resolution, saturated, high contrast, over sharpened, dirt",
-//            "auto_hint": "no",
-//            "guess_mode": "no",
-//            "strength": 0.8,
-//            "controlnet_conditioning_scale": "0.9",
-//            "guidance_scale": 5,
-//            "tomesd": "yes",
-//            "seed": null,
-//            "samples": 1,
-//            "num_inference_steps": 21,
-//            "scheduler": "DPMSolverMultistepScheduler",
-//            "use_karras_sigmas": "yes",
-//            "base64": true,
-//            "clip_skip": 2,
-//            "controlnet_type": "lineart",
-//            "controlnet_model": "lineart",
-//            "lora_model": "more_details_XL",
-//            "lora_strength": "0.9",
-//            "webhook": null,
-//            "track_id": null
-//        }
-
+        loadingMessage = "Processing sketch to realistic image..."
 
         val jsonBody = JSONObject().apply {
             put("key", MODELSLAB_API_KEY)
-            put("model_id", "boziorealvisxlv4")
             put("init_image", base64Image)
-            put("prompt", prompt)
-            put("negative_prompt", negativePrompt)
-            put("auto_hint", "no")
-            put("guess_mode", "no")
-            put("strength", 0.8)
-            put("controlnet_conditioning_scale", "0.9")
-            put("guidance_scale", 5)
-            put("tomesd", "yes")
-            put("seed", null)
-            put("samples", 1)
-            put("num_inference_steps", 21)
-            put("scheduler", "DPMSolverMultistepScheduler")
-            put("use_karras_sigmas", "yes")
-            put("base64", true)
-            put("clip_skip", 2)
-            put("controlnet_type", "lineart")
+            put("prompt", prompt.ifBlank { "a girl, wearing red bikini, looking at camera, ocean in background" })
             put("controlnet_model", "lineart")
-            put("lora_model", "more_details")
-            put("lora_strength", "0.9")
+            put("controlnet_type", "lineart")
+            put("model_id", "boziorealvisxlv4")
+            put("controlnet_conditioning_scale", "0.5")
+            put("auto_hint", null)
+            put("negative_prompt", negativePrompt.ifBlank { "(worst quality:2), (low quality:2), (normal quality:2), (jpeg artifacts), (blurry), (duplicate), (morbid), (mutilated), (out of frame), (extra limbs), (bad anatomy), (disfigured), (deformed), (cross-eye), (glitch), (oversaturated), (overexposed), (underexposed), (bad proportions), (bad hands), (bad feet), (cloned face), (long neck), (missing arms), (missing legs), (extra fingers), (fused fingers), (poorly drawn hands), (poorly drawn face), (mutation), (deformed eyes), watermark, text, logo, signature, grainy, tiling, censored, nsfw, ugly, blurry eyes, noisy image, bad lighting, unnatural skin, asymmetry" })
+            put("samples", "1")
+            put("guidance_scale", "7.5")
+            put("num_inference_steps", "31")
+            put("base64", true)
             put("webhook", null)
             put("track_id", null)
         }
@@ -1340,7 +1311,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         val result = makeApiCallWithPolling(
             url = "https://modelslab.com/api/v5/controlnet",
             jsonBody = jsonBody,
-            modelName = "Sketch Img2Img"
+            modelName = "Sketch to Realistic"
         )
 
         processApiResult(result)
