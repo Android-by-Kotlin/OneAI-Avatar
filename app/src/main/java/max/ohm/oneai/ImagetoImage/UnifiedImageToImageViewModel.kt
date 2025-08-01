@@ -1503,31 +1503,37 @@ class UnifiedImageToImageViewModel : ViewModel() {
     
     private suspend fun performMultipleFaceSwap(base64InitImage: String, base64TargetImage: String) = withContext(Dispatchers.IO) {
         loadingMessage = "Processing multiple face swap..."
-        
+
         try {
             Log.d("UnifiedImg2Img", "Starting Multiple Face Swap")
-            Log.d("UnifiedImg2Img", "Init image size: ${base64InitImage.length} chars")
-            Log.d("UnifiedImg2Img", "Target image size: ${base64TargetImage.length} chars")
-            
+
+            // Upload images to get URLs
+            val initImageUrl = uploadImageToModelsLab(base64InitImage, "Init Image")
+            val targetImageUrl = uploadImageToModelsLab(base64TargetImage, "Target Image")
+
+            if (initImageUrl == null || targetImageUrl == null) {
+                errorMessage = "Failed to upload images for face swap."
+                return@withContext
+            }
+
             val jsonBody = JSONObject().apply {
                 put("key", MODELSLAB_API_KEY)
-                put("init_image", base64InitImage)
-                put("target_image", base64TargetImage)
-                put("base64", true)
+                put("init_image", initImageUrl)
+                put("target_image", targetImageUrl)
+                put("base64", false)
                 put("webhook", null)
                 put("track_id", null)
             }
-            
+
             Log.d("UnifiedImg2Img", "Request JSON created for multiple face swap")
-            
+
             val result = makeApiCallWithPolling(
                 url = "https://modelslab.com/api/v6/deepfake/multiple_face_swap",
                 jsonBody = jsonBody,
                 modelName = "Multiple Face Swap"
             )
-            
+
             processApiResult(result)
-            
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in multiple face swap", e)
             errorMessage = "Multiple Face Swap Error: ${e.message}"
