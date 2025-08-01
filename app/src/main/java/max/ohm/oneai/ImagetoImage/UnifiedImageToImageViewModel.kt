@@ -156,6 +156,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
 //
         // Standard Image-to-Image Models
         "flux-img2img" to "Flux Image-to-Image",
+        "flux-kontext-pro-img2img" to "Flux Kontext Pro Image-to-Image",
         "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
         "sdxl-img2img" to "SDXL Image-to-Image",
 
@@ -165,17 +166,17 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "Enhance-img2img" to "Enhance",
         "Remove-img2img" to "Remove Background",
         "Sketch Img2Img" to "Sketch to Realistic",
-        "anime-style" to "Anime Style Transfer",
-        "oil-painting" to "Oil Painting Style",
-        "watercolor" to "Watercolor Style",
-
-        "cyberpunk-style" to "Cyberpunk Style",
-        "fantasy-art" to "Fantasy Art Style",
+//        "anime-style" to "Anime Style Transfer",
+//        "oil-painting" to "Oil Painting Style",
+//        "watercolor" to "Watercolor Style",
+//
+//        "cyberpunk-style" to "Cyberpunk Style",
+//        "fantasy-art" to "Fantasy Art Style",
 
         // Specialized Models
-        "photo-enhance" to "Photo Enhancement",
-        "colorize" to "Black & White Colorization",
-        "super-resolution" to "Super Resolution Upscale",
+//        "photo-enhance" to "Photo Enhancement",
+//        "colorize" to "Black & White Colorization",
+//        "super-resolution" to "Super Resolution Upscale",
 //
 //
 //        // NEW: Batch Processing Models
@@ -542,6 +543,15 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                         }
                         performFluxImg2Img(base64Image)
+                    }
+                    
+                    "flux-kontext-pro-img2img" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        performFluxKontextProImg2Img(base64Image)
                     }
                     
                     "stable-diffusion-img2img" -> {
@@ -1023,6 +1033,29 @@ class UnifiedImageToImageViewModel : ViewModel() {
             modelName = "Flux Img2Img"
         )
         
+        processApiResult(result)
+    }
+
+    private suspend fun performFluxKontextProImg2Img(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with Flux Kontext Pro..."
+
+        val jsonBody = JSONObject().apply {
+            put("key", MODELSLAB_API_KEY)
+            put("init_image", base64Image)
+            put("prompt", prompt)
+            put("model_id", "flux-kontext-pro")
+            put("aspect_ratio", null)
+            put("base64", true)
+            put("webhook", null)
+            put("track_id", null)
+        }
+
+        val result = makeApiCallWithPolling(
+            url = "https://modelslab.com/api/v7/images/image-to-image",
+            jsonBody = jsonBody,
+            modelName = "Flux Kontext Pro Img2Img"
+        )
+
         processApiResult(result)
     }
 
