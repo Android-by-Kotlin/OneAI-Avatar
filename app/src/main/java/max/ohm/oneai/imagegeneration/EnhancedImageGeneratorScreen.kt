@@ -126,8 +126,8 @@ fun EnhancedImageGeneratorScreen(
         ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
         ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
         ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
-        ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
-        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
+       // ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
+        //ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
         // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar"),
         ModelChoice("Flux Dev", "provider-3/FLUX.1-dev")
     )
