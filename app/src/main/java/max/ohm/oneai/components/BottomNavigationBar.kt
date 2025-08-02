@@ -61,12 +61,13 @@ fun BottomNavigationBar(
             selectedIcon = Icons.Filled.Image,
             label = "Generate"
         ),
-        BottomNavItem(
-            route = "videogeneration",
-            icon = Icons.Outlined.PlayCircle,
-            selectedIcon = Icons.Filled.PlayCircle,
-            label = "Video"
-        ),
+        // Coming Soon - Video Generation
+        // BottomNavItem(
+        //     route = "videogeneration",
+        //     icon = Icons.Outlined.PlayCircle,
+        //     selectedIcon = Icons.Filled.PlayCircle,
+        //     label = "Video"
+        // ),
         BottomNavItem(
             route = "imageToImage",
             icon = Icons.Outlined.AutoFixHigh,

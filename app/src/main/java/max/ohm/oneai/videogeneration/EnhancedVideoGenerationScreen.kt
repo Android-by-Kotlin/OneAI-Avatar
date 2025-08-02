@@ -57,7 +57,8 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
     
     val modelChoices = listOf(
         ModelChoice("WAN 2.1", "provider-6/wan-2.1"),
-        ModelChoice("MiniMax", "T2V-01-Director")
+        ModelChoice("MiniMax", "T2V-01-Director"),
+        ModelChoice("CogVideoX (ModelsLab)", "cogvideox")
     )
     
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModel } ?: modelChoices[0]

@@ -237,12 +237,12 @@ fun SimpleHomeScreen(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                FeatureButton(
+                ComingSoonFeatureButton(
                     icon = Icons.Default.Videocam,
                     title = "Video Gen",
-                    description = "Create videos (2 APIs)",
+                    description = "Coming Soon",
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("videoGeneration") }
+                    onClick = { /* Show coming soon message */ }
                 )
             }
             

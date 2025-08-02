@@ -262,7 +262,7 @@ fun VideoGenerationScreen(
                         border = generateButtonBorder,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(if (isLoading && !viewModel.isUsingA4F.collectAsState().value) "Generating..." else "Generate Video (Original API)")
+                        Text(if (isLoading && !viewModel.isUsingA4F.collectAsState().value && !viewModel.isUsingModelsLab.collectAsState().value) "Generating..." else "Generate Video (Original API)")
                     }
                     
                     // New text-to-video generation button
@@ -275,6 +275,18 @@ fun VideoGenerationScreen(
                         )
                     ) {
                         Text(if (isLoading && viewModel.isUsingA4F.collectAsState().value) "Generating..." else "Generate from Text (A4F API)")
+                    }
+                    
+                    // ModelsLab video generation button  
+                    Button(
+                        onClick = { viewModel.generateModelsLabVideo() },
+                        enabled = !isLoading && prompt.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary
+                        )
+                    ) {
+                        Text(if (isLoading && viewModel.isUsingModelsLab.collectAsState().value) "Generating..." else "Generate with CogVideoX (ModelsLab)")
                     }
                     
                     // Download button

@@ -25,6 +25,8 @@ import android.util.Base64
 import java.io.File
 import java.io.FileOutputStream
 import android.os.Environment
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabApiClient
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabVideoRequest
 
 class VideoGenerationViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -56,9 +58,17 @@ class VideoGenerationViewModel(application: Application) : AndroidViewModel(appl
     private val _isUsingA4F = MutableStateFlow(false)
     val isUsingA4F: StateFlow<Boolean> = _isUsingA4F
     
+    // State to track if using ModelsLab
+    private val _isUsingModelsLab = MutableStateFlow(false)
+    val isUsingModelsLab: StateFlow<Boolean> = _isUsingModelsLab
+    
     // A4F generation state
     private val _a4fGenerationId = MutableStateFlow<String?>(null)
     val a4fGenerationId: StateFlow<String?> = _a4fGenerationId
+    
+    // ModelsLab generation state
+    private val _modelsLabRequestId = MutableStateFlow<Long?>(null)
+    val modelsLabRequestId: StateFlow<Long?> = _modelsLabRequestId
     
     private val a4fClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -94,6 +104,7 @@ class VideoGenerationViewModel(application: Application) : AndroidViewModel(appl
                 // Use the absolute path without file:// prefix for local files
                 _videoUrl.value = tempFile.absolutePath
                 _isUsingA4F.value = false
+                _isUsingModelsLab.value = false
                 stopTimerAndSetTotalTime(true)
                 
             } catch (e: Exception) {
@@ -148,6 +159,88 @@ class VideoGenerationViewModel(application: Application) : AndroidViewModel(appl
         }
 
         generateVideoInternal()
+    }
+
+fun generateModelsLabVideo() {
+        Log.d(TAG, "generateModelsLabVideo called. Current prompt: ${_prompt.value}")
+        _isLoading.value = true
+        _isUsingModelsLab.value = true
+        _error.value = null
+        _videoUrl.value = null
+        _modelsLabRequestId.value = null
+        retryCount = 0
+        startTimer()
+        Log.d(TAG, "isLoading set to true, videoUrl set to null, timer started.")
+
+        viewModelScope.launch {
+            try {
+                val request = ModelsLabVideoRequest(
+                    key = ModelsLabApiClient.API_KEY,
+                    prompt = _prompt.value
+                )
+
+                val response = ModelsLabApiClient.apiService.generateVideo(request)
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()!!
+                    if (responseBody.status.equals("successful", true)) {
+                        Log.d(TAG, "Video generation complete. URLs: ${responseBody.outputUrls?.joinToString()}")
+                        _videoUrl.value = responseBody.outputUrls?.firstOrNull()
+                        stopTimerAndSetTotalTime(true)
+                    } else if (responseBody.status.equals("pending", true)) {
+                        Log.d(TAG, "Video generation pending. RequestId: ${responseBody.id}")
+                        _modelsLabRequestId.value = responseBody.id
+                        pollModelsLabVideoCompletion(responseBody.id!!)
+                    } else {
+                        handleError("ModelsLab API Response Error: ${responseBody.error ?: responseBody.message}")
+                    }
+                } else {
+                    handleError("ModelsLab API Error: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "ModelsLab API Exception: ${e.message}", e)
+                handleError("ModelsLab Network Error: ${e.message}")
+            }
+        }
+    }
+
+    private fun pollModelsLabVideoCompletion(requestId: Long) {
+        viewModelScope.launch {
+            var attempts = 0
+            val maxAttempts = 30 // Poll for up to 5 minutes (30 * 10 seconds)
+
+            while (attempts < maxAttempts) {
+                delay(10000) // Wait 10 seconds between polls
+
+                try {
+                    val response = withContext(Dispatchers.IO) {
+                        ModelsLabApiClient.apiService.checkGenerationStatus(
+                            apiKey = ModelsLabApiClient.API_KEY,
+                            requestId = requestId
+                        )
+                    }
+
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()!!
+                        if (responseBody.status.equals("successful", true)) {
+                            _videoUrl.value = responseBody.outputUrls?.firstOrNull()
+                            stopTimerAndSetTotalTime(true)
+                            return@launch
+                        } else if (responseBody.status.equals("failed", true)) {
+                            handleError("ModelsLab video generation failed.")
+                            return@launch
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Continue polling even if there's an error
+                }
+
+                attempts++
+            }
+
+            // Timeout
+            handleError("ModelsLab video generation timed out.")
+        }
     }
 
     fun generateTextToVideo() {
@@ -317,7 +410,7 @@ class VideoGenerationViewModel(application: Application) : AndroidViewModel(appl
     }
     
     private fun handleError(errorMessage: String) {
-        if (retryCount < maxRetries && !_isUsingA4F.value) {
+        if (retryCount < maxRetries && !_isUsingA4F.value && !_isUsingModelsLab.value) {
             retryCount++
             Log.w(TAG, "Retrying video generation after error: $errorMessage (Attempt ${retryCount}/$maxRetries)")
             viewModelScope.launch {
@@ -328,6 +421,7 @@ class VideoGenerationViewModel(application: Application) : AndroidViewModel(appl
             Log.e(TAG, "Failed after $maxRetries retries: $errorMessage")
             _error.value = "$errorMessage\nFailed after $maxRetries retries."
             _isUsingA4F.value = false
+            _isUsingModelsLab.value = false
             stopTimerAndSetTotalTime(false)
         }
     }

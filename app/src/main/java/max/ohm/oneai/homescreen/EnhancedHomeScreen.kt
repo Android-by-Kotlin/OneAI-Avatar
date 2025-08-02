@@ -107,7 +107,7 @@ fun EnhancedHomeScreen(
     
     // Banner items
     val bannerItems = remember {
-        listOf(
+listOf(
             BannerItem(
                 title = "AI Chat Assistant",
                 subtitle = "Intelligent conversations powered by advanced AI",
@@ -115,14 +115,6 @@ fun EnhancedHomeScreen(
                 imageUrl = "https://cdn.pixabay.com/photo/2024/05/16/19/29/ai-generated-8766874_1280.jpg",
                 gradientColors = listOf(Color(0xFF667EEA), Color(0xFF764BA2)),
                 route = "chatbot"
-            ),
-            BannerItem(
-                title = "Video Generation",
-                subtitle = "Create stunning videos from text prompts",
-                icon = Icons.Outlined.VideoLibrary,
-                imageUrl = "https://cdn.pixabay.com/photo/2019/04/24/21/55/cinema-4153289_1280.jpg",
-                gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
-                route = "styledVideoGeneration"
             ),
             BannerItem(
                 title = "Image Generation",
@@ -141,10 +133,17 @@ fun EnhancedHomeScreen(
                 route = "imageToImage"
             ),
             BannerItem(
+                title = "Video Generation (Coming Soon)",
+                subtitle = "Create stunning videos from text prompts - Feature in development",
+                icon = Icons.Outlined.VideoLibrary,
+                imageUrl = "https://cdn.pixabay.com/photo/2019/04/24/21/55/cinema-4153289_1280.jpg",
+                gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
+                route = "home" // Redirect to home instead of video generation for now
+            ),
+            BannerItem(
                 title = "Live Avatar (Coming Soon)",
                 subtitle = "Interactive AI-powered digital avatars - Feature in development",
                 icon = Icons.Outlined.VideoCall,
-                //imageUrl = "https://cdn.pixabay.com/photo/2022/12/01/04/40/backlit-7628307_1280.jpg",
                 imageUrl = "https://miro.medium.com/v2/resize:fit:1400/0*YpJsxi_-9hBsMc9H.gif",
                 gradientColors = listOf(Color(0xFF8EC5FC), Color(0xFFE0C3FC)),
                 route = "home" // Redirect to home instead of live avatar for now
@@ -453,7 +452,7 @@ fun EnhancedHomeScreen(
                         listOf(
                             QuickAction("Chat", Icons.Outlined.Chat, "chatbot"),
                             QuickAction("Image", Icons.Outlined.Image, "enhancedImageGenerator"),
-                            QuickAction("Video", Icons.Outlined.VideoLibrary, "styledVideoGeneration"),
+                            // QuickAction("Video", Icons.Outlined.VideoLibrary, "styledVideoGeneration"), // Coming Soon
                             QuickAction("Transform", Icons.Outlined.Transform, "imageToImage")
                         )
                     ) { action ->
@@ -461,6 +460,16 @@ fun EnhancedHomeScreen(
                             title = action.title,
                             icon = action.icon,
                             onClick = { navController.navigate(action.route) }
+                        )
+                    }
+                    
+                    // Special "Coming Soon" item for Video
+                    item {
+                        ComingSoonQuickActionCard(
+                            title = "Video",
+                            subtitle = "Soon",
+                            icon = Icons.Outlined.VideoLibrary,
+                            onClick = { /* Show coming soon message */ }
                         )
                     }
                     

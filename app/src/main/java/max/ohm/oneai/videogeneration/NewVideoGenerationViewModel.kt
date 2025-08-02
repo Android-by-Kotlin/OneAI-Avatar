@@ -27,6 +27,8 @@ import max.ohm.oneai.a4f.A4FClient
 import max.ohm.oneai.videogeneration.VideoGenApiKey
 import max.ohm.oneai.videogeneration.VideoThumbnailGenerator
 import android.net.Uri
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabApiClient
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabVideoRequest
 
 data class VideoGenerationState(
     val isLoading: Boolean = false,
@@ -63,6 +65,10 @@ class NewVideoGenerationViewModel(application: Application) : AndroidViewModel(a
             if (model == "T2V-01-Director") {
                 // Use original API for MiniMax
                 generateWithOriginalAPI(prompt)
+                return@launch
+            } else if (model == "cogvideox") {
+                // Use ModelsLab API for CogVideoX
+                generateWithModelsLabAPI(prompt)
                 return@launch
             }
             
@@ -476,6 +482,130 @@ class NewVideoGenerationViewModel(application: Application) : AndroidViewModel(a
             android.util.Log.e("VideoGen", "Error saving video to history", e)
             // Save without thumbnail if thumbnail generation fails
             videoHistoryStore.addVideo(prompt, videoUrl, "Wan 2.1")
+        }
+    }
+    
+    private fun generateWithModelsLabAPI(prompt: String) {
+        viewModelScope.launch {
+            try {
+                val request = ModelsLabVideoRequest(
+                    key = ModelsLabApiClient.API_KEY,
+                    prompt = prompt
+                )
+                
+                android.util.Log.d("VideoGen", "Sending ModelsLab video generation request")
+                
+                val response = withContext(Dispatchers.IO) {
+                    ModelsLabApiClient.apiService.generateVideo(request)
+                }
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()!!
+                    android.util.Log.d("VideoGen", "ModelsLab response status: ${responseBody.status}")
+                    
+                    if (responseBody.status.equals("success", true)) {
+                        // Video is ready immediately
+                        if (!responseBody.outputUrls.isNullOrEmpty()) {
+                            val videoUrl = responseBody.outputUrls.first()
+                            android.util.Log.d("VideoGen", "ModelsLab video URL: $videoUrl")
+                            
+                            // Save to history
+                            saveVideoToHistory(prompt, videoUrl, "CogVideoX")
+                            
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                videoUrl = videoUrl
+                            )
+                        } else {
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = "No video URL in ModelsLab response"
+                            )
+                        }
+                    } else if (responseBody.status.equals("processing", true) && responseBody.id != null) {
+                        // Need to poll for completion
+                        android.util.Log.d("VideoGen", "ModelsLab processing, request ID: ${responseBody.id}")
+                        pollModelsLabStatus(responseBody.id)
+                    } else {
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "ModelsLab error: ${responseBody.message ?: responseBody.error ?: "Unknown error"}"
+                        )
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "ModelsLab API error: ${response.code()} - $errorBody"
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VideoGen", "ModelsLab error: ${e.message}", e)
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "ModelsLab error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun pollModelsLabStatus(requestId: Long) {
+        viewModelScope.launch {
+            var attempts = 0
+            val maxAttempts = 30 // Poll for up to 5 minutes
+            
+            while (attempts < maxAttempts && _state.value.isLoading) {
+                delay(10000) // Wait 10 seconds between polls
+                
+                try {
+                    val response = withContext(Dispatchers.IO) {
+                        ModelsLabApiClient.apiService.checkGenerationStatus(
+                            apiKey = ModelsLabApiClient.API_KEY,
+                            requestId = requestId
+                        )
+                    }
+                    
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()!!
+                        android.util.Log.d("VideoGen", "ModelsLab poll status: ${responseBody.status}")
+                        
+                        if (responseBody.status.equals("success", true)) {
+                            if (!responseBody.outputUrls.isNullOrEmpty()) {
+                                val videoUrl = responseBody.outputUrls.first()
+                                val currentState = _state.value
+                                
+                                // Save to history
+                                if (currentState.currentPrompt != null) {
+                                    saveVideoToHistory(currentState.currentPrompt, videoUrl, "CogVideoX")
+                                }
+                                
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    videoUrl = videoUrl
+                                )
+                                return@launch
+                            }
+                        } else if (responseBody.status.equals("failed", true)) {
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = "ModelsLab video generation failed"
+                            )
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("VideoGen", "ModelsLab polling error: ${e.message}")
+                }
+                
+                attempts++
+            }
+            
+            if (attempts >= maxAttempts) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "ModelsLab video generation timed out"
+                )
+            }
         }
     }
 }

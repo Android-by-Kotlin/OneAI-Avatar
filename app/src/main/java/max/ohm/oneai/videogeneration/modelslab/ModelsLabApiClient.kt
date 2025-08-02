@@ -1,0 +1,33 @@
+package max.ohm.oneai.videogeneration.modelslab
+
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
+
+object ModelsLabApiClient {
+    private const val BASE_URL = "https://modelslab.com/"
+    
+    // API Key - You can store this securely or retrieve from a secure source
+    const val API_KEY = "0ihyp1prSphXcexPXOwm1DMvpsvLOq995x7gXRAkNmccQ7HRFGcb9stRuDvm"
+    
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+    
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build()
+    
+    private val retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+    
+    val apiService: ModelsLabApiService = retrofit.create(ModelsLabApiService::class.java)
+}
