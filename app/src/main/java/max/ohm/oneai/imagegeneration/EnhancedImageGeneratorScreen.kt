@@ -116,13 +116,13 @@ fun EnhancedImageGeneratorScreen(
     // Model selection
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
-        ModelChoice("Flux Schnell", "flux.1-schnell"),
+        //ModelChoice("Flux Schnell", "flux.1-schnell"),
         // ModelChoice("Image-1", "provider-5/gpt-image-1"),
         ModelChoice("ImageGen-4", "provider-4/imagen-4"),
         ModelChoice("ImageGen-3", "provider-4/imagen-3"),
         // ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
         ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
-        ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
+        //ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
         ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
         ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
         ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
