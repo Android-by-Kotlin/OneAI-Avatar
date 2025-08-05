@@ -513,8 +513,8 @@ fun ChatBotScreen(
         }
     )
 }
-
 @Composable
+
 fun ConversationsDrawer(
     chats: List<Chat>,
     currentChatId: String?,
@@ -645,4 +645,3 @@ fun ConversationsDrawer(
         }
     }
 }
-

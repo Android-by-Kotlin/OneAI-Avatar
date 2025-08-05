@@ -408,6 +408,7 @@ fun ImageToImageScreen(
                         containerColor = Color.Transparent,
                         titleContentColor = Color.White
                     ),
+                    windowInsets = WindowInsets(0, 0, 0, 0), // Remove all window insets padding
 //                    actions = {
 //                        // Gallery button
 //                        IconButton(
