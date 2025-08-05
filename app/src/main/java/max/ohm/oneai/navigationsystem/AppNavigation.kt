@@ -50,6 +50,7 @@ import max.ohm.oneai.stabilityai.ui.SketchToImageScreen
 import max.ohm.oneai.stabilityai.viewmodel.SketchToImageViewModel
 import androidx.navigation.NavBackStackEntry
 import max.ohm.oneai.navigation.MainScaffold
+import max.ohm.oneai.debug.AuthDebugScreen
 
 // --- Navigation ---
 @Composable
@@ -74,6 +75,7 @@ fun AppNavigation() {
                 if (loginState !is LoginState.Success) {
                     navController.navigate("login") {
                         popUpTo("splash") { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             }
@@ -375,6 +377,10 @@ fun AppNavigation() {
             }
             val videoUrl = backStackEntry.arguments?.getString("videoUrl") ?: ""
             VideoPlayerScreen(navController = navController, videoUrl = videoUrl)
+        }
+        
+        composable("authDebug") { // Add debug screen for authentication testing
+            AuthDebugScreen(navController = navController, loginViewModel = loginViewModel)
         }
 
         // Add other destinations here (translator)

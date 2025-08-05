@@ -106,13 +106,18 @@ fun SplashScreen(
         delay(100) // Final wait
         
         // Navigate based on authentication state
-        if (loginState is LoginState.Success) {
-            navController.navigate("home") {
-                popUpTo("splash") { inclusive = true }
+        when (loginState) {
+            is LoginState.Success -> {
+                navController.navigate("home") {
+                    popUpTo("splash") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
-        } else {
-            navController.navigate("login") {
-                popUpTo("splash") { inclusive = true }
+            else -> {
+                navController.navigate("login") {
+                    popUpTo("splash") { inclusive = true }
+                    launchSingleTop = true
+                }
             }
         }
     }

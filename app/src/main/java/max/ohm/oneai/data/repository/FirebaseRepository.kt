@@ -66,6 +66,7 @@ class FirebaseRepository {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken("827202302425-gg2s8plq4p37oknuno1r6ch614grna5m.apps.googleusercontent.com")
             .requestEmail()
+            .requestProfile()
             .build()
         
         return GoogleSignIn.getClient(context, gso)

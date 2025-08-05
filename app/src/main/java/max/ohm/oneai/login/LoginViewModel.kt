@@ -31,18 +31,26 @@ class LoginViewModel : ViewModel() {
     fun handleGoogleSignInResult(task: Task<GoogleSignInAccount>) {
         viewModelScope.launch {
             try {
-                val account = task.getResult(ApiException::class.java)
-                val idToken = account?.idToken ?: throw Exception("ID token is null")
-                
+                Log.d(TAG, "Starting Google sign-in process")
                 _loginState.value = LoginState.Loading
+                
+                val account = task.getResult(ApiException::class.java)
+                Log.d(TAG, "Google account retrieved: ${account?.email}")
+                
+                val idToken = account?.idToken ?: throw Exception("ID token is null")
+                Log.d(TAG, "ID token obtained successfully")
+                
                 val result = firebaseRepository.signInWithGoogle(idToken)
                 
                 result.fold(
                     onSuccess = {
+                        Log.d(TAG, "Firebase authentication successful")
                         val user = firebaseRepository.getCurrentUser()
                         if (user != null) {
+                            Log.d(TAG, "User data retrieved: ${user.email}")
                             _loginState.value = LoginState.Success(user)
                         } else {
+                            Log.e(TAG, "Failed to get user data after successful authentication")
                             _loginState.value = LoginState.Error("Failed to get user data")
                         }
                     },
@@ -52,10 +60,10 @@ class LoginViewModel : ViewModel() {
                     }
                 )
             } catch (e: ApiException) {
-                Log.e(TAG, "Google sign-in failed", e)
+                Log.e(TAG, "Google sign-in API exception: ${e.statusCode}", e)
                 _loginState.value = LoginState.Error("Google sign-in failed: ${e.statusCode}")
             } catch (e: Exception) {
-                Log.e(TAG, "Google sign-in failed", e)
+                Log.e(TAG, "Google sign-in general exception", e)
                 _loginState.value = LoginState.Error("Failed to login with Google: ${e.message}")
             }
         }

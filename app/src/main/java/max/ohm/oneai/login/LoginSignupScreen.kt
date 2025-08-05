@@ -82,16 +82,17 @@ fun LoginSignupScreen(
             is LoginState.Success -> {
                 isLoading = false
                 errorMessage = null
-                // Navigate to home screen
+                // Navigate to home screen with proper navigation
                 navController.navigate("home") {
-                    popUpTo("login") { inclusive = true }
+                    popUpTo("splash") { inclusive = true }
+                    launchSingleTop = true
                 }
             }
             is LoginState.Error -> {
                 isLoading = false
                 errorMessage = (loginState as LoginState.Error).message
             }
-            else -> {
+            is LoginState.Idle -> {
                 isLoading = false
             }
         }
@@ -267,9 +268,15 @@ fun LoginSignupScreen(
                             .size(48.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF1A1A1A))
-                            .clickable {
-                                val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
-                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            .clickable(enabled = !isLoading) {
+                                if (!isLoading) {
+                                    try {
+                                        val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                                    } catch (e: Exception) {
+                                        errorMessage = "Failed to start Google Sign-In: ${e.message}"
+                                    }
+                                }
                             },
                         contentAlignment = Alignment.Center
                     ) {
