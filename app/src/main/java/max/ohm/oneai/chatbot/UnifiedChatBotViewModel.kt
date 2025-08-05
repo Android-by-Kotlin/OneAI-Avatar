@@ -50,7 +50,7 @@ class UnifiedChatBotViewModel : ViewModel() {
         private set
         
     // Current chat title
-    var currentChatTitle by mutableStateOf("New Conversation")
+    var currentChatTitle by mutableStateOf<String?>(null)
         private set
 
     // List of available chats
@@ -184,7 +184,7 @@ class UnifiedChatBotViewModel : ViewModel() {
         }
     }
 
-    fun createNewChat(title: String = "New Conversation") {
+    fun createNewChat(title: String? = null) {
         if (auth.currentUser == null) {
             errorMessage = "You need to be logged in to create a chat."
             return
@@ -195,13 +195,14 @@ class UnifiedChatBotViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Creating new chat with title: $title")
-                val result = chatRepository.createChat(title)
+                val chatTitle = title ?: "Chat ${System.currentTimeMillis()}"
+                Log.d(TAG, "Creating new chat with title: $chatTitle")
+                val result = chatRepository.createChat(chatTitle)
                 result.fold(
                     onSuccess = { chatId ->
                         Log.d(TAG, "Successfully created chat with ID: $chatId")
                         currentChatId = chatId
-                        currentChatTitle = title
+                        currentChatTitle = null // Don't show title until user sends first message
                         messages = emptyList()
                         loadChats() // Refresh the chat list
                     },
@@ -237,7 +238,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                 val chatResult = chatRepository.getChat(chatId)
                 chatResult.fold(
                     onSuccess = { chat ->
-                        currentChatTitle = chat.title
+                        currentChatTitle = chat.title // Keep title for sidebar, but won't show in top bar
                     },
                     onFailure = { error ->
                         Log.e(TAG, "Failed to load chat metadata", error)
@@ -280,12 +281,11 @@ class UnifiedChatBotViewModel : ViewModel() {
                     onSuccess = {
                         Log.d(TAG, "Successfully deleted chat with ID: $chatId")
                         
-                        // If we deleted the current chat, create a new one
+                        // If we deleted the current chat, clear the current chat
                         if (currentChatId == chatId) {
                             currentChatId = null
-                            currentChatTitle = "New Conversation"
+                            currentChatTitle = null
                             messages = emptyList()
-                            createNewChat("New Conversation")
                         }
                         
                         loadChats() // Refresh the chat list
@@ -303,7 +303,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     }
     
     private fun generateChatTitle(userMessage: String) {
-        if (currentChatTitle != "New Conversation") {
+        if (currentChatTitle != null) {
             return // Only auto-generate title for new conversations
         }
         
@@ -367,7 +367,7 @@ class UnifiedChatBotViewModel : ViewModel() {
         // Create a new chat if none exists when sending a message
         if (currentChatId == null) {
             Log.d(TAG, "No current chat, creating new one before sending message")
-            createNewChat("New Conversation")
+            createNewChat(null)
             // Store the message to send after chat creation
             val pendingMessage = Message(messageText, true, selectedImageBitmap)
             viewModelScope.launch {
@@ -382,7 +382,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                     // Now send the pending message
                     directSendMessage(pendingMessage)
                     
-                    // Generate title based on first message
+                    // Generate title for sidebar display (won't show in top bar)
                     if (messageText.isNotBlank()) {
                         generateChatTitle(messageText)
                     }
@@ -396,8 +396,8 @@ class UnifiedChatBotViewModel : ViewModel() {
         val userMessage = Message(messageText, true, selectedImageBitmap)
         directSendMessage(userMessage)
         
-        // Generate title based on first message if this is the first user message
-        if (messages.count { it.isUser } <= 1 && messageText.isNotBlank() && currentChatTitle == "New Conversation") {
+        // Generate title for sidebar display (won't show in top bar due to UI logic)
+        if (messages.count { it.isUser } <= 1 && messageText.isNotBlank() && currentChatTitle == null) {
             generateChatTitle(messageText)
         }
     }

@@ -263,15 +263,7 @@ fun ChatBotScreen(
                             )
                         }
                         
-                        Text(
-                            text = currentChatTitle ?: "New Chat",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                        // Title display removed from top bar - titles only show in sidebar
                     }
                     
                     // Model selector
