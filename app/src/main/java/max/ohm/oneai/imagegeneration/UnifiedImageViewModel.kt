@@ -36,7 +36,7 @@ class UnifiedImageViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
-    var selectedModel by mutableStateOf("flux.1-schnell") // Default model
+    var selectedModel by mutableStateOf("provider-4/imagen-4") // Default model - ImageGen-4
 
     private val _elapsedTimeInSeconds = MutableStateFlow(0L)
     val elapsedTimeInSeconds: StateFlow<Long> = _elapsedTimeInSeconds
@@ -50,7 +50,7 @@ class UnifiedImageViewModel : ViewModel() {
     // Initialize the ViewModel with default model
     init {
         // Ensure the default model is properly set
-        selectedModel = "flux.1-schnell"
+        selectedModel = "provider-4/imagen-4"
     }
 
     fun updatePrompt(newPrompt: TextFieldValue) {
@@ -97,7 +97,7 @@ class UnifiedImageViewModel : ViewModel() {
         // Ensure we have a valid model selected
         if (selectedModel.isBlank()) {
             // Set to default model if somehow blank
-            selectedModel = "flux.1-schnell"
+            selectedModel = "provider-4/imagen-4"
             Log.d("ImageGeneration", "Model was blank, set to default: $selectedModel")
         }
 
@@ -544,31 +544,31 @@ class UnifiedImageViewModel : ViewModel() {
                         Log.e("ImageGeneration", "Invalid model selected: '$selectedModel'")
                         
                         // Try to use the default model as a fallback
-                        if (selectedModel != "flux.1-schnell") {
-                            Log.d("ImageGeneration", "Falling back to flux.1-schnell model")
-                            selectedModel = "flux.1-schnell"
+                        if (selectedModel != "provider-4/imagen-4") {
+                            Log.d("ImageGeneration", "Falling back to provider-4/imagen-4 model")
+                            selectedModel = "provider-4/imagen-4"
                             
-                            // Retry with the default model
-                            if (NEBIUS_API_KEY == "YOUR_NEBIUS_API_KEY_HERE" || NEBIUS_API_KEY.isBlank()) {
-                                errorMessage = "Please set your Nebius API Key in ImageGenApiKey.kt"
+                            // Retry with the default model (ImageGen-4)
+                            if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                                errorMessage = "Please set your A4F API Key in A4FClient"
                                 isLoading = false
                                 return@launch
                             }
                             
-                            val request = ImageGenerationRequest(prompt = prompt.text)
-                            val response = ApiClient.instance.generateImage("Bearer $NEBIUS_API_KEY", request)
+                            val request = FluxImageGenerationRequest(
+                                model = "provider-4/imagen-4",
+                                prompt = prompt.text,
+                                n = 1,
+                                size = "1024x1792"
+                            )
+                            val response = FluxApiClient.apiService.generateImage(request)
 
-                            if (response.isSuccessful && response.body() != null) {
-                                val responseBody = response.body()!!
-                                if (responseBody.data.isNotEmpty()) {
-                                    val base64String = responseBody.data[0].base64Json
-                                    generatedImageData = Base64.decode(base64String, Base64.DEFAULT)
-                                } else {
-                                    errorMessage = "API returned no image data for flux.1-schnell."
-                                }
+                            if (response.isSuccessful) {
+                                val generatedFluxImage = response.body()?.data?.firstOrNull()
+                                imageUrl = generatedFluxImage?.url
                             } else {
                                 val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                                errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
+                                errorMessage = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
                             }
                             isLoading = false
                         } else {

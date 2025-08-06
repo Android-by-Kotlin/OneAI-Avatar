@@ -118,7 +118,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "flux.1-schnell"
+                defaultValue = "provider-4/imagen-4"
             })
         ) { backStackEntry ->
             // Check if user is logged in
