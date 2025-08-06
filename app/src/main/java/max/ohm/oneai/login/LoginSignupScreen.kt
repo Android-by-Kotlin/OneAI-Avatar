@@ -1,7 +1,6 @@
 package max.ohm.oneai.login
 
 import android.app.Activity
-import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -10,32 +9,38 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
 import max.ohm.oneai.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +54,8 @@ fun LoginSignupScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var showConfirmPassword by remember { mutableStateOf(false) }
     
     // Loading state
     var isLoading by remember { mutableStateOf(false) }
@@ -97,407 +104,120 @@ fun LoginSignupScreen(
             }
         }
     }
-    
+
+    // Modern gradient background
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = Alignment.Center
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0F0F23),
+                        Color(0xFF1A1A2E),
+                        Color(0xFF16213E)
+                    )
+                )
+            )
     ) {
-        // Login Form
-        AnimatedVisibility(
-            visible = !showRegistration,
-            enter = fadeIn(animationSpec = tween(500)),
-            exit = fadeOut(animationSpec = tween(500))
+        // Background decorative elements
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF6366F1).copy(alpha = 0.1f),
+                            Color.Transparent
+                        ),
+                        radius = 800f
+                    )
+                )
+        )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Color(0xFF121212),
-                        RoundedCornerShape(24.dp)
-                    )
-                    .padding(32.dp)
+            // Login Form
+            AnimatedVisibility(
+                visible = !showRegistration,
+                enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
+                    animationSpec = tween(600),
+                    initialOffsetY = { it / 4 }
+                ),
+                exit = fadeOut(animationSpec = tween(400)) + slideOutVertically(
+                    animationSpec = tween(400),
+                    targetOffsetY = { -it / 4 }
+                )
             ) {
-                // App Logo/Title
-                Text(
-                    text = "OneAI",
-                    color = Color.White,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                Text(
-                    text = "Welcome back",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-                
-                // Error message
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-                
-                // Email field
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-                
-                // Password field
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-                
-                // Forgot Password
-                Text(
-                    text = "Forgot Password?",
-                    color = Color(0xFF9C27B0),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp)
-                        .clickable { /* Handle forgot password */ }
-                )
-                
-                // Login Button
-                Button(
-                    onClick = {
+                LoginForm(
+                    email = email,
+                    password = password,
+                    showPassword = showPassword,
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    onEmailChange = { email = it },
+                    onPasswordChange = { password = it },
+                    onPasswordVisibilityChange = { showPassword = !showPassword },
+                    onLogin = {
                         if (email.isNotBlank() && password.isNotBlank()) {
                             loginViewModel.loginWithEmail(email, password)
                         } else {
                             errorMessage = "Please fill in all fields"
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF9C27B0)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 6.dp
-                    ),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Login",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Social Login Options
-                Text(
-                    text = "Or continue with",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                
-                Row(
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Google Icon
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF1A1A1A))
-                            .clickable(enabled = !isLoading) {
-                                if (!isLoading) {
-                                    try {
-                                        val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
-                                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                                    } catch (e: Exception) {
-                                        errorMessage = "Failed to start Google Sign-In: ${e.message}"
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.google),
-                            contentDescription = "Login with Google",
-                            modifier = Modifier.size(60.dp)
-                        )
-                    }
-                    
-                    // Facebook Icon
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF1A1A1A))
-                            .clickable { /* Handle Facebook login */ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_facebook),
-                            contentDescription = "Login with Facebook",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                    
-                    // Twitter/X Icon
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF1A1A1A))
-                            .clickable { /* Handle Twitter login */ },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_twitter),
-                            contentDescription = "Login with Twitter",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Sign Up Link
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Don't have an account? ",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
-                    
-                    Text(
-                        text = "Sign Up",
-                        color = Color(0xFF9C27B0),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            showRegistration = true
+                    onGoogleSignIn = {
+                        if (!isLoading) {
+                            try {
+                                val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            } catch (e: Exception) {
+                                errorMessage = "Failed to start Google Sign-In: ${e.message}"
+                            }
                         }
-                    )
-                }
+                    },
+                    onShowRegistration = {
+                        showRegistration = true
+                        // Clear form data
+                        email = ""
+                        password = ""
+                        errorMessage = null
+                    }
+                )
             }
-        }
-        
-        // Registration Form
-        AnimatedVisibility(
-            visible = showRegistration,
-            enter = fadeIn(animationSpec = tween(500)) + 
-                   slideInVertically(animationSpec = tween(500)) { it },
-            exit = fadeOut(animationSpec = tween(500)) + 
-                  slideOutVertically(animationSpec = tween(500)) { it }
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Color(0xFF121212),
-                        RoundedCornerShape(24.dp)
-                    )
-                    .padding(32.dp)
+            
+            // Registration Form
+            AnimatedVisibility(
+                visible = showRegistration,
+                enter = fadeIn(animationSpec = tween(600)) + slideInVertically(
+                    animationSpec = tween(600),
+                    initialOffsetY = { it / 4 }
+                ),
+                exit = fadeOut(animationSpec = tween(400)) + slideOutVertically(
+                    animationSpec = tween(400),
+                    targetOffsetY = { -it / 4 }
+                )
             ) {
-                // App Logo/Title
-                Text(
-                    text = "OneAI",
-                    color = Color.White,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                Text(
-                    text = "Create account",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 16.sp,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-                
-                // Error message
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
-                
-                // Name field
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-                
-                // Email field
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-                
-                // Password field
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Next
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
-                
-                // Confirm Password field
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirm Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF9C27B0),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedLabelColor = Color(0xFF9C27B0),
-                        unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                        focusedContainerColor = Color(0xFF1A1A1A),
-                        unfocusedContainerColor = Color(0xFF1A1A1A)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp)
-                )
-                
-                // Sign Up Button
-                Button(
-                    onClick = {
+                SignUpForm(
+                    name = name,
+                    email = email,
+                    password = password,
+                    confirmPassword = confirmPassword,
+                    showPassword = showPassword,
+                    showConfirmPassword = showConfirmPassword,
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    onNameChange = { name = it },
+                    onEmailChange = { email = it },
+                    onPasswordChange = { password = it },
+                    onConfirmPasswordChange = { confirmPassword = it },
+                    onPasswordVisibilityChange = { showPassword = !showPassword },
+                    onConfirmPasswordVisibilityChange = { showConfirmPassword = !showConfirmPassword },
+                    onSignUp = {
                         if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
                             if (password == confirmPassword) {
                                 loginViewModel.signUpWithEmail(email, password, name)
@@ -508,58 +228,522 @@ fun LoginSignupScreen(
                             errorMessage = "Please fill in all fields"
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF9C27B0)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 6.dp
-                    ),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = "Sign Up",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Login Link
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Already have an account? ",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
-                    
-                    Text(
-                        text = "Login",
-                        color = Color(0xFF9C27B0),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable {
-                            showRegistration = false
+                    onGoogleSignIn = {
+                        if (!isLoading) {
+                            try {
+                                val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                            } catch (e: Exception) {
+                                errorMessage = "Failed to start Google Sign-In: ${e.message}"
+                            }
                         }
-                    )
-                }
+                    },
+                    onShowLogin = {
+                        showRegistration = false
+                        // Clear form data
+                        name = ""
+                        email = ""
+                        password = ""
+                        confirmPassword = ""
+                        errorMessage = null
+                    }
+                )
             }
         }
     }
 }
 
+@Composable
+private fun LoginForm(
+    email: String,
+    password: String,
+    showPassword: Boolean,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onPasswordVisibilityChange: () -> Unit,
+    onLogin: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    onShowRegistration: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 20.dp
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            // Logo and branding
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(20.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.brain_logo_black),
+                    contentDescription = "OneAI Brain Logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Welcome Back",
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Text(
+                text = "Sign in to continue to OneAI",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+            
+            // Error message
+            if (errorMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFF5252).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = Color(0xFFFF5252),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+            
+            // Email field with icon
+            ModernTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = "Email Address",
+                icon = Icons.Default.Email,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Password field with icon and visibility toggle
+            ModernTextField(
+                value = password,
+                onValueChange = onPasswordChange,
+                label = "Password",
+                icon = Icons.Default.Lock,
+                isPassword = true,
+                showPassword = showPassword,
+                onPasswordVisibilityChange = onPasswordVisibilityChange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                )
+            )
+            
+            // Forgot Password
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    text = "Forgot Password?",
+                    color = Color(0xFF6366F1),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable { /* Handle forgot password */ }
+                )
+            }
+            
+            // Login Button
+            Button(
+                onClick = onLogin,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6366F1)
+                ),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Sign In",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Divider
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+                Text(
+                    text = "  or continue with  ",
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 14.sp
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Google Sign-In Button
+            OutlinedButton(
+                onClick = onGoogleSignIn,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF2A2A3A).copy(alpha = 0.5f)
+                ),
+                enabled = !isLoading
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.google),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Continue with Google",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Sign Up Link
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Don't have an account? ",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 15.sp
+                )
+                
+                Text(
+                    text = "Sign Up",
+                    color = Color(0xFF6366F1),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { onShowRegistration() }
+                )
+            }
+        }
+    }
+}
 
+@Composable
+private fun SignUpForm(
+    name: String,
+    email: String,
+    password: String,
+    confirmPassword: String,
+    showPassword: Boolean,
+    showConfirmPassword: Boolean,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onPasswordVisibilityChange: () -> Unit,
+    onConfirmPasswordVisibilityChange: () -> Unit,
+    onSignUp: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    onShowLogin: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 20.dp
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            // Logo and branding
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(20.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.brain_logo_black),
+                    contentDescription = "OneAI Brain Logo",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = "Create Account",
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Text(
+                text = "Join OneAI and unlock AI possibilities",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 16.sp,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+            
+            // Error message
+            if (errorMessage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFF5252).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = Color(0xFFFF5252),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            }
+            
+            // Name field
+            ModernTextField(
+                value = name,
+                onValueChange = onNameChange,
+                label = "Full Name",
+                icon = Icons.Default.Person,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Email field
+            ModernTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = "Email Address",
+                icon = Icons.Default.Email,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Password field
+            ModernTextField(
+                value = password,
+                onValueChange = onPasswordChange,
+                label = "Password",
+                icon = Icons.Default.Lock,
+                isPassword = true,
+                showPassword = showPassword,
+                onPasswordVisibilityChange = onPasswordVisibilityChange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Confirm Password field
+            ModernTextField(
+                value = confirmPassword,
+                onValueChange = onConfirmPasswordChange,
+                label = "Confirm Password",
+                icon = Icons.Default.Lock,
+                isPassword = true,
+                showPassword = showConfirmPassword,
+                onPasswordVisibilityChange = onConfirmPasswordVisibilityChange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                )
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Sign Up Button
+            Button(
+                onClick = onSignUp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6366F1)
+                ),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Create Account",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Divider
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+                Text(
+                    text = "  or continue with  ",
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 14.sp
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = Color.White.copy(alpha = 0.2f)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Google Sign-In Button
+            OutlinedButton(
+                onClick = onGoogleSignIn,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xFF2A2A3A).copy(alpha = 0.5f)
+                ),
+                enabled = !isLoading
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.google),
+                        contentDescription = "Google",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Continue with Google",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            // Login Link
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Already have an account? ",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 15.sp
+                )
+                
+                Text(
+                    text = "Sign In",
+                    color = Color(0xFF6366F1),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.clickable { onShowLogin() }
+                )
+            }
+        }
+    }
+}
