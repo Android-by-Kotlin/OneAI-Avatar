@@ -172,20 +172,20 @@ class UnifiedImageToImageViewModel : ViewModel() {
 //        "stability-ai-upscale" to "🚀 Stability AI Conservative Upscale",
 //
         // Standard Image-to-Image Models
-        "flux-img2img" to "Flux Image-to-Image",
+      //  "flux-img2img" to "Flux Image-to-Image",
         "flux-kontext-pro-img2img" to "Flux Kontext Pro Image-to-Image",
         "flux-kontext-dev-dual" to "Flux Kontext Dev Dual Images",
        // "multiple-face-swap" to "🎭 Multiple Face Swap",
         "fashion-try-on" to "👗 Fashion Try-On",
-        "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
-        "sdxl-img2img" to "SDXL Image-to-Image",
+       // "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
+      //  "sdxl-img2img" to "SDXL Image-to-Image",
 
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
         "headshot-img2img" to "Headshot",
-        "Enhance-img2img" to "Enhance",
+      //  "Enhance-img2img" to "Enhance",
         "Remove-img2img" to "Remove Background",
-        "Sketch Img2Img" to "Sketch to Realistic",
+        "Sketch Img2Img" to "ControlNet",
 //        "anime-style" to "Anime Style Transfer",
 //        "oil-painting" to "Oil Painting Style",
 //        "watercolor" to "Watercolor Style",
