@@ -16,6 +16,7 @@ object StatusBarUtils {
     val ImageGenerationStatusBarColor = Color(0xFF0A0E27) // Dark blue for image generation
     val VideoGenerationStatusBarColor = Color(0xFF0A0E27) // Dark blue for video generation
     val ImageToImageStatusBarColor = Color(0xFF0A0E27) // Dark blue for image to image
+    val ProfileStatusBarColor = Color(0xFF0A0E27) // Dark blue for profile screen
     val DefaultStatusBarColor = Color(0xFF1A1F3A) // Default dark blue
     
     fun setStatusBarColor(activity: Activity, color: Color) {
