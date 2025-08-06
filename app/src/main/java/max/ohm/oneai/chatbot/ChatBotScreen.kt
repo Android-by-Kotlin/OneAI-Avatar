@@ -6,7 +6,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -208,7 +211,7 @@ fun ChatBotScreen(
     }
 
     // Set status bar color for chatbot screen
-    SetStatusBarColor(StatusBarUtils.ChatBotStatusBarColor)
+    SetStatusBarColor(Color.Black)
     
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -239,12 +242,13 @@ fun ChatBotScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(DarkGreen)
+                    .background(Color.Black)
             ) {
                 // Top bar with menu and title
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .background(Color.Transparent)
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -271,7 +275,12 @@ fun ChatBotScreen(
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(MediumGreen)
+                                .background(Color.Transparent)
+                                .border(
+                                    width = 2.dp,
+                                    color = Color(0xFF00C853), // Bright green
+                                    shape = RoundedCornerShape(16.dp)
+                                )
                                 .clickable { showModelSelector = true }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -397,7 +406,7 @@ fun ChatBotScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(DarkGreen)
+                        .background(Color.Transparent)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     // Image preview
@@ -447,7 +456,7 @@ fun ChatBotScreen(
                             onClick = { imagePickerLauncher.launch("image/*") },
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(MediumGreen, CircleShape)
+                                .background(Color.Transparent, CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Image,
@@ -459,32 +468,42 @@ fun ChatBotScreen(
                         
                         Spacer(modifier = Modifier.width(8.dp))
                         
-                        // OutlinedTextField
-                        OutlinedTextField(
-                            value = inputText,
-                            onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
-                            placeholder = {
-                                Text(
-                                    text = "Type a message...",
-                                    color = Color.White.copy(alpha = 0.6f),
-                                    fontSize = 16.sp
+                        // OutlinedTextField with gradient border
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(
+                                    width = 2.dp,
+                                    color = Color(0xFF00C853), // Bright green
+                                    shape = RoundedCornerShape(24.dp)
                                 )
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isLoading,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedContainerColor = MediumGreen,
-                                unfocusedContainerColor = MediumGreen
-                            ),
-                            shape = RoundedCornerShape(24.dp),
-                            maxLines = 5,
-                            singleLine = false
-                        )
+                        ) {
+                            OutlinedTextField(
+                                value = inputText,
+                                onValueChange = { unifiedChatBotViewModel.updateInputText(it) },
+                                placeholder = {
+                                    Text(
+                                        text = "Type a message...",
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 16.sp
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isLoading,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                    cursorColor = Color.White,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
+                                ),
+                                shape = RoundedCornerShape(24.dp),
+                                maxLines = 5,
+                                singleLine = false
+                            )
+                        }
                         
                         Spacer(modifier = Modifier.width(8.dp))
                         
