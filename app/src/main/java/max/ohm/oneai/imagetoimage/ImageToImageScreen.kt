@@ -2765,7 +2765,8 @@ when {
                                 if (viewModel.selectedModel.startsWith("batch-") && viewModel.isBatchProcessing) {
                                     "Processing Batch... (${viewModel.batchProcessingProgress + 1}/${viewModel.batchProcessingTotal})"
                                 } else {
-                                    "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}..."
+//                                    "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}..."
+                                    "Generating..."
                                 },
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium,

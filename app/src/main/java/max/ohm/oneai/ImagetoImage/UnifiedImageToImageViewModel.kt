@@ -53,7 +53,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
     var errorMessage by mutableStateOf<String?>(null)
 
-    var selectedModel by mutableStateOf("flux-img2img") // Default model
+    var selectedModel by mutableStateOf("flux-kontext-pro-img2img") // Default model
         private set
 
     // Prompt and parameters
@@ -173,8 +173,8 @@ class UnifiedImageToImageViewModel : ViewModel() {
 //
         // Standard Image-to-Image Models
       //  "flux-img2img" to "Flux Image-to-Image",
-        "flux-kontext-pro-img2img" to "Flux Kontext Pro Image-to-Image",
-        "flux-kontext-dev-dual" to "Flux Kontext Dev Dual Images",
+        "flux-kontext-pro-img2img" to "Flux Kontext Pro",
+        "flux-kontext-dev-dual" to "Flux Kontext Dev",
        // "multiple-face-swap" to "🎭 Multiple Face Swap",
         "fashion-try-on" to "👗 Fashion Try-On",
        // "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
