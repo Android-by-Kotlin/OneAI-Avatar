@@ -41,6 +41,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Force hide any title or action bar
+        window.requestFeature(android.view.Window.FEATURE_NO_TITLE)
+        
         // Configure full-screen immersive UI
         configureSystemUI()
         
