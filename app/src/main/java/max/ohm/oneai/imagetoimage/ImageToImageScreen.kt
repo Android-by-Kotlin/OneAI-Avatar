@@ -3138,37 +3138,107 @@ private fun FullscreenImageDialog(
                     )
                 }
                 
-                // Toggle button
-                if (originalImage != null) {
-                    Surface(
-                        onClick = { showOriginal = !showOriginal },
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color.White.copy(alpha = 0.1f),
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                // Right side controls (Download, Share, Toggle)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Download button
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    var bitmapToSave = if (showOriginal) originalImage else generatedImageBitmap
+                                    
+                                    // If showing generated image and no bitmap but we have URL, download it
+                                    if (!showOriginal && bitmapToSave == null && generatedImageUrl != null) {
+                                        Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
+                                        bitmapToSave = downloadBitmapFromUrl(generatedImageUrl)
+                                    }
+                                    
+                                    if (bitmapToSave != null) {
+                                        saveImageToDevice(context, bitmapToSave, showOriginal)
+                                    } else {
+                                        Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                Color(0xFF10B981).copy(alpha = 0.2f),
+                                CircleShape
+                            )
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                        Icon(
+                            Icons.Outlined.Download,
+                            contentDescription = "Download",
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    // Share button
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    var bitmapToShare = if (showOriginal) originalImage else generatedImageBitmap
+                                    
+                                    // If showing generated image and no bitmap but we have URL, download it
+                                    if (!showOriginal && bitmapToShare == null && generatedImageUrl != null) {
+                                        Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
+                                        bitmapToShare = downloadBitmapFromUrl(generatedImageUrl)
+                                    }
+                                    
+                                    if (bitmapToShare != null) {
+                                        shareImage(context, bitmapToShare, showOriginal)
+                                    } else {
+                                        Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Failed to share: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                Color(0xFF6366F1).copy(alpha = 0.2f),
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            Icons.Outlined.Share,
+                            contentDescription = "Share",
+                            tint = Color(0xFF6366F1),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    // Toggle button
+                    if (originalImage != null) {
+                        IconButton(
+                            onClick = { showOriginal = !showOriginal },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(
+                                    Color.White.copy(alpha = 0.2f),
+                                    CircleShape
+                                )
                         ) {
                             Icon(
                                 Icons.Outlined.Compare,
-                                contentDescription = null,
+                                contentDescription = if (showOriginal) "Show Generated" else "Show Original",
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (showOriginal) "Show Generated" else "Show Original",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.width(48.dp)) // Balance the layout
             }
             
             // Bottom action bar
@@ -3197,103 +3267,7 @@ private fun FullscreenImageDialog(
                         )
                     }
                     
-                    // Action buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Download button
-                        OutlinedButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        var bitmapToSave = if (showOriginal) originalImage else generatedImageBitmap
-                                        
-                                        // If showing generated image and no bitmap but we have URL, download it
-                                        if (!showOriginal && bitmapToSave == null && generatedImageUrl != null) {
-                                            Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
-                                            bitmapToSave = downloadBitmapFromUrl(generatedImageUrl)
-                                        }
-                                        
-                                        if (bitmapToSave != null) {
-                                            saveImageToDevice(context, bitmapToSave, showOriginal)
-                                        } else {
-                                            Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
-                                        }
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Failed to save: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = Color(0xFF10B981)
-                            ),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color(0xFF10B981).copy(alpha = 0.5f)
-                            )
-                        ) {
-                            Icon(
-                                Icons.Outlined.Download,
-                                contentDescription = "Download",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Download",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        
-                        // Share button
-                        OutlinedButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        var bitmapToShare = if (showOriginal) originalImage else generatedImageBitmap
-                                        
-                                        // If showing generated image and no bitmap but we have URL, download it
-                                        if (!showOriginal && bitmapToShare == null && generatedImageUrl != null) {
-                                            Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
-                                            bitmapToShare = downloadBitmapFromUrl(generatedImageUrl)
-                                        }
-                                        
-                                        if (bitmapToShare != null) {
-                                            shareImage(context, bitmapToShare, showOriginal)
-                                        } else {
-                                            Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
-                                        }
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Failed to share: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = Color(0xFF6366F1)
-                            ),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = Color(0xFF6366F1).copy(alpha = 0.5f)
-                            )
-                        ) {
-                            Icon(
-                                Icons.Outlined.Share,
-                                contentDescription = "Share",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Share",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
+
                 }
             }
         }
