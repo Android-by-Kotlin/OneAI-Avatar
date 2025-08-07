@@ -3241,11 +3241,12 @@ private fun FullscreenImageDialog(
                 }
             }
             
-            // Bottom action bar
+            // Bottom action bar - moved up
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 30.dp), // Move up by 60dp
                 color = Color.Black.copy(alpha = 0.8f)
             ) {
                 Column(
