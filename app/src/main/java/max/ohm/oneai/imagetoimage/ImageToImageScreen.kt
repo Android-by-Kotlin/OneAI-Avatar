@@ -3186,18 +3186,25 @@ private fun FullscreenImageDialog(
                         onClick = {
                             coroutineScope.launch {
                                 try {
-                                    var bitmapToShare = if (showOriginal) originalImage else generatedImageBitmap
-                                    
-                                    // If showing generated image and no bitmap but we have URL, download it
-                                    if (!showOriginal && bitmapToShare == null && generatedImageUrl != null) {
-                                        Toast.makeText(context, "Downloading image...", Toast.LENGTH_SHORT).show()
-                                        bitmapToShare = downloadBitmapFromUrl(generatedImageUrl)
-                                    }
-                                    
-                                    if (bitmapToShare != null) {
-                                        shareImage(context, bitmapToShare, showOriginal)
+                                    if (showOriginal && originalImage != null) {
+                                        // Share original image bitmap
+                                        shareImage(context, originalImage, true)
+                                    } else if (!showOriginal) {
+                                        // For generated image, always share the actual image
+                                        var bitmapToShare = generatedImageBitmap
+                                        
+                                        // If no bitmap but we have URL, download it silently
+                                        if (bitmapToShare == null && generatedImageUrl != null) {
+                                            bitmapToShare = downloadBitmapFromUrl(generatedImageUrl)
+                                        }
+                                        
+                                        if (bitmapToShare != null) {
+                                            shareImage(context, bitmapToShare, false)
+                                        } else {
+                                            Toast.makeText(context, "No image to share", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
-                                        Toast.makeText(context, "Failed to download image", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "No image to share", Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "Failed to share: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -3353,3 +3360,5 @@ private suspend fun shareImage(
         throw e
     }
 }
+
+
