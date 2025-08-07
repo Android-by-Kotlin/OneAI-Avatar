@@ -96,6 +96,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    
+    // Explicitly add the latest safe reCAPTCHA version to override the vulnerable one
+    implementation("com.google.android.recaptcha:recaptcha:18.4.0")
 
     // Testing
     testImplementation(libs.junit)
