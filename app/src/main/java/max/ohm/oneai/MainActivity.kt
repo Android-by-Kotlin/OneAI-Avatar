@@ -170,14 +170,15 @@ class MainActivity : ComponentActivity() {
     
     private fun requestPermissions() {
         val permissions = mutableListOf(
-            Manifest.permission.INTERNET,
-            Manifest.permission.MODIFY_AUDIO_SETTINGS,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.INTERNET
+            // Audio permissions commented out - not used in this app
+            // Manifest.permission.MODIFY_AUDIO_SETTINGS,
+            // Manifest.permission.RECORD_AUDIO
         )
         
         // Add storage permissions based on Android version
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
+            // permissions.add(Manifest.permission.READ_MEDIA_AUDIO) // Audio permission commented out
         } else {
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }

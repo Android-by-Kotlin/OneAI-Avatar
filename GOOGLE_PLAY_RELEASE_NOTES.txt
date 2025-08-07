@@ -1,0 +1,28 @@
+🔒 SECURITY & UI UPDATE - Version 1.3
+
+🛡️ SECURITY FIXES:
+• Critical security vulnerability patched
+• Updated reCAPTCHA SDK to latest secure version
+• Enhanced Firebase authentication security
+
+✨ UI IMPROVEMENTS:
+• Redesigned image-to-image feature with intuitive icon buttons
+• Moved download/share buttons to top-right corner for better access
+• Improved visual feedback and label positioning
+• Cleaner, more modern interface design
+
+⚡ PERFORMANCE ENHANCEMENTS:
+• Faster image sharing functionality
+• Improved app stability and crash fixes
+• Better memory management and responsiveness
+• Optimized resource usage
+
+🐛 BUG FIXES:
+• Fixed app startup crashes
+• Resolved image sharing issues
+• Enhanced error handling
+• Improved Android compatibility
+
+This update includes critical security patches and is recommended for all users.
+
+Minimum Android: 9.0 | Target Android: 14
