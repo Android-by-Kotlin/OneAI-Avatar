@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.foundation.layout.navigationBarsPadding
 
 data class BottomNavItem(
     val route: String,
@@ -80,6 +81,7 @@ fun BottomNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .height(80.dp)
+            .navigationBarsPadding() // Add padding for system navigation bar
     ) {
         // Background with gradient
         Surface(
@@ -91,7 +93,7 @@ fun BottomNavigationBar(
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            color = Color(0xFF1A1F3A), // Dark secondary color matching home screen
+            color = Color(0xFF16161D), // Surface color from theme
             shadowElevation = 2.dp
         ) {
             Row(

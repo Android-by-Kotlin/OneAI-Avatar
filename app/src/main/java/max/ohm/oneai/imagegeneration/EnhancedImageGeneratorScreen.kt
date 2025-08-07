@@ -243,7 +243,7 @@ fun EnhancedImageGeneratorScreen(
                     Box {
                         Text(
                             text = "AI Art Studio",
-                            fontSize = 24.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
                             modifier = Modifier.graphicsLayer(alpha = 0.99f)
@@ -976,7 +976,7 @@ private fun GalleryOverlay(
                 ) {
                     Text(
                         text = "Gallery",
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
@@ -1010,7 +1010,7 @@ private fun GalleryOverlay(
                         Text(
                             text = "No images yet",
                             color = TextSecondary,
-                            fontSize = 18.sp
+                            fontSize = 16.sp
                         )
                     }
                 }

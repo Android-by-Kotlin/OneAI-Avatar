@@ -68,7 +68,7 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
             // Title
             Text(
                 text = "Image to Image",
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             
@@ -176,7 +176,7 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                     ) {
                         Text(
                             text = if (uiState.isSearchAndReplaceMode) "Search & Replace Mode" else "Image-to-Image Mode",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold
                         )
                         Switch(
@@ -244,11 +244,11 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                 } else {
                     Text(
                         text = when {
-                            uiState.useStabilityAI && uiState.isSearchAndReplaceMode -> "Search & Replace with Stability AI"
-                            uiState.useStabilityAI -> "Generate with Stability AI"
-                            else -> "Generate with ModelsLab"
+                            uiState.useStabilityAI && uiState.isSearchAndReplaceMode -> "Search & Replace"
+                            uiState.useStabilityAI -> "Generate"
+                            else -> "Generate"
                         },
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
@@ -436,10 +436,10 @@ fun ImageToImageScreen(viewModel: ImageToImageViewModel = viewModel()) {
                     }
                     
                     Text(
-                        text = if (uiState.useStabilityAI) 
-                            "Stability AI requires image upload only. Higher quality but slower processing."
-                        else 
-                            "ModelsLab supports both URL and upload. Faster processing with multiple models.",
+                        text = if (uiState.useStabilityAI)
+                            "Stability AI: image upload only, higher quality"
+                        else
+                            "ModelsLab: URL/upload support, faster processing",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)

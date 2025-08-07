@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         // Force hide any title or action bar
         window.requestFeature(android.view.Window.FEATURE_NO_TITLE)
         
-        // Configure full-screen immersive UI
+        // Configure full-screen immersive UI with edge-to-edge display
         configureSystemUI()
         
         // Set content immediately to show splash screen
@@ -82,10 +82,10 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun configureSystemUI() {
-        // Make the app draw edge-to-edge
+        // Make the app draw edge-to-edge for full screen experience
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
-        // Set status bar and navigation bar colors to match app theme
+        // Set status bar and navigation bar colors to same theme color for full view
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             window.statusBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()
             window.navigationBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()

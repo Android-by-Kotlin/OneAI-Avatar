@@ -249,13 +249,13 @@ listOf(
                     Column {
                         Text(
                             text = "OneAI Studio",
-                            fontSize = 28.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
                             text = "Your Creative AI Companion",
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             color = TextSecondary
                         )
                     }
@@ -353,13 +353,13 @@ listOf(
                     Column {
                         Text(
                             text = "Recent Creations",
-                            fontSize = 24.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
                             text = "Your AI-generated masterpieces",
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             color = TextSecondary
                         )
                     }
@@ -526,16 +526,16 @@ private fun BannerCard(
                 ) {
                     Text(
                         text = item.title,
-                        fontSize = 28.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = item.subtitle,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.9f),
-                        lineHeight = 22.sp
+                        lineHeight = 20.sp
                     )
                 }
                 

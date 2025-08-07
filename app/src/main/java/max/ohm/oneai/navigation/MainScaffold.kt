@@ -1,42 +1,30 @@
 package max.ohm.oneai.navigation
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import max.ohm.oneai.components.BottomNavigationBar
 
 @Composable
 fun MainScaffold(
     navController: NavController,
     content: @Composable () -> Unit
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    
-    // Define routes that should show the bottom navigation
-    val bottomNavRoutes = listOf(
-        "home",
-        "chatbot",
-        // "videogeneration", // Coming Soon
-        "enhancedImageGenerator"
-    )
-    
-    // Check if we should show the bottom navigation
-    val shouldShowBottomNav = currentRoute in bottomNavRoutes
-    
     Scaffold(
         bottomBar = {
-            if (shouldShowBottomNav) {
-                BottomNavigationBar(navController = navController)
-            }
+            // Bottom navigation bar removed as requested
         }
     ) { paddingValues ->
         Surface(
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier
+                .padding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding(),
+                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
+                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current)
+                )
         ) {
             content()
         }

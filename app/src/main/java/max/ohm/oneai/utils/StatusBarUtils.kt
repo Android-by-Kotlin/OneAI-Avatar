@@ -11,13 +11,13 @@ import androidx.core.view.WindowCompat
 
 object StatusBarUtils {
     
-    // Define status bar colors for different screens
-    val ChatBotStatusBarColor = Color(0xFF10231c) // Dark green for chatbot
-    val ImageGenerationStatusBarColor = Color(0xFF0A0E27) // Dark blue for image generation
-    val VideoGenerationStatusBarColor = Color(0xFF0A0E27) // Dark blue for video generation
-    val ImageToImageStatusBarColor = Color(0xFF0A0E27) // Dark blue for image to image
-    val ProfileStatusBarColor = Color(0xFF0A0E27) // Dark blue for profile screen
-    val DefaultStatusBarColor = Color(0xFF1A1F3A) // Default dark blue
+    // Define status bar colors for different screens - using modern theme colors
+    val ChatBotStatusBarColor = Color(0xFF16161D) // Surface color for chatbot
+    val ImageGenerationStatusBarColor = Color(0xFF16161D) // Surface color for image generation
+    val VideoGenerationStatusBarColor = Color(0xFF16161D) // Surface color for video generation
+    val ImageToImageStatusBarColor = Color(0xFF16161D) // Surface color for image to image
+    val ProfileStatusBarColor = Color(0xFF16161D) // Surface color for profile screen
+    val DefaultStatusBarColor = Color(0xFF16161D) // Default surface color from theme
     
     fun setStatusBarColor(activity: Activity, color: Color) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
