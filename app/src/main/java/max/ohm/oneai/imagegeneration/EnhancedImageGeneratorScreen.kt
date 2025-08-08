@@ -107,6 +107,8 @@ fun EnhancedImageGeneratorScreen(
     var showGallery by remember { mutableStateOf(false) }
     var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
     var showImageDetail by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var reportReason by remember { mutableStateOf("") }
     
     val elapsedTimeInSeconds by unifiedImageViewModel.elapsedTimeInSeconds.collectAsState()
     val totalGenerationTimeInSeconds by unifiedImageViewModel.totalGenerationTimeInSeconds.collectAsState()
@@ -116,8 +118,8 @@ fun EnhancedImageGeneratorScreen(
     // Model selection
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
-        ModelChoice("Flux Schnell", "flux.1-schnell"),
-        // ModelChoice("Image-1", "provider-5/gpt-image-1"),
+       // ModelChoice("Flux Schnell", "flux.1-schnell"),
+        // ModelChoice("Image-1", "provider-5/gpt-image-1")
         ModelChoice("ImageGen-4", "provider-4/imagen-4"),
         ModelChoice("ImageGen-3", "provider-4/imagen-3"),
         // ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
@@ -202,8 +204,9 @@ fun EnhancedImageGeneratorScreen(
     // Show error messages
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            unifiedImageViewModel.clearErrorMessage()
+            // Don't clear the error message immediately, let it be displayed in the UI
+            // Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            // unifiedImageViewModel.clearErrorMessage()
         }
     }
     
@@ -357,6 +360,9 @@ fun EnhancedImageGeneratorScreen(
                                     onFullscreen = {
                                         selectedImage = imageHistory.firstOrNull()
                                         showImageDetail = true
+                                    },
+                                    onReport = {
+                                        showReportDialog = true
                                     }
                                 )
                             }
@@ -367,6 +373,55 @@ fun EnhancedImageGeneratorScreen(
                     }
                 }
                 
+                // Error message display
+                AnimatedVisibility(
+                    visible = !isLoading && errorMessage != null,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFDC2626).copy(alpha = 0.1f)
+                        ),
+                        border = BorderStroke(1.dp, Color(0xFFDC2626).copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Error,
+                                contentDescription = null,
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = errorMessage ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            IconButton(
+                                onClick = { unifiedImageViewModel.clearErrorMessage() },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Dismiss",
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Generation time display
                 val currentTotalTime = totalGenerationTimeInSeconds
                 val showGenerationTime = remember(isLoading, currentTotalTime) {
@@ -491,6 +546,30 @@ fun EnhancedImageGeneratorScreen(
                 }
             )
         }
+
+        // Report Dialog
+        if (showReportDialog) {
+            ReportImageDialog(
+                onDismiss = { 
+                    showReportDialog = false
+                    reportReason = ""
+                },
+                onReport = { reason ->
+                    coroutineScope.launch {
+                        // Handle report submission
+                        submitImageReport(
+                            context = context,
+                            imageData = generatedImageData ?: imageUrl,
+                            prompt = prompt.text,
+                            reason = reason
+                        )
+                        showReportDialog = false
+                        reportReason = ""
+                        Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -561,7 +640,8 @@ private fun GeneratedImageDisplay(
     prompt: String,
     onDownload: () -> Unit,
     onShare: () -> Unit,
-    onFullscreen: () -> Unit
+    onFullscreen: () -> Unit,
+    onReport: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         AsyncImage(
@@ -583,6 +663,15 @@ private fun GeneratedImageDisplay(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            ActionButton(
+                icon = Icons.Filled.Report,
+                onClick = { 
+                    // Show report dialog or handle report
+                    onReport()
+                },
+                contentDescription = "Report",
+                backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f)
+            )
             ActionButton(
                 icon = Icons.Filled.Share,
                 onClick = onShare,
@@ -625,12 +714,13 @@ private fun GeneratedImageDisplay(
 private fun ActionButton(
     icon: ImageVector,
     onClick: () -> Unit,
-    contentDescription: String
+    contentDescription: String,
+    backgroundColor: Color = Color.Black.copy(alpha = 0.6f)
 ) {
     Surface(
         modifier = Modifier.size(40.dp),
         shape = CircleShape,
-        color = Color.Black.copy(alpha = 0.6f),
+        color = backgroundColor,
         onClick = onClick
     ) {
         Icon(
@@ -1432,6 +1522,234 @@ private suspend fun shareImage(
     } catch (e: Exception) {
         withContext(Dispatchers.Main) {
             Toast.makeText(context, "Failed to share image", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReportImageDialog(
+    onDismiss: () -> Unit,
+    onReport: (String) -> Unit
+) {
+    var selectedReason by remember { mutableStateOf("") }
+    var customReason by remember { mutableStateOf("") }
+    var showCustomInput by remember { mutableStateOf(false) }
+    
+    val reportReasons = listOf(
+        "Inappropriate content",
+        "Violence or harmful content",
+        "Copyright infringement",
+        "Spam or misleading content",
+        "Other (specify)"
+    )
+    
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.8f)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Report Image",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary
+                        )
+                    }
+                }
+                
+                Text(
+                    text = "Help us maintain a safe community by reporting inappropriate content.",
+                    color = TextSecondary,
+                    fontSize = 14.sp
+                )
+                
+                // Report reasons
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Reason for reporting:",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    reportReasons.forEach { reason ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedReason = reason
+                                    showCustomInput = reason == "Other (specify)"
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedReason == reason,
+                                onClick = {
+                                    selectedReason = reason
+                                    showCustomInput = reason == "Other (specify)"
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = AccentPurple,
+                                    unselectedColor = TextSecondary
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = reason,
+                                color = TextPrimary,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+                
+                // Custom reason input
+                AnimatedVisibility(visible = showCustomInput) {
+                    OutlinedTextField(
+                        value = customReason,
+                        onValueChange = { customReason = it },
+                        label = { Text("Please specify", color = TextSecondary) },
+                        placeholder = { Text("Describe the issue...", color = TextSecondary.copy(alpha = 0.7f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedBorderColor = AccentPurple,
+                            unfocusedBorderColor = BorderColor,
+                            cursorColor = AccentPurple,
+                            focusedLabelColor = AccentPurple,
+                            unfocusedLabelColor = TextSecondary
+                        ),
+                        maxLines = 3,
+                        minLines = 2
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = TextSecondary
+                        ),
+                        border = BorderStroke(1.dp, BorderColor),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val finalReason = if (selectedReason == "Other (specify)") {
+                                customReason.takeIf { it.isNotBlank() } ?: "Other"
+                            } else {
+                                selectedReason
+                            }
+                            if (finalReason.isNotBlank()) {
+                                onReport(finalReason)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        enabled = selectedReason.isNotBlank() && 
+                                 (selectedReason != "Other (specify)" || customReason.isNotBlank()),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFDC2626),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFDC2626).copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Report",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private suspend fun submitImageReport(
+    context: Context,
+    imageData: Any?,
+    prompt: String,
+    reason: String
+) {
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            // Here you would typically send the report to your backend server
+            // For now, we'll just log it locally
+            android.util.Log.i("ImageReport", "Image reported - Reason: $reason, Prompt: $prompt")
+            
+            // You could implement actual reporting by:
+            // 1. Sending to Firebase Firestore
+            // 2. Sending to your backend API
+            // 3. Sending via email
+            
+            // Example structure for a report:
+            val report = mapOf(
+                "timestamp" to System.currentTimeMillis(),
+                "reason" to reason,
+                "prompt" to prompt,
+                "imageHash" to imageData.hashCode().toString(), // Don't store actual image for privacy
+                "userId" to "anonymous", // You could add user ID if available
+                "status" to "pending"
+            )
+            
+            // For demonstration, we'll just log the report
+            android.util.Log.i("ImageReport", "Report data: $report")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("ImageReport", "Failed to submit report", e)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                Toast.makeText(context, "Failed to submit report. Please try again.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

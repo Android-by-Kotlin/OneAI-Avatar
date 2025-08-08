@@ -36,6 +36,37 @@ class UnifiedImageViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
+    // Function to convert technical error messages to user-friendly ones
+    private fun getUserFriendlyErrorMessage(technicalError: String, modelName: String): String {
+        return when {
+            technicalError.contains("500") || technicalError.contains("503") || 
+            technicalError.contains("Service Unavailable") || technicalError.contains("Internal Server Error") -> {
+                "$modelName is experiencing heavy traffic. Please try another model or wait a moment."
+            }
+            technicalError.contains("429") || technicalError.contains("Too Many Requests") -> {
+                "Too many requests to $modelName. Please wait a moment before trying again."
+            }
+            technicalError.contains("401") || technicalError.contains("Unauthorized") -> {
+                "Authentication failed. Please check your API key configuration."
+            }
+            technicalError.contains("400") || technicalError.contains("Bad Request") -> {
+                "Invalid request to $modelName. Please try a different prompt."
+            }
+            technicalError.contains("404") || technicalError.contains("Not Found") -> {
+                "$modelName is currently unavailable. Please try another model."
+            }
+            technicalError.contains("timeout") || technicalError.contains("Timeout") -> {
+                "$modelName is taking too long to respond. Please try again."
+            }
+            technicalError.contains("Network") || technicalError.contains("network") -> {
+                "Network connection issue. Please check your internet connection."
+            }
+            else -> {
+                "$modelName is currently unavailable. Please try another model."
+            }
+        }
+    }
+
     var selectedModel by mutableStateOf("provider-4/imagen-4") // Default model - ImageGen-4
 
     private val _elapsedTimeInSeconds = MutableStateFlow(0L)
@@ -132,7 +163,8 @@ class UnifiedImageViewModel : ViewModel() {
                             }
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Flux.1-schnell API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Schnell")
                         }
                         isLoading = false
                     }
@@ -158,7 +190,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "GPT Image-1 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "GPT Image-1")
                         }
                         isLoading = false
                     }
@@ -188,7 +221,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-4")
                         }
                         isLoading = false
                     }
@@ -246,7 +280,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Imagen 4.0 Preview API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Imagen 4.0 Preview")
                         }
                         isLoading = false
                     }
@@ -274,7 +309,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "ImageGen-3 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-3")
                         }
                         isLoading = false
                     }
@@ -303,7 +339,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Imagen 3.0 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Imagen 3.0")
                         }
                         isLoading = false
                     }
@@ -328,7 +365,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro Ultra Raw API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Flux Pro Ultra Raw API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Pro Raw")
                         }
                         isLoading = false
                     }
@@ -351,7 +389,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Flux Pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Pro")
                         }
                         isLoading = false
                     }
@@ -374,7 +413,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Ultra Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Flux Ultra Pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Ultra Pro")
                         }
                         isLoading = false
                     }
@@ -397,7 +437,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "DALL-E 3")
                         }
                         isLoading = false
                     }
@@ -420,7 +461,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Shuttle 3.1 Aesthetic API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Shuttle 3.1 Aesthetic API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Shuttle 3.1 Aesthetic")
                         }
                         isLoading = false
                     }
@@ -443,7 +485,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Shuttle 3 Diffusion API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Shuttle 3 Diffusion API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Shuttle 3 Diffusion")
                         }
                         isLoading = false
                     }
@@ -466,7 +509,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Shuttle Jaguar API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Shuttle Jaguar API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Shuttle Jaguar")
                         }
                         isLoading = false
                     }
@@ -489,7 +533,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "Flux Dev API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "Flux Dev API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Dev")
                         }
                         isLoading = false
                     }
@@ -512,7 +557,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "FLUX Kontext Max API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "FLUX Kontext Max API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "FLUX Kontext Max")
                         }
                         isLoading = false
                     }
@@ -535,7 +581,8 @@ class UnifiedImageViewModel : ViewModel() {
                             imageUrl = generatedFluxImage?.url
                         } else {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                            errorMessage = "FLUX Kontext Pro API Error: ${response.code()} - ${errorBody}"
+                            val technicalError = "FLUX Kontext Pro API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "FLUX Kontext Pro")
                         }
                         isLoading = false
                     }
@@ -568,7 +615,8 @@ class UnifiedImageViewModel : ViewModel() {
                                 imageUrl = generatedFluxImage?.url
                             } else {
                                 val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                                errorMessage = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
+                                val technicalError = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
+                                errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-4")
                             }
                             isLoading = false
                         } else {
@@ -578,7 +626,8 @@ class UnifiedImageViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
-                errorMessage = "Network or other error: ${e.message}"
+                val technicalError = "Network or other error: ${e.message}"
+                errorMessage = getUserFriendlyErrorMessage(technicalError, "Image generation")
                 e.printStackTrace()
             } finally {
                 isLoading = false // This will stop the timer loop in startTimer()
