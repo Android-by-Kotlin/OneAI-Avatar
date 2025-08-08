@@ -2793,6 +2793,35 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                 }
             }
             
+            // Live timer display during generation
+            AnimatedVisibility(
+                visible = viewModel.isLoading,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Outlined.Timer,
+                        contentDescription = null,
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Generating: ${viewModel.elapsedTimeInSeconds.collectAsState().value} sec",
+                        color = Color(0xFF6366F1),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
             // Generate Button (Single button at bottom)
             Box(
                 modifier = Modifier
@@ -2902,35 +2931,7 @@ when {
                 }
             }
             
-            // Error Message
-            // Live timer display during generation
-            AnimatedVisibility(
-                visible = viewModel.isLoading,
-                enter = fadeIn() + slideInVertically(),
-                exit = fadeOut() + slideOutVertically()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Outlined.Timer,
-                        contentDescription = null,
-                        tint = Color(0xFF6366F1),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        "Generating: ${viewModel.elapsedTimeInSeconds.collectAsState().value} sec",
-                        color = Color(0xFF6366F1),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+
             
             // Error Message
             AnimatedVisibility(

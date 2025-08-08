@@ -409,7 +409,7 @@ private fun LoginForm(
                 } else {
                     Text(
                         text = "Sign In",
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
                     )
@@ -466,7 +466,7 @@ private fun LoginForm(
                     Text(
                         text = "Continue with Google",
                         color = Color.White,
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -482,13 +482,13 @@ private fun LoginForm(
                 Text(
                     text = "Don't have an account? ",
                     color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 15.sp
+                    fontSize = 13.sp
                 )
                 
                 Text(
                     text = "Sign Up",
                     color = Color(0xFF6366F1),
-                    fontSize = 15.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { onShowRegistration() }
                 )
@@ -560,7 +560,7 @@ private fun SignUpForm(
             Text(
                 text = "Join OneAI and unlock AI possibilities",
                 color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 modifier = Modifier.padding(bottom = 32.dp)
             )
             
@@ -725,7 +725,7 @@ private fun SignUpForm(
                     Text(
                         text = "Continue with Google",
                         color = Color.White,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -741,13 +741,13 @@ private fun SignUpForm(
                 Text(
                     text = "Already have an account? ",
                     color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 15.sp
+                    fontSize = 13.sp
                 )
                 
                 Text(
                     text = "Sign In",
                     color = Color(0xFF6366F1),
-                    fontSize = 15.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { onShowLogin() }
                 )
