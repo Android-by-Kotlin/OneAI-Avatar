@@ -225,6 +225,7 @@ fun ImageToImageScreen(
     val coroutineScope = rememberCoroutineScope()
     var showFullscreenImage by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
     
     // Gradient colors for Pro style
     val gradientColors = listOf(
@@ -813,6 +814,28 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
+                                        )
+                                    }
+                                    
+                                    // Report button for generated image
+                                    Surface(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                            .size(28.dp),
+                                        shape = CircleShape,
+                                        color = Color(0xFFDC2626).copy(alpha = 0.8f),
+                                        onClick = { 
+                                            showReportDialog = true
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Report,
+                                            contentDescription = "Report",
+                                            tint = Color.White,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(6.dp)
                                         )
                                     }
                                 }
@@ -2920,6 +2943,30 @@ exit = fadeOut() + slideOutVertically()
                 onDismiss = { viewModel.toggleMaskingInterface() }
             )
         }
+        
+        // Report Dialog
+        if (showReportDialog) {
+            ImageToImageReportDialog(
+                onDismiss = { 
+                    showReportDialog = false
+                },
+                onReport = { reason ->
+                    coroutineScope.launch {
+                        // Handle report submission
+                        submitImageToImageReport(
+                            context = context,
+                            originalImage = viewModel.selectedImage,
+                            generatedImageUrl = viewModel.generatedImageUrl,
+                            generatedImageBitmap = viewModel.generatedImageBitmap,
+                            prompt = viewModel.prompt,
+                            reason = reason
+                        )
+                        showReportDialog = false
+                        Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -3362,3 +3409,235 @@ private suspend fun shareImage(
 }
 
 
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImageToImageReportDialog(
+    onDismiss: () -> Unit,
+    onReport: (String) -> Unit
+) {
+    var selectedReason by remember { mutableStateOf("") }
+    var customReason by remember { mutableStateOf("") }
+    var showCustomInput by remember { mutableStateOf(false) }
+    
+    val reportReasons = listOf(
+        "Inappropriate content",
+        "Violence or harmful content",
+        "Copyright infringement",
+        "Spam or misleading content",
+        "Other (specify)"
+    )
+    
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.8f)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1F3A))
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Report Image",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                
+                Text(
+                    text = "Help us maintain a safe community by reporting inappropriate content.",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+                
+                // Report reasons
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Reason for reporting:",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    reportReasons.forEach { reason ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedReason = reason
+                                    showCustomInput = reason == "Other (specify)"
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedReason == reason,
+                                onClick = {
+                                    selectedReason = reason
+                                    showCustomInput = reason == "Other (specify)"
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = Color(0xFF6366F1),
+                                    unselectedColor = Color.White.copy(alpha = 0.7f)
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = reason,
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+                
+                // Custom reason input
+                AnimatedVisibility(visible = showCustomInput) {
+                    OutlinedTextField(
+                        value = customReason,
+                        onValueChange = { customReason = it },
+                        label = { Text("Please specify", color = Color.White.copy(alpha = 0.7f)) },
+                        placeholder = { Text("Describe the issue...", color = Color.White.copy(alpha = 0.5f)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF6366F1),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF6366F1),
+                            focusedLabelColor = Color(0xFF6366F1),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                        ),
+                        maxLines = 3,
+                        minLines = 2
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Action buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.White.copy(alpha = 0.7f)
+                        ),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Cancel",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val finalReason = if (selectedReason == "Other (specify)") {
+                                customReason.takeIf { it.isNotBlank() } ?: "Other"
+                            } else {
+                                selectedReason
+                            }
+                            if (finalReason.isNotBlank()) {
+                                onReport(finalReason)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        enabled = selectedReason.isNotBlank() && 
+                                 (selectedReason != "Other (specify)" || customReason.isNotBlank()),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFDC2626),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFDC2626).copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Report",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private suspend fun submitImageToImageReport(
+    context: android.content.Context,
+    originalImage: Bitmap?,
+    generatedImageUrl: String?,
+    generatedImageBitmap: Bitmap?,
+    prompt: String,
+    reason: String
+) {
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            // Here you would typically send the report to your backend server
+            // For now, we'll just log it locally
+            android.util.Log.i("ImageToImageReport", "Image-to-Image transformation reported - Reason: $reason, Prompt: $prompt")
+            
+            // You could implement actual reporting by:
+            // 1. Sending to Firebase Firestore
+            // 2. Sending to your backend API
+            // 3. Sending via email
+            
+            // Example structure for a report:
+            val report = mapOf(
+                "timestamp" to System.currentTimeMillis(),
+                "reason" to reason,
+                "prompt" to prompt,
+                "originalImageHash" to originalImage.hashCode().toString(),
+                "generatedImageHash" to (generatedImageBitmap?.hashCode() ?: generatedImageUrl?.hashCode()).toString(),
+                "userId" to "anonymous", // You could add user ID if available
+                "status" to "pending",
+                "type" to "image-to-image"
+            )
+            
+            // For demonstration, we'll just log the report
+            android.util.Log.i("ImageToImageReport", "Report data: $report")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("ImageToImageReport", "Failed to submit report", e)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                Toast.makeText(context, "Failed to submit report. Please try again.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+}

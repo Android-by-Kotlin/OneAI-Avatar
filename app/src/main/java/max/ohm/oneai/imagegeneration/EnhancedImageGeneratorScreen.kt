@@ -670,7 +670,8 @@ private fun GeneratedImageDisplay(
                     onReport()
                 },
                 contentDescription = "Report",
-                backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f)
+                backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f),
+                buttonSize = 28.dp
             )
             ActionButton(
                 icon = Icons.Filled.Share,
@@ -715,10 +716,11 @@ private fun ActionButton(
     icon: ImageVector,
     onClick: () -> Unit,
     contentDescription: String,
-    backgroundColor: Color = Color.Black.copy(alpha = 0.6f)
+    backgroundColor: Color = Color.Black.copy(alpha = 0.6f),
+    buttonSize: androidx.compose.ui.unit.Dp = 40.dp
 ) {
     Surface(
-        modifier = Modifier.size(40.dp),
+        modifier = Modifier.size(buttonSize),
         shape = CircleShape,
         color = backgroundColor,
         onClick = onClick
@@ -729,7 +731,7 @@ private fun ActionButton(
             tint = TextPrimary,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp)
+                .padding(6.dp)
         )
     }
 }
