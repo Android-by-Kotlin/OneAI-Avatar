@@ -173,7 +173,11 @@ fun LoginSignupScreen(
                     onGoogleSignIn = {
                         if (!isLoading) {
                             try {
+                                // Clear any existing error message
+                                errorMessage = null
+                                // Get Google Sign-In client (which will sign out existing user to force account selection)
                                 val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                // Launch the sign-in intent
                                 googleSignInLauncher.launch(googleSignInClient.signInIntent)
                             } catch (e: Exception) {
                                 errorMessage = "Failed to start Google Sign-In: ${e.message}"
@@ -231,7 +235,11 @@ fun LoginSignupScreen(
                     onGoogleSignIn = {
                         if (!isLoading) {
                             try {
+                                // Clear any existing error message
+                                errorMessage = null
+                                // Get Google Sign-In client (which will sign out existing user to force account selection)
                                 val googleSignInClient = loginViewModel.firebaseRepository.getGoogleSignInClient(context)
+                                // Launch the sign-in intent
                                 googleSignInLauncher.launch(googleSignInClient.signInIntent)
                             } catch (e: Exception) {
                                 errorMessage = "Failed to start Google Sign-In: ${e.message}"

@@ -69,7 +69,11 @@ class FirebaseRepository {
             .requestProfile()
             .build()
         
-        return GoogleSignIn.getClient(context, gso)
+        // Sign out any existing user to force account selection
+        val client = GoogleSignIn.getClient(context, gso)
+        client.signOut()
+        
+        return client
     }
     
     suspend fun signInWithGoogle(idToken: String): Result<AuthResult> {
