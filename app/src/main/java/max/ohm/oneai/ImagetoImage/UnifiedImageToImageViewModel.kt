@@ -176,7 +176,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "flux-kontext-pro-img2img" to "Flux Kontext Pro",
         "flux-kontext-dev-dual" to "Flux Kontext Dev",
        // "multiple-face-swap" to "🎭 Multiple Face Swap",
-        "fashion-try-on" to "👗 Fashion Try-On",
+        "fashion-try-on" to "Fashion Try-On",
        // "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
       //  "sdxl-img2img" to "SDXL Image-to-Image",
 

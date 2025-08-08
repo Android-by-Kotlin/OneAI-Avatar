@@ -550,47 +550,85 @@ Column(
                     // Model Selection Dropdown
                     ExposedDropdownMenuBox(
                         expanded = expanded,
-                        onExpandedChange = { expanded = !expanded },
+                        onExpandedChange = { expanded = it },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-OutlinedTextField(
-    readOnly = true,
-    value = viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Select Model",
-    onValueChange = { },
-    placeholder = { 
-        Text(
-            "Choose AI Model...",
-            color = Color.White.copy(alpha = 0.5f),
-            fontSize = 12.sp
-        ) 
-    },
-    modifier = Modifier
-        .fillMaxWidth()
-        .menuAnchor(),
-    colors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedBorderColor = Color(0xFF6366F1),
-        unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-        focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
-        unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
-        cursorColor = Color(0xFF6366F1)
-    ),
-    shape = RoundedCornerShape(12.dp),
-    leadingIcon = {
-        Icon(
-            Icons.Outlined.ModelTraining,
-            contentDescription = null,
-            tint = Color(0xFF6366F1),
-            modifier = Modifier.size(18.dp)
-        )
-    },
-    trailingIcon = {
-        ExposedDropdownMenuDefaults.TrailingIcon(
-            expanded = expanded
-        )
-    }
-)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF0A0E27).copy(alpha = 0.3f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (expanded) Color(0xFF6366F1) else Color.White.copy(alpha = 0.2f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.ModelTraining,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    
+                                    val selectedModelName = viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Select Model"
+                                    
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedModelName,
+                                            color = Color.White,
+                                            fontSize = 14.sp
+                                        )
+                                        
+                                        // Add tags/icons directly next to text without extra space
+                                        when (viewModel.selectedModel) {
+                                            "flux-kontext-pro-img2img" -> {
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    color = Color(0xFFDC2626).copy(alpha = 0.2f)
+                                                ) {
+                                                    Text(
+                                                        "Multimodel",
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFFDC2626)
+                                                    )
+                                                }
+                                            }
+                                            "fashion-try-on" -> {
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    "👗",
+                                                    fontSize = 14.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Icon(
+                                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                         ExposedDropdownMenu(
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
@@ -603,11 +641,42 @@ OutlinedTextField(
                                         expanded = false
                                     },
                                     text = { 
-                                        Text(
-                                            text = model.second,
-                                            color = Color.White,
-                                            fontSize = 13.sp
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = model.second,
+                                                color = Color.White,
+                                                fontSize = 13.sp
+                                            )
+                                            
+                                            // Add tags/icons directly next to text
+                                            when (model.first) {
+                                                "flux-kontext-pro-img2img" -> {
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Surface(
+                                                        shape = RoundedCornerShape(4.dp),
+                                                        color = Color(0xFFDC2626).copy(alpha = 0.2f)
+                                                    ) {
+                                                        Text(
+                                                            "Multimodel",
+                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                            fontSize = 9.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Color(0xFFDC2626)
+                                                        )
+                                                    }
+                                                }
+                                                "fashion-try-on" -> {
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        "👗",
+                                                        fontSize = 13.sp
+                                                    )
+                                                }
+                                            }
+                                        }
                                     },
                                     colors = MenuDefaults.itemColors(
                                         textColor = Color.White
@@ -667,7 +736,7 @@ OutlinedTextField(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Transformation Complete",
-                                    fontSize = 22.sp,
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
@@ -681,7 +750,7 @@ OutlinedTextField(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Transform Your Vision",
-                                    fontSize = 22.sp,
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
@@ -2836,44 +2905,30 @@ when {
             // Error Message
             // Live timer display during generation
             AnimatedVisibility(
-visible = viewModel.isLoading,
-enter = fadeIn() + slideInVertically(),
-exit = fadeOut() + slideOutVertically()
+                visible = viewModel.isLoading,
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
             ) {
-                Card(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF6366F1).copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = Color(0xFF6366F1).copy(alpha = 0.5f)
-                    )
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Outlined.Timer,
-                            contentDescription = null,
-                            tint = Color(0xFF6366F1),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Generating: ${viewModel.elapsedTimeInSeconds.collectAsState().value} sec",
-                            color = Color(0xFF6366F1),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Icon(
+                        Icons.Outlined.Timer,
+                        contentDescription = null,
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Generating: ${viewModel.elapsedTimeInSeconds.collectAsState().value} sec",
+                        color = Color(0xFF6366F1),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
             
