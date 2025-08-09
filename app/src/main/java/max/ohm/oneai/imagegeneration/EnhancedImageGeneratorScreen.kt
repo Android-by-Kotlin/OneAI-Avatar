@@ -65,15 +65,13 @@ import androidx.compose.runtime.collectAsState
 import android.util.Log
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
-
-// Enhanced color scheme
-private val DarkBackground = Color(0xFF0A0E27)
-private val CardBackground = Color(0xFF1A1F3A)
-private val AccentPurple = Color(0xFF6366F1)
-private val AccentPink = Color(0xFFEC4899)
-private val TextPrimary = Color(0xFFFFFFFF)
-private val TextSecondary = Color(0xFFB8BCC8)
-private val BorderColor = Color(0xFF2D3748)
+import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.components.AnimatedGlassOrb
+import max.ohm.oneai.components.EmotionIntelligentButton
+import max.ohm.oneai.components.AdaptiveGlassCard
+import max.ohm.oneai.components.EmotionIntelligentTextField
+import max.ohm.oneai.components.EmotionState
+import max.ohm.oneai.components.EmotionStatusIndicator
 
 // Data class for generated images history
 data class GeneratedImage(
@@ -108,6 +106,7 @@ fun EnhancedImageGeneratorScreen(
     var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
     var showImageDetail by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var reportButtonClickTime by remember { mutableStateOf(0L) }
     var reportReason by remember { mutableStateOf("") }
     
     val elapsedTimeInSeconds by unifiedImageViewModel.elapsedTimeInSeconds.collectAsState()
@@ -226,14 +225,68 @@ fun EnhancedImageGeneratorScreen(
                 )
             )
     ) {
+        // Animated background orbs
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
+        }
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Enhanced Top Bar
+            // Enhanced Top Bar with Glass Effect (No Border)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = CardBackground.copy(alpha = 0.9f),
-                shadowElevation = 8.dp
+                color = Color.Transparent,
+                shadowElevation = 0.dp
             ) {
                 Row(
                     modifier = Modifier
@@ -242,14 +295,20 @@ fun EnhancedImageGeneratorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // App Title with gradient
-                    Box {
+                    // App Title with emotion indicator
+                    Column {
                         Text(
                             text = "AI Art Studio",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
                             modifier = Modifier.graphicsLayer(alpha = 0.99f)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        EmotionStatusIndicator(
+                            status = "Creative Mode",
+                            emotion = EmotionState.Creative,
+                            icon = Icons.Outlined.Palette
                         )
                     }
                     
@@ -300,28 +359,15 @@ fun EnhancedImageGeneratorScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Enhanced Image Display Card
-                Card(
+                // Enhanced Image Display with Premium Glass Effect
+                PremiumGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
                         .animateContentSize(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = CardBackground
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                AccentPurple.copy(alpha = 0.5f),
-                                AccentPink.copy(alpha = 0.5f)
-                            ),
-                            start = Offset(0f, 0f),
-                            end = Offset(1000f, 1000f)
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    accentType = GlassAccentType.Purple,
+                    cornerRadius = 24.dp,
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -362,7 +408,12 @@ fun EnhancedImageGeneratorScreen(
                                         showImageDetail = true
                                     },
                                     onReport = {
-                                        showReportDialog = true
+                                        val currentTime = System.currentTimeMillis()
+                                        if (currentTime - reportButtonClickTime > 1000) { // Prevent double-click within 1 second
+                                            reportButtonClickTime = currentTime
+                                            showReportDialog = true
+                                            android.util.Log.d("ReportDialog", "Report button clicked, showing dialog")
+                                        }
                                     }
                                 )
                             }
@@ -379,12 +430,12 @@ fun EnhancedImageGeneratorScreen(
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFDC2626).copy(alpha = 0.1f)
-                        ),
-                        border = BorderStroke(1.dp, Color(0xFFDC2626).copy(alpha = 0.3f)),
-                        modifier = Modifier.fillMaxWidth()
+                    GlassCard(
+                        backgroundColor = Color(0xFFDC2626).copy(alpha = 0.08f),
+                        borderColor = Color(0xFFDC2626).copy(alpha = 0.25f),
+                        cornerRadius = 16.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -432,11 +483,11 @@ fun EnhancedImageGeneratorScreen(
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = AccentPurple.copy(alpha = 0.1f)
-                        ),
-                        border = BorderStroke(1.dp, AccentPurple.copy(alpha = 0.3f))
+                    GlassCard(
+                        backgroundColor = AccentPurple.copy(alpha = 0.08f),
+                        borderColor = AccentPurple.copy(alpha = 0.25f),
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(0.dp)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -482,19 +533,116 @@ fun EnhancedImageGeneratorScreen(
                     }
                 )
                 
-                // Enhanced Prompt Input
-                PromptInputCard(
-                    prompt = prompt,
-                    isLoading = isLoading,
-                    onPromptChange = { unifiedImageViewModel.updatePrompt(it) }
-                )
+                // Enhanced Prompt Input with Emotion Intelligence
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Transparent)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = null,
+                                tint = TextSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Creative Prompt",
+                                color = TextSecondary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        
+                        EmotionIntelligentTextField(
+                            value = prompt.text,
+                            onValueChange = { newText -> unifiedImageViewModel.updatePrompt(TextFieldValue(newText)) },
+                            emotion = EmotionState.Creative,
+                            placeholder = "Describe your artistic vision...",
+                            enabled = !isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            GradientPurple.copy(alpha = 0.6f),
+                                            GradientPink.copy(alpha = 0.7f),
+                                            GradientCyan.copy(alpha = 0.5f),
+                                            GradientPurple.copy(alpha = 0.4f)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            maxLines = 5
+                        )
+                    }
+                }
                 
-                // Generate Button
-                GenerateButton(
-                    isLoading = isLoading,
+                // Generate Button with Dark Background
+                Button(
+                    onClick = { unifiedImageViewModel.generateImage() },
                     enabled = !isLoading && prompt.text.isNotEmpty(),
-                    onClick = { unifiedImageViewModel.generateImage() }
-                )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    GradientPurple.copy(alpha = 0.4f),
+                                    GradientPink.copy(alpha = 0.3f),
+                                    GradientCyan.copy(alpha = 0.3f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!isLoading && prompt.text.isNotEmpty()) {
+                            Color(0xFF1F2937).copy(alpha = 0.8f) // Dark background
+                        } else {
+                            Color(0xFF1F2937).copy(alpha = 0.4f) // Lighter when disabled
+                        },
+                        disabledContainerColor = Color(0xFF1F2937).copy(alpha = 0.4f)
+                    )
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = TextPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = TextPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isLoading) "Generating..." else "Generate Art",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
             }
         }
         
@@ -549,24 +697,19 @@ fun EnhancedImageGeneratorScreen(
 
         // Report Dialog
         if (showReportDialog) {
+            android.util.Log.d("ReportDialog", "Showing ReportImageDialog")
             ReportImageDialog(
                 onDismiss = { 
+                    android.util.Log.d("ReportDialog", "Report dialog dismissed")
                     showReportDialog = false
                     reportReason = ""
                 },
                 onReport = { reason ->
-                    coroutineScope.launch {
-                        // Handle report submission
-                        submitImageReport(
-                            context = context,
-                            imageData = generatedImageData ?: imageUrl,
-                            prompt = prompt.text,
-                            reason = reason
-                        )
-                        showReportDialog = false
-                        reportReason = ""
-                        Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
-                    }
+                    // Handle report submission
+                    android.util.Log.d("ReportDialog", "Report submitted with reason: $reason")
+                    showReportDialog = false
+                    reportReason = ""
+                    Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
                 }
             )
         }
@@ -853,13 +996,12 @@ private fun ModelSelectionCard(
     onExpandedChange: (Boolean) -> Unit,
     onModelSelected: (ModelChoice) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderColor)
+    // AI Model Card with No Border for Clean Glass Look
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -940,13 +1082,11 @@ private fun PromptInputCard(
     isLoading: Boolean,
     onPromptChange: (TextFieldValue) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderColor)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -986,7 +1126,7 @@ private fun PromptInputCard(
                     containerColor = DarkBackground,
                     cursorColor = AccentPurple,
                     focusedBorderColor = AccentPurple,
-                    unfocusedBorderColor = BorderColor
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
                 ),
                 shape = RoundedCornerShape(12.dp),
                 minLines = 3,
@@ -1550,13 +1690,88 @@ private fun ReportImageDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.8f)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground)
+                .wrapContentHeight()
+                .padding(16.dp)
+        ) {
+            // Animated background with gradient and orbs - same as main screen
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                DarkBackground,
+                                DarkBackground.copy(alpha = 0.95f),
+                                Color(0xFF0F172A)
+                            )
+                        )
+                    )
+            ) {
+                // Animated background orbs
+                repeat(3) { index ->
+                    val infiniteTransition = rememberInfiniteTransition(label = "orb_dialog_$index")
+                    val offsetX by infiniteTransition.animateFloat(
+                        initialValue = -100f + index * 150f,
+                        targetValue = 100f + index * 150f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = 8000 + index * 2000,
+                                easing = EaseInOutSine
+                            ),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "orb_dialog_offset_x_$index"
+                    )
+                    val offsetY by infiniteTransition.animateFloat(
+                        initialValue = -50f + index * 100f,
+                        targetValue = 50f + index * 100f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = 10000 + index * 1000,
+                                easing = EaseInOutSine
+                            ),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "orb_dialog_offset_y_$index"
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .offset(x = offsetX.dp, y = offsetY.dp)
+                            .size(150.dp + (index * 30).dp)
+                            .background(
+                                brush = Brush.radialGradient(
+                                    colors = when (index) {
+                                        0 -> listOf(
+                                            GradientPurple.copy(alpha = 0.1f),
+                                            Color.Transparent
+                                        )
+                                        1 -> listOf(
+                                            GradientPink.copy(alpha = 0.08f),
+                                            Color.Transparent
+                                        )
+                                        else -> listOf(
+                                            GradientCyan.copy(alpha = 0.06f),
+                                            Color.Transparent
+                                        )
+                                    }
+                                ),
+                                shape = CircleShape
+                            )
+                            .blur(40.dp)
+                    )
+                }
+            }
+            
+            // Card content with transparent background
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f))
         ) {
             Column(
                 modifier = Modifier
@@ -1627,7 +1842,7 @@ private fun ReportImageDialog(
                             Text(
                                 text = reason,
                                 color = TextPrimary,
-                                fontSize = 14.sp
+                                fontSize = 12.sp
                             )
                         }
                     }
@@ -1645,7 +1860,7 @@ private fun ReportImageDialog(
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
                             focusedBorderColor = AccentPurple,
-                            unfocusedBorderColor = BorderColor,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                             cursorColor = AccentPurple,
                             focusedLabelColor = AccentPurple,
                             unfocusedLabelColor = TextSecondary
@@ -1672,7 +1887,7 @@ private fun ReportImageDialog(
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = TextSecondary
                         ),
-                        border = BorderStroke(1.dp, BorderColor),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
@@ -1717,41 +1932,4 @@ private fun ReportImageDialog(
     }
 }
 
-private suspend fun submitImageReport(
-    context: Context,
-    imageData: Any?,
-    prompt: String,
-    reason: String
-) {
-    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        try {
-            // Here you would typically send the report to your backend server
-            // For now, we'll just log it locally
-            android.util.Log.i("ImageReport", "Image reported - Reason: $reason, Prompt: $prompt")
-            
-            // You could implement actual reporting by:
-            // 1. Sending to Firebase Firestore
-            // 2. Sending to your backend API
-            // 3. Sending via email
-            
-            // Example structure for a report:
-            val report = mapOf(
-                "timestamp" to System.currentTimeMillis(),
-                "reason" to reason,
-                "prompt" to prompt,
-                "imageHash" to imageData.hashCode().toString(), // Don't store actual image for privacy
-                "userId" to "anonymous", // You could add user ID if available
-                "status" to "pending"
-            )
-            
-            // For demonstration, we'll just log the report
-            android.util.Log.i("ImageReport", "Report data: $report")
-            
-        } catch (e: Exception) {
-            android.util.Log.e("ImageReport", "Failed to submit report", e)
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                Toast.makeText(context, "Failed to submit report. Please try again.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 }

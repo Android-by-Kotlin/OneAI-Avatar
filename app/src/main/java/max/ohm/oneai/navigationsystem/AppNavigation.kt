@@ -24,6 +24,7 @@ import max.ohm.oneai.chatbot.ResponsiveTestScreen
 import max.ohm.oneai.chatbot.UnifiedChatBotViewModel
 import max.ohm.oneai.homescreen.SimpleHomeScreen
 import max.ohm.oneai.homescreen.EnhancedHomeScreen
+import max.ohm.oneai.homescreen.ModernGlassmorphismHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.EnhancedImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.UnifiedImageViewModel
@@ -79,8 +80,8 @@ fun AppNavigation() {
                     }
                 }
             }
-            // Use the new EnhancedHomeScreen with beautiful UI
-            EnhancedHomeScreen(navController = navController, loginViewModel = loginViewModel)
+            // Use the new Modern Glassmorphism HomeScreen with professional UI
+            ModernGlassmorphismHomeScreen(navController = navController, loginViewModel = loginViewModel)
         }
         composable("profile") {
             // Check if user is logged in

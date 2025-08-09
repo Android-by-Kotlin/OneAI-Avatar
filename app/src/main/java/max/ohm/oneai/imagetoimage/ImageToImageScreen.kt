@@ -40,9 +40,13 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
+import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.components.AnimatedGlassOrb
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -226,6 +230,7 @@ fun ImageToImageScreen(
     var showFullscreenImage by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var reportButtonClickTime by remember { mutableStateOf(0L) }
     
     // Gradient colors for Pro style
     val gradientColors = listOf(
@@ -363,12 +368,40 @@ fun ImageToImageScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0A0E27),
-                        Color(0xFF1A1F3A)
+                        DarkBackground,
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
                     )
                 )
             )
     ) {
+        // Animated Background with Glass Orbs
+        repeat(3) { index ->
+            AnimatedGlassOrb(
+                modifier = Modifier
+                    .size((200 + index * 50).dp)
+                    .offset(
+                        x = (index * 150 - 100).dp, 
+                        y = (index * 100 - 50).dp
+                    ),
+                colors = when (index) {
+                    0 -> listOf(
+                        Color(0xFF6366F1).copy(alpha = 0.15f),
+                        Color.Transparent
+                    )
+                    1 -> listOf(
+                        Color(0xFFEC4899).copy(alpha = 0.12f),
+                        Color.Transparent
+                    )
+                    else -> listOf(
+                        Color(0xFF10B981).copy(alpha = 0.1f),
+                        Color.Transparent
+                    )
+                },
+                size = (200 + index * 50).dp,
+                duration = 8000 + index * 2000
+            )
+        }
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
@@ -441,18 +474,13 @@ Column(
             
             // Batch Processing Status (show only when batch images are selected)
             if (viewModel.batchImages.isNotEmpty()) {
-                Card(
+                PremiumGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        color = Color(0xFFEC4899).copy(alpha = 0.3f)
-                    )
+                    accentType = GlassAccentType.Pink,
+                    cornerRadius = 16.dp,
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
@@ -507,19 +535,14 @@ Column(
                 }
             }
             
-            // Model Selection Card
-            Card(
+            // Model Selection Card with transparent background
+            PremiumGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
-                ),
-                border = BorderStroke(
-                    width = 1.dp,
-                    color = Color(0xFF6366F1).copy(alpha = 0.3f)
-                )
+                accentType = GlassAccentType.Purple,
+                cornerRadius = 16.dp,
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
@@ -550,19 +573,16 @@ Column(
                     // Model Selection Dropdown
                     ExposedDropdownMenuBox(
                         expanded = expanded,
-                        onExpandedChange = { expanded = it },
+                        onExpandedChange = { expanded = !expanded },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Surface(
+                        GlassSurface(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF0A0E27).copy(alpha = 0.3f),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = if (expanded) Color(0xFF6366F1) else Color.White.copy(alpha = 0.2f)
-                            )
+                            color = Color.White.copy(alpha = 0.05f),
+                            borderColor = if (expanded) Color(0xFF6366F1).copy(alpha = 0.5f) else GlassMorphism.GlassBorderSubtle
                         ) {
                             Row(
                                 modifier = Modifier
@@ -597,9 +617,11 @@ Column(
                                         when (viewModel.selectedModel) {
                                             "flux-kontext-pro-img2img" -> {
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Surface(
+                                                GlassSurface(
                                                     shape = RoundedCornerShape(4.dp),
-                                                    color = Color(0xFFDC2626).copy(alpha = 0.2f)
+                                                    color = Color(0xFFDC2626).copy(alpha = 0.15f),
+                                                    borderColor = Color(0xFFDC2626).copy(alpha = 0.3f),
+                                                    borderWidth = 0.5.dp
                                                 ) {
                                                     Text(
                                                         "Multimodel",
@@ -687,30 +709,16 @@ Column(
                     }
                 }
             }
-            // Hero Section - Image Upload
-            Card(
+            // Hero Section - Image Upload with Glass Morphism
+            PremiumGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        ambientColor = Color(0xFF6366F1).copy(alpha = 0.3f),
-                        spotColor = Color(0xFF6366F1).copy(alpha = 0.3f)
-                    ),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
-                ),
-                border = BorderStroke(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = gradientColors.map { it.copy(alpha = 0.5f) }
-                    )
-                )
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                accentType = GlassAccentType.Cyan,
+                cornerRadius = 24.dp,
+                contentPadding = PaddingValues(20.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Title Section - Dynamic based on state
@@ -750,7 +758,7 @@ Column(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     "Transform Your Vision",
-                                    fontSize = 18.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
@@ -796,9 +804,11 @@ Column(
                                         contentScale = ContentScale.Fit
                                     )
                                     
-                                    Surface(
+                                    GlassSurface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFF6366F1).copy(alpha = 0.9f),
+                                        color = Color(0xFF6366F1).copy(alpha = 0.7f),
+                                        borderColor = Color.White.copy(alpha = 0.3f),
+                                        borderWidth = 0.5.dp,
                                         modifier = Modifier
                                             .align(Alignment.TopStart)
                                             .padding(8.dp)
@@ -870,9 +880,11 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                         }
                                     }
                                     
-                                    Surface(
+                                    GlassSurface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFEC4899).copy(alpha = 0.9f),
+                                        color = Color(0xFFEC4899).copy(alpha = 0.7f),
+                                        borderColor = Color.White.copy(alpha = 0.3f),
+                                        borderWidth = 0.5.dp,
                                         modifier = Modifier
                                             .align(Alignment.TopStart)
                                             .padding(8.dp)
@@ -887,16 +899,23 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     }
                                     
                                     // Report button for generated image
-                                    Surface(
+                                    GlassSurface(
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
                                             .padding(8.dp)
-                                            .size(28.dp),
-                                        shape = CircleShape,
-                                        color = Color(0xFFDC2626).copy(alpha = 0.8f),
-                                        onClick = { 
-                                            showReportDialog = true
-                                        }
+                                            .size(28.dp)
+                                            .clickable { 
+                                                val currentTime = System.currentTimeMillis()
+                                                if (currentTime - reportButtonClickTime > 1000) { // Prevent double-click within 1 second
+                                                    reportButtonClickTime = currentTime
+                                                    showReportDialog = true
+                                                    android.util.Log.d("ReportDialog", "Report button clicked, showing dialog")
+                                                }
+                                            },
+                                        shape = RoundedCornerShape(14.dp),
+                                        color = Color(0xFFDC2626).copy(alpha = 0.6f),
+                                        borderColor = Color(0xFFDC2626).copy(alpha = 0.4f),
+                                        borderWidth = 0.5.dp
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.Report,
@@ -913,9 +932,11 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             // Generation time display
                             val totalTime = viewModel.totalGenerationTimeInSeconds.collectAsState().value
                             if (totalTime != null && totalTime > 0) {
-                                Surface(
+                                GlassSurface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFF10B981).copy(alpha = 0.2f),
+                                    color = Color(0xFF10B981).copy(alpha = 0.12f),
+                                    borderColor = Color(0xFF10B981).copy(alpha = 0.25f),
+                                    borderWidth = 1.dp,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 8.dp)
@@ -974,7 +995,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 .fillMaxWidth()
                                 .height(280.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.Black)
+                                .background(Color.Black.copy(alpha = 0.3f))
                         ) {
                             Image(
                                 bitmap = viewModel.selectedImage!!.asImageBitmap(),
@@ -1001,9 +1022,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     .padding(12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Surface(
+                                GlassSurface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = Color.White.copy(alpha = 0.1f)
+                                    color = Color.White.copy(alpha = 0.15f),
+                                    borderColor = Color.White.copy(alpha = 0.3f)
                                 ) {
                                     Text(
                                         "Original",
@@ -1023,7 +1045,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                             modifier = Modifier
                                                 .size(36.dp)
                                                 .background(
-                                                    Color(0xFFEC4899).copy(alpha = 0.3f),
+                                                    Color(0xFFEC4899).copy(alpha = 0.2f),
                                                     CircleShape
                                                 )
                                         ) {
@@ -1056,7 +1078,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             }
                         }
                     } else {
-                        // Image Upload Area
+                        // Image Upload Area - Matching Cyan Theme
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1065,8 +1087,9 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 .background(
                                     Brush.verticalGradient(
                                         colors = listOf(
-                                            Color(0xFF1A1F3A).copy(alpha = 0.5f),
-                                            Color(0xFF0A0E27).copy(alpha = 0.8f)
+                                            Color(0xFF06B6D4).copy(alpha = 0.08f), // Cyan tint
+                                            Color(0xFF10B981).copy(alpha = 0.06f), // Green tint
+                                            Color(0xFF0A0E27).copy(alpha = 0.9f)   // Dark base
                                         )
                                     )
                                 )
@@ -1185,7 +1208,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Camera option
+                                    // Camera option - Cyan theme
                                     OutlinedCard(
                                         onClick = { cameraLauncher.launch(null) },
                                         modifier = Modifier
@@ -1194,10 +1217,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                         shape = RoundedCornerShape(16.dp),
                                         border = BorderStroke(
                                             width = 1.dp,
-                                            color = Color(0xFF6366F1).copy(alpha = 0.3f)
+                                            color = Color(0xFF06B6D4).copy(alpha = 0.4f) // Cyan border
                                         ),
                                         colors = CardDefaults.outlinedCardColors(
-                                            containerColor = Color.White.copy(alpha = 0.05f)
+                                            containerColor = Color(0xFF06B6D4).copy(alpha = 0.08f) // Cyan background
                                         )
                                     ) {
                                         Column(
@@ -1211,7 +1234,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                                 Icons.Outlined.PhotoCamera,
                                                 contentDescription = "Camera",
                                                 modifier = Modifier.size(24.dp),
-                                                tint = Color(0xFF6366F1)
+                                                tint = Color(0xFF06B6D4) // Cyan icon
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
@@ -1222,7 +1245,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                         }
                                     }
                                     
-                                    // Batch processing option
+                                    // Batch processing option - Green theme
                                     OutlinedCard(
                                         onClick = { 
                                             // Launch multiple image picker for batch processing
@@ -1234,10 +1257,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                         shape = RoundedCornerShape(16.dp),
                                         border = BorderStroke(
                                             width = 1.dp,
-                                            color = Color(0xFFEC4899).copy(alpha = 0.3f)
+                                            color = Color(0xFF10B981).copy(alpha = 0.4f) // Green border
                                         ),
                                         colors = CardDefaults.outlinedCardColors(
-                                            containerColor = Color.White.copy(alpha = 0.05f)
+                                            containerColor = Color(0xFF10B981).copy(alpha = 0.08f) // Green background
                                         )
                                     ) {
                                         Column(
@@ -1251,7 +1274,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                                 Icons.Outlined.Collections,
                                                 contentDescription = "Batch",
                                                 modifier = Modifier.size(24.dp),
-                                                tint = Color(0xFFEC4899)
+                                                tint = Color(0xFF10B981) // Green icon
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
@@ -1269,15 +1292,14 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                 }
             }
             
-            // Transformation Settings Card
-            Card(
+            // Transformation Settings Card with Glass Morphism
+            PremiumGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1F3A).copy(alpha = 0.9f)
-                )
+                accentType = GlassAccentType.Neutral,
+                cornerRadius = 20.dp,
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp)
@@ -2349,7 +2371,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             )
                         }
                         else -> {
-                            // Main Prompt Input for other models
+                            // Main Prompt Input for other models - Enhanced Styling to match EnhancedImageGeneratorScreen
                             OutlinedTextField(
                                 value = viewModel.prompt,
                                 onValueChange = { viewModel.prompt = it },
@@ -2361,12 +2383,24 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 12.dp),
+                                    .padding(bottom = 12.dp)
+                                    .border(
+                                        width = 2.dp,
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(
+                                                Color(0xFF8B5CF6).copy(alpha = 0.6f), // GradientPurple
+                                                Color(0xFFEC4899).copy(alpha = 0.7f), // GradientPink
+                                                Color(0xFF06B6D4).copy(alpha = 0.5f), // GradientCyan
+                                                Color(0xFF8B5CF6).copy(alpha = 0.4f)  // GradientPurple
+                                            )
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = Color.White,
                                     unfocusedTextColor = Color.White,
-                                    focusedBorderColor = Color(0xFF6366F1),
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
                                     focusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.5f),
                                     unfocusedContainerColor = Color(0xFF0A0E27).copy(alpha = 0.3f),
                                     cursorColor = Color(0xFF6366F1)
@@ -2429,16 +2463,16 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                 }
             }
             
-            // Advanced Settings Toggle
-            Card(
+            // Advanced Settings Toggle with Glass Morphism
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .clickable { showAdvancedSettings = !showAdvancedSettings },
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A1F3A).copy(alpha = 0.7f)
-                )
+                cornerRadius = 16.dp,
+                backgroundColor = Color.White.copy(alpha = 0.05f),
+                borderColor = GlassMorphism.GlassBorderSubtle,
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -2480,15 +2514,15 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Card(
+                GlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF1A1F3A).copy(alpha = 0.5f)
-                    )
+                    cornerRadius = 16.dp,
+                    backgroundColor = Color.White.copy(alpha = 0.03f),
+                    borderColor = GlassMorphism.GlassBorderSubtle,
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp)
@@ -2822,111 +2856,84 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                 }
             }
             
-            // Generate Button (Single button at bottom)
-            Box(
+            // Generate Button with Enhanced Style matching EnhancedImageGeneratorScreen
+            Button(
+                onClick = {
+                    when {
+                        viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty() -> viewModel.processBatch()
+                        else -> viewModel.generateImage()
+                    }
+                },
+                enabled = (!viewModel.isLoading && !viewModel.isBatchProcessing) &&
+                        (viewModel.selectedImage != null || 
+                        (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty())),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .height(60.dp)
-                    .shadow(
-                        elevation = if (!viewModel.isLoading) 12.dp else 0.dp,
-                        shape = RoundedCornerShape(16.dp),
-                        ambientColor = Color(0xFF6366F1).copy(alpha = 0.5f),
-                        spotColor = Color(0xFF6366F1).copy(alpha = 0.5f)
-                    )
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (viewModel.isLoading || viewModel.selectedImage == null) {
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Gray.copy(alpha = 0.3f),
-                                    Color.Gray.copy(alpha = 0.3f)
-                                )
+                    .height(56.dp)
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF6366F1).copy(alpha = 0.4f),
+                                Color(0xFFEC4899).copy(alpha = 0.3f),
+                                Color(0xFF10B981).copy(alpha = 0.3f)
                             )
-                        } else {
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF6366F1),
-                                    Color(0xFFEC4899)
-                                )
-                            )
-                        }
-                    )
-                    .clickable(
-                        enabled = (!viewModel.isLoading && !viewModel.isBatchProcessing) &&
-                                (viewModel.selectedImage != null || 
-                                (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()))
-                    ) {
-when {
-                            viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty() -> viewModel.processBatch()
-                            else -> viewModel.generateImage()
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                AnimatedContent(
-                    targetState = viewModel.isLoading,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(300)) togetherWith
-                            fadeOut(animationSpec = tween(300))
-                    }
-                ) { isLoading ->
-                    if (isLoading) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(22.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                if (viewModel.selectedModel.startsWith("batch-") && viewModel.isBatchProcessing) {
-                                    "Processing Batch... (${viewModel.batchProcessingProgress + 1}/${viewModel.batchProcessingTotal})"
-                                } else {
-//                                    "Generating with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "AI Model"}..."
-                                    "Generating..."
-                                },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.White
-                            )
-                        }
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if ((!viewModel.isLoading && !viewModel.isBatchProcessing) &&
+                            (viewModel.selectedImage != null || 
+                            (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()))) {
+                        Color(0xFF1F2937).copy(alpha = 0.8f) // Dark background when enabled
                     } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    if (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()) {
-                                        "Process Batch (${viewModel.batchImages.size} images)"
-                                    } else {
-                                        "Generate Image"
-                                    },
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    "with ${viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Selected Model"}",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-                            }
-                        }
+                        Color(0xFF1F2937).copy(alpha = 0.4f) // Lighter when disabled
+                    },
+                    disabledContainerColor = Color(0xFF1F2937).copy(alpha = 0.4f)
+                )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    if (viewModel.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = TextPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (viewModel.selectedModel.startsWith("batch-") && viewModel.isBatchProcessing) {
+                                "Processing Batch... (${viewModel.batchProcessingProgress + 1}/${viewModel.batchProcessingTotal})"
+                            } else {
+                                "Transforming..."
+                            },
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (viewModel.selectedModel.startsWith("batch-") && viewModel.batchImages.isNotEmpty()) {
+                                "Transform Batch (${viewModel.batchImages.size})"
+                            } else {
+                                "Transform Image"
+                            },
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
                     }
                 }
             }
@@ -3002,24 +3009,17 @@ when {
         
         // Report Dialog
         if (showReportDialog) {
+            android.util.Log.d("ReportDialog", "Showing ImageToImageReportDialog")
             ImageToImageReportDialog(
                 onDismiss = { 
+                    android.util.Log.d("ReportDialog", "Report dialog dismissed")
                     showReportDialog = false
                 },
                 onReport = { reason ->
-                    coroutineScope.launch {
-                        // Handle report submission
-                        submitImageToImageReport(
-                            context = context,
-                            originalImage = viewModel.selectedImage,
-                            generatedImageUrl = viewModel.generatedImageUrl,
-                            generatedImageBitmap = viewModel.generatedImageBitmap,
-                            prompt = viewModel.prompt,
-                            reason = reason
-                        )
-                        showReportDialog = false
-                        Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
-                    }
+                    // Handle report submission
+                    android.util.Log.d("ReportDialog", "Report submitted with reason: $reason")
+                    showReportDialog = false
+                    Toast.makeText(context, "Report submitted successfully. Thank you for helping us improve.", Toast.LENGTH_LONG).show()
                 }
             )
         }
@@ -3488,13 +3488,88 @@ private fun ImageToImageReportDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .fillMaxHeight(0.8f)
-                .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1F3A))
+                .wrapContentHeight()
+                .padding(16.dp)
+        ) {
+            // Animated background with gradient and orbs - same as EnhancedImageGeneratorScreen
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0A0E27), // DarkBackground
+                                Color(0xFF0A0E27).copy(alpha = 0.95f),
+                                Color(0xFF0F172A)
+                            )
+                        )
+                    )
+            ) {
+                // Animated background orbs
+                repeat(3) { index ->
+                    val infiniteTransition = rememberInfiniteTransition(label = "orb_dialog_$index")
+                    val offsetX by infiniteTransition.animateFloat(
+                        initialValue = -100f + index * 150f,
+                        targetValue = 100f + index * 150f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = 8000 + index * 2000,
+                                easing = FastOutSlowInEasing
+                            ),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "orb_dialog_offset_x_$index"
+                    )
+                    val offsetY by infiniteTransition.animateFloat(
+                        initialValue = -50f + index * 100f,
+                        targetValue = 50f + index * 100f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = 10000 + index * 1000,
+                                easing = FastOutSlowInEasing
+                            ),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "orb_dialog_offset_y_$index"
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .offset(x = offsetX.dp, y = offsetY.dp)
+                            .size(150.dp + (index * 30).dp)
+                            .background(
+                                brush = Brush.radialGradient(
+                                    colors = when (index) {
+                                        0 -> listOf(
+                                            Color(0xFF8B5CF6).copy(alpha = 0.1f), // GradientPurple
+                                            Color.Transparent
+                                        )
+                                        1 -> listOf(
+                                            Color(0xFFEC4899).copy(alpha = 0.08f), // GradientPink
+                                            Color.Transparent
+                                        )
+                                        else -> listOf(
+                                            Color(0xFF06B6D4).copy(alpha = 0.06f), // GradientCyan
+                                            Color.Transparent
+                                        )
+                                    }
+                                ),
+                                shape = CircleShape
+                            )
+                            .blur(40.dp)
+                    )
+                }
+            }
+            
+            // Card content with transparent background
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f))
         ) {
             Column(
                 modifier = Modifier
@@ -3565,7 +3640,7 @@ private fun ImageToImageReportDialog(
                             Text(
                                 text = reason,
                                 color = Color.White,
-                                fontSize = 14.sp
+                                fontSize = 12.sp
                             )
                         }
                     }
@@ -3655,45 +3730,4 @@ private fun ImageToImageReportDialog(
     }
 }
 
-private suspend fun submitImageToImageReport(
-    context: android.content.Context,
-    originalImage: Bitmap?,
-    generatedImageUrl: String?,
-    generatedImageBitmap: Bitmap?,
-    prompt: String,
-    reason: String
-) {
-    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-        try {
-            // Here you would typically send the report to your backend server
-            // For now, we'll just log it locally
-            android.util.Log.i("ImageToImageReport", "Image-to-Image transformation reported - Reason: $reason, Prompt: $prompt")
-            
-            // You could implement actual reporting by:
-            // 1. Sending to Firebase Firestore
-            // 2. Sending to your backend API
-            // 3. Sending via email
-            
-            // Example structure for a report:
-            val report = mapOf(
-                "timestamp" to System.currentTimeMillis(),
-                "reason" to reason,
-                "prompt" to prompt,
-                "originalImageHash" to originalImage.hashCode().toString(),
-                "generatedImageHash" to (generatedImageBitmap?.hashCode() ?: generatedImageUrl?.hashCode()).toString(),
-                "userId" to "anonymous", // You could add user ID if available
-                "status" to "pending",
-                "type" to "image-to-image"
-            )
-            
-            // For demonstration, we'll just log the report
-            android.util.Log.i("ImageToImageReport", "Report data: $report")
-            
-        } catch (e: Exception) {
-            android.util.Log.e("ImageToImageReport", "Failed to submit report", e)
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                Toast.makeText(context, "Failed to submit report. Please try again.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 }
