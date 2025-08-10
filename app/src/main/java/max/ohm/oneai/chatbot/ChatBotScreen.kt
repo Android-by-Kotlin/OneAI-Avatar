@@ -5,10 +5,12 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -543,121 +546,238 @@ fun ConversationsDrawer(
     isTypingSoundEnabled: Boolean = true,
     onToggleTypingSound: () -> Unit = {}
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxHeight()
             .width(280.dp)
-            .background(DarkGreen)
-            .padding(vertical = 16.dp)
     ) {
-        // Drawer header
-        Row(
+        // Glassmorphism background with animated orbs
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Conversations",
-                color = Color.White,
-                fontSize = 25.sp,
-                modifier = Modifier.padding(top = 5.dp),
-                fontWeight = FontWeight.Bold
-            )
-
-            // Sound toggle and New chat buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Sound toggle button
-                IconButton(
-                    onClick = onToggleTypingSound,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            if (isTypingSoundEnabled) AccentGreen else MediumGreen,
-                            CircleShape
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0A0E27), // DarkBackground
+                            Color(0xFF0A0E27).copy(alpha = 0.95f),
+                            Color(0xFF0F172A)
                         )
-                ) {
-                    Icon(
-                        imageVector = if (isTypingSoundEnabled) 
-                            Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                        contentDescription = if (isTypingSoundEnabled) 
-                            "Disable typing sound" else "Enable typing sound",
-                        tint = Color.White
                     )
-                }
+                )
+        ) {
+            // Animated background orbs
+            repeat(3) { index ->
+                val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "drawer_orb_$index")
+                val offsetX by infiniteTransition.animateFloat(
+                    initialValue = -100f + index * 80f,
+                    targetValue = 100f + index * 80f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(
+                            durationMillis = 6000 + index * 1500,
+                            easing = androidx.compose.animation.core.EaseInOutSine
+                        ),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                    ),
+                    label = "drawer_orb_offset_x_$index"
+                )
+                val offsetY by infiniteTransition.animateFloat(
+                    initialValue = -80f + index * 120f,
+                    targetValue = 80f + index * 120f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                        animation = androidx.compose.animation.core.tween(
+                            durationMillis = 8000 + index * 1000,
+                            easing = androidx.compose.animation.core.EaseInOutSine
+                        ),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                    ),
+                    label = "drawer_orb_offset_y_$index"
+                )
                 
-                // New chat button
-                IconButton(
-                    onClick = onNewChatClicked,
+                Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(AccentGreen, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "New Conversation",
-                        tint = Color.White
-                    )
-                }
+                        .offset(x = offsetX.dp, y = offsetY.dp)
+                        .size(120.dp + (index * 20).dp)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = when (index) {
+                                    0 -> listOf(
+                                        Color(0xFF8B5CF6).copy(alpha = 0.08f), // GradientPurple
+                                        Color.Transparent
+                                    )
+                                    1 -> listOf(
+                                        Color(0xFFEC4899).copy(alpha = 0.06f), // GradientPink
+                                        Color.Transparent
+                                    )
+                                    else -> listOf(
+                                        Color(0xFF06B6D4).copy(alpha = 0.05f), // GradientCyan
+                                        Color.Transparent
+                                    )
+                                }
+                            ),
+                            shape = CircleShape
+                        )
+                        .blur(40.dp)
+                )
             }
         }
-
-        //Divider(color = MediumGreen, thickness = 1.dp)
-
-        // Chat list
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 8.dp)
+        
+        // Content overlay
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 16.dp)
         ) {
-            items(chats) { chat ->
-                val isSelected = chat.id == currentChatId
+            // Drawer header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Conversations",
+                    color = Color.White,
+                    fontSize = 25.sp,
+                    modifier = Modifier.padding(top = 5.dp),
+                    fontWeight = FontWeight.Bold
+                )
 
+                // Sound toggle and New chat buttons - smaller and more beautiful
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            if (isSelected) MediumGreen else Color.Transparent
-                        )
-                        .clickable { onChatSelected(chat) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = chat.title,
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Text(
-                            text = "Updated: ${chat.updatedAt.toDate().toString().substringBefore("GMT")}",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    // Delete button
-                    IconButton(
-                        onClick = { onDeleteChatClicked(chat) },
-                        modifier = Modifier.size(32.dp)
+                    // Sound toggle button - smaller with theme colors
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                brush = if (isTypingSoundEnabled) {
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFF10B981), // GradientCyan
+                                            Color(0xFF06B6D4)
+                                        )
+                                    )
+                                } else {
+                                    Brush.linearGradient(
+                                        colors = listOf(
+                                            Color(0xFF6B7280),
+                                            Color(0xFF4B5563)
+                                        )
+                                    )
+                                },
+                                shape = CircleShape
+                            )
+                            .clickable { onToggleTypingSound() },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Delete Conversation",
-                            tint = Color.White.copy(alpha = 0.6f)
+                            imageVector = if (isTypingSoundEnabled) 
+                                Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = if (isTypingSoundEnabled) 
+                                "Disable typing sound" else "Enable typing sound",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
+                    }
+                    
+                    // New chat button - smaller with theme colors
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        Color(0xFF8B5CF6), // GradientPurple
+                                        Color(0xFFEC4899)  // GradientPink
+                                    )
+                                ),
+                                shape = CircleShape
+                            )
+                            .clickable { onNewChatClicked() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "New Conversation",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            // Chat list
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(chats) { chat ->
+                    val isSelected = chat.id == currentChatId
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (isSelected) {
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                                            Color(0xFFEC4899).copy(alpha = 0.1f)
+                                        )
+                                    )
+                                } else {
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color.Transparent, Color.Transparent)
+                                    )
+                                }
+                            )
+                            .clickable { onChatSelected(chat) }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = chat.title,
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = "Updated: ${chat.updatedAt.toDate().toString().substringBefore("GMT")}",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        // Delete button - smaller and more colorful
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(
+                                    Color(0xFFDC2626).copy(alpha = 0.2f),
+                                    CircleShape
+                                )
+                                .clickable { onDeleteChatClicked(chat) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Delete Conversation",
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
             }

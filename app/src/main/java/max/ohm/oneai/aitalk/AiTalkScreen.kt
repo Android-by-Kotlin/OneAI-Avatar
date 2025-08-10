@@ -8,9 +8,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -36,6 +35,7 @@ import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,7 +57,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import max.ohm.oneai.chatbot.MessageBubble
+import max.ohm.oneai.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +95,9 @@ fun AiTalkScreen(
         animationSpec = infiniteRepeatable(animation = tween(500)),
         label = "MicScale"
     )
+    
+    // Background animations
+    val infiniteTransition = rememberInfiniteTransition(label = "background_animation")
     
     // Permission handling
     val audioPermission = Manifest.permission.RECORD_AUDIO
@@ -142,58 +149,151 @@ fun AiTalkScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("AI Talk") },
-                actions = {
-                    // Settings button
-                    IconButton(onClick = { showSettings = !showSettings }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                    }
-                    
-                    // Clear button
-                    IconButton(onClick = { aiTalkViewModel.clearMessages() }) {
-                        Icon(Icons.Filled.Clear, contentDescription = "Clear Chat")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    if (!hasPermission) {
-                        permissionLauncher.launch(audioPermission)
-                    } else if (isListening) {
-                        aiTalkViewModel.stopListening()
-                    } else {
-                        startSpeechRecognition.invoke()
-                    }
-                },
-                modifier = Modifier.scale(if (isListening) scale else 1f),
-                containerColor = if (isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Icon(
-                    imageVector = if (isListening) Icons.Filled.MicOff else Icons.Filled.Mic,
-                    contentDescription = if (isListening) "Stop Listening" else "Start Listening",
-                    tint = if (isListening) Color.White else MaterialTheme.colorScheme.onPrimaryContainer
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        DarkBackground,
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
+                    )
                 )
-            }
+            )
+    ) {
+        // Animated background orbs
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
         }
+        
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            "AI Talk",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        ) 
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
+                    actions = {
+                        // Settings button
+                        IconButton(onClick = { showSettings = !showSettings }) {
+                            Icon(
+                                Icons.Filled.Settings, 
+                                contentDescription = "Settings",
+                                tint = TextPrimary
+                            )
+                        }
+                        
+                        // Clear button
+                        IconButton(onClick = { aiTalkViewModel.clearMessages() }) {
+                            Icon(
+                                Icons.Filled.Clear, 
+                                contentDescription = "Clear Chat",
+                                tint = TextPrimary
+                            )
+                        }
+                    }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = {
+                        if (!hasPermission) {
+                            permissionLauncher.launch(audioPermission)
+                        } else if (isListening) {
+                            aiTalkViewModel.stopListening()
+                        } else {
+                            startSpeechRecognition.invoke()
+                        }
+                    },
+                    modifier = Modifier.scale(if (isListening) scale else 1f),
+                    containerColor = if (isListening) {
+                        Color(0xFFDC2626)
+                    } else {
+                        Color(0xFF1F2937).copy(alpha = 0.8f)
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isListening) Icons.Filled.MicOff else Icons.Filled.Mic,
+                        contentDescription = if (isListening) "Stop Listening" else "Start Listening",
+                        tint = Color.White
+                    )
+                }
+            }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            // Settings panel (expandable)
-            if (showSettings) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
+                // Settings panel (expandable)
+                if (showSettings) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = GlassBackground
+                        )
+                    ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -201,7 +301,8 @@ fun AiTalkScreen(
                         Text(
                             "Settings",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
                         )
                         
                         // LLM Model selector
@@ -210,7 +311,7 @@ fun AiTalkScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("LLM Model")
+                            Text("LLM Model", color = TextSecondary)
                             
                             Button(onClick = { showLlmModelDropdown = true }) {
                                 Text(selectedLlmModel.substringAfterLast('/').substringBefore(':'))
@@ -238,7 +339,7 @@ fun AiTalkScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("TTS Voice")
+                            Text("TTS Voice", color = TextSecondary)
                             
                             Button(onClick = { showVoiceDropdown = true }) {
                                 Text(selectedVoice)
@@ -263,14 +364,17 @@ fun AiTalkScreen(
                 }
             }
             
-            // Status indicators
-            if (isListening) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
+                // Status indicators
+                if (isListening) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = GlassBackground
+                        )
+                    ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -278,7 +382,7 @@ fun AiTalkScreen(
                         Text(
                             "Listening...",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = AccentPurple
                         )
                         
                         if (recognizedText.isNotEmpty()) {
@@ -286,7 +390,8 @@ fun AiTalkScreen(
                             Text(
                                 recognizedText,
                                 style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = TextPrimary
                             )
                         }
                     }
@@ -306,7 +411,8 @@ fun AiTalkScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         if (isProcessing) "Processing..." else "Generating speech...",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
                     )
                 }
             }
@@ -341,17 +447,19 @@ fun AiTalkScreen(
                         Text(
                             "Tap the microphone button to start speaking",
                             style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            color = TextSecondary
                         )
                         
                         Icon(
                             imageVector = Icons.Filled.Mic,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = AccentPurple
                         )
                     }
                 }
+            }
             }
         }
     }

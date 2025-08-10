@@ -1,9 +1,11 @@
 package max.ohm.oneai.imageediting
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -26,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import max.ohm.oneai.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,12 +45,67 @@ fun FaceGenScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF121212),
-                        Color(0xFF1E1E1E)
+                        DarkBackground,
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
                     )
                 )
             )
     ) {
+        // Animated background orbs
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -63,7 +122,7 @@ fun FaceGenScreen(
                 Icon(
                     imageVector = Icons.Default.Face,
                     contentDescription = "Face Gen",
-                    tint = Color(0xFF6200EE),
+                    tint = AccentPurple,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -71,7 +130,7 @@ fun FaceGenScreen(
                     text = "Face Generation",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = TextPrimary
                 )
             }
             
@@ -81,7 +140,7 @@ fun FaceGenScreen(
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A2A2A)
+                    containerColor = GlassBackground
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -90,14 +149,14 @@ fun FaceGenScreen(
                 ) {
                     Text(
                         text = "Generate AI images with custom faces",
-                        color = Color.White,
+                        color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Upload a face image and describe your vision to create unique AI-generated images",
-                        color = Color.White.copy(alpha = 0.7f),
+                        color = TextSecondary,
                         fontSize = 14.sp
                     )
                 }
