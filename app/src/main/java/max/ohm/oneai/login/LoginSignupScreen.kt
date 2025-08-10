@@ -4,7 +4,7 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -14,10 +14,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.blur
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -105,34 +108,74 @@ fun LoginSignupScreen(
         }
     }
 
-    // Modern gradient background
+    // Glassmorphism background - same as other screens
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0F0F23),
-                        Color(0xFF1A1A2E),
-                        Color(0xFF16213E)
+                        Color(0xFF0A0E27), // DarkBackground
+                        Color(0xFF0A0E27).copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
                     )
                 )
             )
     ) {
-        // Background decorative elements
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF6366F1).copy(alpha = 0.1f),
-                            Color.Transparent
+        // Animated background orbs - same as other screens
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    Color(0xFF8B5CF6).copy(alpha = 0.1f), // GradientPurple
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    Color(0xFFEC4899).copy(alpha = 0.08f), // GradientPink
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    Color(0xFF06B6D4).copy(alpha = 0.06f), // GradientCyan
+                                    Color.Transparent
+                                )
+                            }
                         ),
-                        radius = 800f
+                        shape = androidx.compose.foundation.shape.CircleShape
                     )
-                )
-        )
+                    .blur(60.dp)
+            )
+        }
         
         Column(
             modifier = Modifier
@@ -281,10 +324,10 @@ private fun LoginForm(
             .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
+            containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 20.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(
@@ -523,10 +566,10 @@ private fun SignUpForm(
             .padding(horizontal = 8.dp),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E1E2E).copy(alpha = 0.95f)
+            containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 20.dp
+            defaultElevation = 0.dp
         )
     ) {
         Column(

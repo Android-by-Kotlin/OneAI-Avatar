@@ -31,6 +31,7 @@ import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.animation.LetterDropAnimation
 import androidx.compose.ui.text.TextStyle
 import max.ohm.oneai.ui.theme.*
+import androidx.compose.animation.core.EaseInOutSine
 
 @Composable
 fun SplashScreen(
@@ -126,71 +127,68 @@ fun SplashScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
+                Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0A0E27),
-                        Color(0xFF1A1F3A),
-                        Color(0xFF2D1B69)
+                        DarkBackground,
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Animated background elements
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(0.3f)
-        ) {
-            // Floating orbs
+        // Animated background orbs - same as other screens
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
             Box(
                 modifier = Modifier
-                    .size(300.dp)
-                    .offset(x = (-100).dp, y = (-150).dp + floatingAnimation.dp)
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
                     .blur(60.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF6366F1).copy(alpha = 0.6f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-            )
-            
-            Box(
-                modifier = Modifier
-                    .size(250.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 100.dp, y = 100.dp + (-floatingAnimation).dp)
-                    .blur(50.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFEC4899).copy(alpha = 0.5f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-            )
-            
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 50.dp, y = 100.dp + floatingAnimation.dp)
-                    .blur(40.dp)
-                    .background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF10B981).copy(alpha = 0.4f),
-                                Color.Transparent
-                            )
-                        ),
-                        shape = CircleShape
-                    )
             )
         }
         
