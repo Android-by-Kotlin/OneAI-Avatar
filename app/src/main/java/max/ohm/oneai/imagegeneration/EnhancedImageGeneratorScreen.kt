@@ -806,6 +806,7 @@ private fun GeneratedImageDisplay(
                 .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Report button (same as before)
             ActionButton(
                 icon = Icons.Filled.Report,
                 onClick = { 
@@ -816,21 +817,38 @@ private fun GeneratedImageDisplay(
                 backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f),
                 buttonSize = 28.dp
             )
-            ActionButton(
-                icon = Icons.Filled.Share,
-                onClick = onShare,
-                contentDescription = "Share"
-            )
-            ActionButton(
-                icon = Icons.Filled.Download,
-                onClick = onDownload,
-                contentDescription = "Download"
-            )
-            ActionButton(
-                icon = Icons.Filled.Fullscreen,
-                onClick = onFullscreen,
-                contentDescription = "Fullscreen"
-            )
+            
+            // Download button - styled like ImageToImage
+            Surface(
+                modifier = Modifier.size(28.dp),
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.6f)
+            ) {
+                IconButton(onClick = onDownload) {
+                    Icon(
+                        Icons.Outlined.Download,
+                        contentDescription = "Download",
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            
+            // Share button - styled like ImageToImage
+            Surface(
+                modifier = Modifier.size(28.dp),
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.6f)
+            ) {
+                IconButton(onClick = onShare) {
+                    Icon(
+                        Icons.Outlined.Share,
+                        contentDescription = "Share",
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
         
         // Prompt overlay
