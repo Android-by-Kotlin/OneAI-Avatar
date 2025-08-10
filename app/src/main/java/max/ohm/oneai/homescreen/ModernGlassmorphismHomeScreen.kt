@@ -308,37 +308,27 @@ fun ModernGlassmorphismHomeScreen(
 
 @Composable
 private fun GlassmorphicHeader(navController: NavController) {
-    Card(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = GlassBackground
-        ),
-        border = BorderStroke(1.dp, GlassBorder)
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            GlassBackgroundLight,
-                            GlassBackground
-                        ),
-                        start = Offset(0f, 0f),
-                        end = Offset(1000f, 1000f)
-                    )
-                )
-                .blur(0.5.dp)
+        // Transparent box with only OneAI text
+        Card(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            ),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
         ) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .background(Color.Transparent)
+                    .padding(20.dp)
             ) {
                 Column {
                     Text(
@@ -348,64 +338,59 @@ private fun GlassmorphicHeader(navController: NavController) {
                         color = TextPrimary,
                         style = androidx.compose.ui.text.TextStyle(
                             shadow = androidx.compose.ui.graphics.Shadow(
-                                color = AccentPurple.copy(alpha = 0.3f),
+                                color = GradientPurple.copy(alpha = 0.3f),
                                 offset = Offset(0f, 4f),
                                 blurRadius = 8f
                             )
                         )
                     )
-                    Text(
-                        text = "Pro",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = AccentPurple,
-                        modifier = Modifier.offset(x = 8.dp, y = (-8).dp)
-                    )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Your AI Creative Suite",
+                        text = "One New Era of AI",
                         fontSize = 14.sp,
                         color = TextSecondary
                     )
                 }
-                
-                // Profile Avatar with glass effect
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(AccentPurple, AccentPink)
-                            )
-                        )
-                        .clickable { navController.navigate("profile") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    val auth = FirebaseAuth.getInstance()
-                    val userPhotoUrl = remember { auth.currentUser?.photoUrl }
-                    val userName = remember { auth.currentUser?.displayName ?: "User" }
-                    val userInitial = remember { userName.firstOrNull()?.toString() ?: "U" }
-                    
-                    if (userPhotoUrl != null) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(userPhotoUrl)
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Profile",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Text(
-                            text = userInitial,
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(16.dp))
+        
+        // Profile Avatar outside the transparent box
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(GradientPurple, GradientPink)
+                    )
+                )
+                .clickable { navController.navigate("profile") },
+            contentAlignment = Alignment.Center
+        ) {
+            val auth = FirebaseAuth.getInstance()
+            val userPhotoUrl = remember { auth.currentUser?.photoUrl }
+            val userName = remember { auth.currentUser?.displayName ?: "User" }
+            val userInitial = remember { userName.firstOrNull()?.toString() ?: "U" }
+            
+            if (userPhotoUrl != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(userPhotoUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Profile",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Text(
+                    text = userInitial,
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
