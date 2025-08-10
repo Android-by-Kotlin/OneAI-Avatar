@@ -282,14 +282,13 @@ class ImageToImageHistoryDataStore(private val context: Context) {
     // Get image data from history item
     fun getImageData(item: ImageToImageHistoryItem): Any? {
         return try {
-            // First try to load from generated image file
+            // First try to return the file path directly for generated image
             item.generatedImagePath?.let { path ->
                 val file = File(path)
                 if (file.exists()) {
                     Log.d("ImageToImageHistoryDataStore", "Loading generated image from file: $path")
-                    val imageBytes = file.readBytes()
-                    Log.d("ImageToImageHistoryDataStore", "Loaded ${imageBytes.size} bytes")
-                    return imageBytes
+                    // Return the File object directly so AsyncImage can handle it
+                    return file
                 } else {
                     Log.e("ImageToImageHistoryDataStore", "File not found: $path")
                 }

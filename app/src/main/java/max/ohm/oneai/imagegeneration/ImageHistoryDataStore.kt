@@ -262,14 +262,13 @@ class ImageHistoryDataStore(private val context: Context) {
     // Get image data from history item
     fun getImageData(item: ImageHistoryItem): Any? {
         return try {
-            // First try to load from local file
+            // First try to return the file path directly for local image
             item.localFilePath?.let { path ->
                 val file = File(path)
                 if (file.exists()) {
                     Log.d("ImageHistoryDataStore", "Loading image from file: $path")
-                    val imageBytes = file.readBytes()
-                    Log.d("ImageHistoryDataStore", "Loaded ${imageBytes.size} bytes")
-                    return imageBytes
+                    // Return the File object directly so AsyncImage can handle it
+                    return file
                 } else {
                     Log.e("ImageHistoryDataStore", "File not found: $path")
                 }
