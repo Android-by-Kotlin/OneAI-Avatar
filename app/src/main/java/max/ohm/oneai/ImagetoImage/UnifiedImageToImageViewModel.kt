@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.isActive
 import max.ohm.oneai.a4f.A4FClient.A4F_API_KEY
 import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
 import max.ohm.oneai.stabilityai.STABILITY_API_KEY
@@ -857,6 +858,12 @@ class UnifiedImageToImageViewModel : ViewModel() {
                         errorMessage = "Invalid model selected: $selectedModel"
                         isLoading = false
                     }
+                }
+                
+                // Auto-save to history after successful generation
+                if ((generatedImageBitmap != null || generatedImageUrl != null) && errorMessage == null) {
+                    Log.d("UnifiedImg2Img", "Auto-saving to history...")
+                    saveToHistory()
                 }
                 
             } catch (e: Exception) {
