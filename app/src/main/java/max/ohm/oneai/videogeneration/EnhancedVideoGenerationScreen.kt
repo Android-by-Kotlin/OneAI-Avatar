@@ -12,8 +12,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.widget.Toast
+import android.app.DownloadManager
+import android.net.Uri
+import android.os.Environment
+import android.content.Context
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +39,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
+
+// Data class for model choices
+data class ModelChoice(
+    val displayName: String,
+    val internalName: String
+)
 
 // Enhanced color scheme matching AI Art Studio
 private val DarkBackground = Color(0xFF0A0E27)
@@ -58,7 +74,9 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
     val modelChoices = listOf(
         ModelChoice("WAN 2.1", "provider-6/wan-2.1"),
         ModelChoice("MiniMax", "T2V-01-Director"),
-        ModelChoice("CogVideoX (ModelsLab)", "cogvideox")
+        ModelChoice("CogVideoX (ModelsLab)", "cogvideox"),
+        ModelChoice("Seedance I2V (Image to Video)", "seedance-i2v"),
+        ModelChoice("Seedance T2V (Text to Video)", "seedance-t2v")
     )
     
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModel } ?: modelChoices[0]
@@ -192,11 +210,25 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                                 LoadingAnimation(gradientRotation, elapsedTimeInSeconds)
                             }
                             state.videoUrl != null -> {
-                                VideoPlayer(
-                                    videoUrl = state.videoUrl!!,
-                                    autoplay = true,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    VideoPlayer(
+                                        videoUrl = state.videoUrl!!,
+                                        autoplay = true,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    
+                                    // Download button overlay
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(12.dp)
+                                    ) {
+                                        DownloadButton(
+                                            videoUrl = state.videoUrl!!,
+                                            context = context
+                                        )
+                                    }
+                                }
                             }
                             else -> {
                                 EmptyStateDisplay()
@@ -615,5 +647,130 @@ private fun GenerateButton(
     }
 }
 
-// Data class
-data class ModelChoice(val displayName: String, val internalName: String)
+@Composable
+private fun DownloadButton(
+    videoUrl: String,
+    context: Context
+) {
+    var isDownloading by remember { mutableStateOf(false) }
+    
+    // Auto-reset download state after 3 seconds
+    LaunchedEffect(isDownloading) {
+        if (isDownloading) {
+            kotlinx.coroutines.delay(3000)
+            isDownloading = false
+        }
+    }
+    
+    // Gradient colors for animated effect
+    val infiniteTransition = rememberInfiniteTransition(label = "download_animation")
+    val animatedOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "gradient_animation"
+    )
+    
+    val gradientColors = listOf(
+        Color(0xFF00D4FF),  // Cyan
+        Color(0xFF00FF88),  // Green
+        Color(0xFFFFD700),  // Gold
+        Color(0xFFFF6B6B),  // Coral
+        Color(0xFF8B5CF6)   // Purple
+    )
+    
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = AccentPink.copy(alpha = 0.3f),
+                spotColor = AccentPurple.copy(alpha = 0.3f)
+            )
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.sweepGradient(
+                    colors = if (isDownloading) {
+                        gradientColors + gradientColors.first()
+                    } else {
+                        listOf(
+                            AccentPurple,
+                            AccentPink,
+                            AccentPurple
+                        )
+                    },
+                    center = Offset(0.5f, 0.5f)
+                )
+            )
+            .clickable {
+                if (!isDownloading) {
+                    downloadVideo(videoUrl, context)
+                    isDownloading = true
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        // Inner glow effect
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { 
+                    alpha = if (isDownloading) 0.8f else 0.5f
+                }
+        ) {
+            val radiusValue = size.minDimension * animatedOffset.coerceAtLeast(0.1f)
+            if (radiusValue > 0f) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.3f),
+                            Color.Transparent
+                        ),
+                        radius = radiusValue
+                    )
+                )
+            }
+        }
+        
+        // Icon with animation
+        Icon(
+            imageVector = if (isDownloading) Icons.Filled.CloudDownload else Icons.Filled.Download,
+            contentDescription = "Download Video",
+            tint = Color.White,
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer {
+                    if (isDownloading) {
+                        scaleX = 0.9f + (animatedOffset * 0.2f)
+                        scaleY = 0.9f + (animatedOffset * 0.2f)
+                    }
+                }
+        )
+    }
+}
+
+private fun downloadVideo(videoUrl: String, context: Context) {
+    try {
+        val request = DownloadManager.Request(Uri.parse(videoUrl))
+        val fileName = "AI_Video_${System.currentTimeMillis()}.mp4"
+        
+        request.setTitle("Downloading AI Video")
+        request.setDescription("Your AI-generated video is being downloaded")
+        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+        request.setAllowedOverMetered(true)
+        request.setAllowedOverRoaming(true)
+        
+        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        downloadManager.enqueue(request)
+        
+        Toast.makeText(context, "Download started: $fileName", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
+

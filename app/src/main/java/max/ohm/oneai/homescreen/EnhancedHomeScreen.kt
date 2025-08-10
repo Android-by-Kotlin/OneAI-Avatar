@@ -56,6 +56,12 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.random.Random
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import androidx.compose.runtime.DisposableEffect
+import android.net.Uri
 
 // Modern color palette
 private val DarkBackground = Color(0xFF0A0E27)
@@ -423,8 +429,7 @@ listOf(
                                         video = item.video,
                                         aspectRatio = 16f/9f, // Standard video aspect ratio
                                         onClick = {
-                                            selectedVideo = item.video
-                                            showVideoPlayer = true
+                                            // No longer navigate, just handled within the card
                                         }
                                     )
                                 }
@@ -449,14 +454,7 @@ listOf(
         )
     }
     
-    // Video player dialog
-    if (showVideoPlayer && selectedVideo != null) {
-        VideoPlayerDialog(
-            video = selectedVideo!!,
-            onDismiss = { showVideoPlayer = false },
-            navController = navController
-        )
-    }
+    // Video player dialog - removed as we now play inline
 }
 
 @Composable
@@ -782,145 +780,167 @@ private fun GeneratedVideoCard(
     aspectRatio: Float = 16f / 9f,
     onClick: () -> Unit
 ) {
+    var isPlaying by remember { mutableStateOf(false) }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(aspectRatio)
-            .clickable { onClick() },
+            .clickable { 
+                isPlaying = !isPlaying
+                onClick()
+            },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box {
-            // Video thumbnail or placeholder
-            if (video.thumbnailPath != null && File(video.thumbnailPath).exists()) {
-                // Display actual video thumbnail
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(video.thumbnailPath))
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Video thumbnail",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+            if (isPlaying) {
+                // Show video player inline
+                InlineVideoPlayer(
+                    videoUrl = video.videoUrl,
+                    modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Fallback gradient background
+                // Video thumbnail or placeholder
+                if (video.thumbnailPath != null && File(video.thumbnailPath).exists()) {
+                    // Display actual video thumbnail
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(video.thumbnailPath))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Video thumbnail",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Fallback gradient background
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF4C1D95),
+                                        Color(0xFF7C3AED)
+                                    )
+                                )
+                            )
+                    )
+                }
+                
+                // Dark overlay for better contrast
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.2f))
+                )
+                
+                // Play button overlay
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .align(Alignment.Center)
+                        .background(
+                            Color.Black.copy(alpha = 0.7f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = "Play Video",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                
+                // Gradient overlay for text
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF4C1D95),
-                                    Color(0xFF7C3AED)
-                                )
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.9f)
+                                ),
+                                startY = 150f
                             )
                         )
                 )
-            }
-            
-            // Dark overlay for better contrast
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.2f))
-            )
-            
-            // Play button overlay
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .align(Alignment.Center)
-                    .background(
-                        Color.Black.copy(alpha = 0.7f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = "Play Video",
-                    tint = Color.White,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-            
-            // Gradient overlay for text
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.9f)
-                            ),
-                            startY = 150f
-                        )
-                    )
-            )
-            
-            // Video info
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                
+                // Video info - removed the video icon and text
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp)
                 ) {
-                    Icon(
-                        Icons.Outlined.VideoLibrary,
-                        contentDescription = null,
-                        tint = AccentPink,
-                        modifier = Modifier.size(14.dp)
-                    )
                     Text(
                         text = video.model,
                         color = AccentPink,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = video.prompt,
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 16.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+                            .format(Date(video.timestamp)),
+                        color = TextSecondary,
+                        fontSize = 10.sp
+                    )
                 }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = video.prompt,
-                    color = TextPrimary,
-                    fontSize = 12.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 16.sp
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
-                        .format(Date(video.timestamp)),
-                    color = TextSecondary,
-                    fontSize = 10.sp
-                )
             }
         }
     }
 }
 
+// VideoPlayerDialog removed - videos now play inline
+
 @Composable
-private fun VideoPlayerDialog(
-    video: GeneratedVideo,
-    onDismiss: () -> Unit,
-    navController: NavController
+private fun InlineVideoPlayer(
+    videoUrl: String,
+    modifier: Modifier = Modifier
 ) {
-    // Simple dialog that navigates to video player screen
-    LaunchedEffect(video) {
-        // Navigate to video player with video URL
-        val encodedUrl = java.net.URLEncoder.encode(video.videoUrl, "UTF-8")
-        navController.navigate("videoPlayer?videoUrl=$encodedUrl")
-        onDismiss()
+    val context = LocalContext.current
+    
+    val exoPlayer = remember(videoUrl) {
+        ExoPlayer.Builder(context).build().apply {
+            val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
+            setMediaItem(mediaItem)
+            prepare()
+            playWhenReady = true
+        }
     }
+    
+    DisposableEffect(exoPlayer) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+    
+    AndroidView(
+        factory = { ctx ->
+            PlayerView(ctx).apply {
+                player = exoPlayer
+                useController = true
+            }
+        },
+        modifier = modifier
+    )
 }
 
 @Composable

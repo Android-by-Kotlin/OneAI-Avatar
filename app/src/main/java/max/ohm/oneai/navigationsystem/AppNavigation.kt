@@ -362,6 +362,18 @@ fun AppNavigation() {
             EnhancedVideoGenerationScreen(navController = navController)
         }
         
+        composable("enhancedVideoGeneration") { // Add enhanced video generation destination
+            // Check if user is logged in
+            LaunchedEffect(loginState) {
+                if (loginState !is LoginState.Success) {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            }
+            EnhancedVideoGenerationScreen(navController = navController)
+        }
+        
         composable(
             "videoPlayer?videoUrl={videoUrl}",
             arguments = listOf(navArgument("videoUrl") {

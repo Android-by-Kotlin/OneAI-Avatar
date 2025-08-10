@@ -29,6 +29,9 @@ import max.ohm.oneai.videogeneration.VideoThumbnailGenerator
 import android.net.Uri
 import max.ohm.oneai.videogeneration.modelslab.ModelsLabApiClient
 import max.ohm.oneai.videogeneration.modelslab.ModelsLabVideoRequest
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabImageToVideoRequest
+import max.ohm.oneai.videogeneration.modelslab.ModelsLabTextToVideoRequest
+import max.ohm.oneai.videogeneration.modelslab.SeedanceFetchRequest
 
 data class VideoGenerationState(
     val isLoading: Boolean = false,
@@ -69,6 +72,14 @@ class NewVideoGenerationViewModel(application: Application) : AndroidViewModel(a
             } else if (model == "cogvideox") {
                 // Use ModelsLab API for CogVideoX
                 generateWithModelsLabAPI(prompt)
+                return@launch
+            } else if (model == "seedance-i2v") {
+                // Use ModelsLab API for Seedance I2V (Image to Video)
+                generateWithSeedanceI2V(prompt)
+                return@launch
+            } else if (model == "seedance-t2v") {
+                // Use ModelsLab API for Seedance T2V (Text to Video)
+                generateWithSeedanceT2V(prompt)
                 return@launch
             }
             
@@ -604,6 +615,524 @@ class NewVideoGenerationViewModel(application: Application) : AndroidViewModel(a
                 _state.value = _state.value.copy(
                     isLoading = false,
                     error = "ModelsLab video generation timed out"
+                )
+            }
+        }
+    }
+    
+    private fun generateWithSeedanceI2V(prompt: String) {
+        viewModelScope.launch {
+            try {
+                // For now, use a default image URL. In the future, this could be user-provided
+                val defaultImageUrl = "https://pub-3626123a908346a7a8be8d9295f44e26.r2.dev/livewire-tmp/4yTocqHjDm1KgbSBrVA09hMNuWJpOY-metaZG93bmxvYWRfNC5wbmc=-.png"
+                
+                val request = ModelsLabImageToVideoRequest(
+                    key = ModelsLabApiClient.API_KEY,
+                    initImage = defaultImageUrl,
+                    prompt = prompt
+                )
+                
+                android.util.Log.d("VideoGen", "Sending Seedance I2V generation request")
+                
+                val response = withContext(Dispatchers.IO) {
+                    ModelsLabApiClient.apiService.generateImageToVideo(request)
+                }
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()!!
+                    android.util.Log.d("VideoGen", "Seedance I2V response status: ${responseBody.status}")
+                    
+                    if (responseBody.status.equals("success", true)) {
+                        // Video is ready immediately
+                        if (!responseBody.outputUrls.isNullOrEmpty()) {
+                            val videoUrl = responseBody.outputUrls.first()
+                            android.util.Log.d("VideoGen", "Seedance I2V video URL: $videoUrl")
+                            
+                            // Save to history
+                            saveVideoToHistory(prompt, videoUrl, "Seedance I2V")
+                            
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                videoUrl = videoUrl
+                            )
+                        } else {
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = "No video URL in Seedance I2V response"
+                            )
+                        }
+                    } else if (responseBody.status.equals("processing", true) && responseBody.id != null) {
+                        // Need to poll for completion
+                        android.util.Log.d("VideoGen", "Seedance I2V processing, request ID: ${responseBody.id}")
+                        pollSeedanceI2VStatus(responseBody.id)
+                    } else {
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "Seedance I2V error: ${responseBody.message ?: responseBody.error ?: "Unknown error"}"
+                        )
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Seedance I2V API error: ${response.code()} - $errorBody"
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VideoGen", "Seedance I2V error: ${e.message}", e)
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Seedance I2V error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun pollSeedanceI2VStatus(requestId: Long) {
+        viewModelScope.launch {
+            var attempts = 0
+            val maxAttempts = 30 // Poll for up to 5 minutes
+            
+            while (attempts < maxAttempts && _state.value.isLoading) {
+                delay(10000) // Wait 10 seconds between polls
+                
+                try {
+                    val response = withContext(Dispatchers.IO) {
+                        val fetchRequest = SeedanceFetchRequest(
+                            key = ModelsLabApiClient.API_KEY
+                        )
+                        ModelsLabApiClient.apiService.checkSeedanceGenerationStatus(
+                            requestId = requestId,
+                            body = fetchRequest
+                        )
+                    }
+                    
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()!!
+                        android.util.Log.d("VideoGen", "Seedance I2V poll status: ${responseBody.status}")
+                        
+                        if (responseBody.status.equals("success", true)) {
+                            if (!responseBody.outputUrls.isNullOrEmpty()) {
+                                val videoUrl = responseBody.outputUrls.first()
+                                val currentState = _state.value
+                                
+                                // Save to history
+                                if (currentState.currentPrompt != null) {
+                                    saveVideoToHistory(currentState.currentPrompt, videoUrl, "Seedance I2V")
+                                }
+                                
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    videoUrl = videoUrl
+                                )
+                                return@launch
+                            }
+                        } else if (responseBody.status.equals("failed", true)) {
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = "Seedance I2V video generation failed"
+                            )
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("VideoGen", "Seedance I2V polling error: ${e.message}")
+                }
+                
+                attempts++
+            }
+            
+            if (attempts >= maxAttempts) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Seedance I2V video generation timed out"
+                )
+            }
+        }
+    }
+    
+    private fun generateWithSeedanceT2V(prompt: String) {
+        viewModelScope.launch {
+            try {
+                val request = ModelsLabTextToVideoRequest(
+                    key = ModelsLabApiClient.API_KEY,
+                    prompt = prompt
+                )
+                
+                android.util.Log.d("VideoGen", "Sending Seedance T2V generation request with prompt: $prompt")
+                android.util.Log.d("VideoGen", "Request details: model=${request.modelId}, resolution=${request.resolution}, fps=${request.fps}")
+                
+                val response = withContext(Dispatchers.IO) {
+                    ModelsLabApiClient.apiService.generateTextToVideo(request)
+                }
+                
+                android.util.Log.d("VideoGen", "Seedance T2V response code: ${response.code()}")
+                
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody == null) {
+                        android.util.Log.e("VideoGen", "Seedance T2V response body is null")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "Empty response from Seedance T2V API"
+                        )
+                        return@launch
+                    }
+                    
+                    android.util.Log.d("VideoGen", "Seedance T2V response - status: ${responseBody.status}, id: ${responseBody.id}, outputUrls: ${responseBody.outputUrls}, fetchResult: ${responseBody.fetchResultUrl}")
+                    
+                    // Check for immediate success with video URL
+                    if (!responseBody.outputUrls.isNullOrEmpty()) {
+                        val videoUrl = responseBody.outputUrls.first()
+                        android.util.Log.d("VideoGen", "Seedance T2V video ready immediately: $videoUrl")
+                        
+                        // Save to history
+                        saveVideoToHistory(prompt, videoUrl, "Seedance T2V")
+                        
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            videoUrl = videoUrl
+                        )
+                    } 
+                    // Check if we have a fetch_result URL to poll
+                    else if (!responseBody.fetchResultUrl.isNullOrEmpty()) {
+                        android.util.Log.d("VideoGen", "Seedance T2V has fetch_result URL: ${responseBody.fetchResultUrl}")
+                        pollSeedanceT2VWithFetchUrl(responseBody.fetchResultUrl, prompt)
+                    }
+                    // If status indicates processing but no polling mechanism available
+                    else if (responseBody.status.equals("processing", true) || responseBody.status.equals("pending", true)) {
+                        android.util.Log.w("VideoGen", "Seedance T2V is processing but no polling mechanism available")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "Video is processing. Please try again later as the API doesn't support status checking."
+                        )
+                    }
+                    else {
+                        val errorMessage = responseBody.message ?: responseBody.error ?: responseBody.status ?: "Unknown error - no video URL returned"
+                        android.util.Log.e("VideoGen", "Seedance T2V unexpected response: $errorMessage")
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "Seedance T2V: $errorMessage"
+                        )
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    android.util.Log.e("VideoGen", "Seedance T2V API error - Code: ${response.code()}, Body: $errorBody")
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = "Seedance T2V API error: ${response.code()} - ${errorBody?.take(200) ?: "Unknown error"}"
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("VideoGen", "Seedance T2V exception: ${e.message}", e)
+                e.printStackTrace()
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Seedance T2V error: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    private fun pollSeedanceT2VStatus(requestId: Long, prompt: String) {
+        viewModelScope.launch {
+            var attempts = 0
+            val maxAttempts = 60 // Poll for up to 10 minutes (increased from 5)
+            val delayMillis = 10000L // 10 seconds between polls
+            
+            android.util.Log.d("VideoGen", "Starting Seedance T2V polling for request ID: $requestId")
+            
+            while (attempts < maxAttempts && _state.value.isLoading) {
+                attempts++
+                android.util.Log.d("VideoGen", "Seedance T2V poll attempt $attempts/$maxAttempts")
+                
+                // Wait before polling (except for first attempt)
+                if (attempts > 1) {
+                    delay(delayMillis)
+                }
+                
+                try {
+                    val response = withContext(Dispatchers.IO) {
+                        val fetchRequest = SeedanceFetchRequest(
+                            key = ModelsLabApiClient.API_KEY
+                        )
+                        ModelsLabApiClient.apiService.checkSeedanceGenerationStatus(
+                            requestId = requestId,
+                            body = fetchRequest
+                        )
+                    }
+                    
+                    android.util.Log.d("VideoGen", "Seedance T2V poll response code: ${response.code()}")
+                    
+                    if (response.isSuccessful) {
+                        val responseBody = response.body()
+                        if (responseBody == null) {
+                            android.util.Log.e("VideoGen", "Seedance T2V poll response body is null")
+                            continue
+                        }
+                        
+                        android.util.Log.d("VideoGen", "Seedance T2V poll - status: ${responseBody.status}, outputUrls: ${responseBody.outputUrls}, eta: ${responseBody.eta}")
+                        
+                        when {
+                            responseBody.status.equals("success", true) && !responseBody.outputUrls.isNullOrEmpty() -> {
+                                val videoUrl = responseBody.outputUrls.first()
+                                android.util.Log.d("VideoGen", "Seedance T2V video ready: $videoUrl")
+                                
+                                // Save to history
+                                saveVideoToHistory(prompt, videoUrl, "Seedance T2V")
+                                
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    videoUrl = videoUrl
+                                )
+                                return@launch
+                            }
+                            responseBody.status.equals("completed", true) && !responseBody.outputUrls.isNullOrEmpty() -> {
+                                val videoUrl = responseBody.outputUrls.first()
+                                android.util.Log.d("VideoGen", "Seedance T2V video completed: $videoUrl")
+                                
+                                // Save to history
+                                saveVideoToHistory(prompt, videoUrl, "Seedance T2V")
+                                
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    videoUrl = videoUrl
+                                )
+                                return@launch
+                            }
+                            responseBody.status.equals("failed", true) || responseBody.status.equals("error", true) -> {
+                                val errorMsg = responseBody.error ?: responseBody.message ?: "Video generation failed"
+                                android.util.Log.e("VideoGen", "Seedance T2V generation failed: $errorMsg")
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    error = "Seedance T2V generation failed: $errorMsg"
+                                )
+                                return@launch
+                            }
+                            responseBody.status.equals("processing", true) || responseBody.status.equals("pending", true) || responseBody.status.equals("queued", true) -> {
+                                android.util.Log.d("VideoGen", "Seedance T2V still processing, ETA: ${responseBody.eta} seconds")
+                                // Continue polling
+                            }
+                            else -> {
+                                android.util.Log.w("VideoGen", "Seedance T2V unknown status: ${responseBody.status}")
+                                // Continue polling for unknown status
+                            }
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        android.util.Log.e("VideoGen", "Seedance T2V poll error - Code: ${response.code()}, Body: $errorBody")
+                        
+                        // Don't fail immediately on polling errors, retry
+                        if (response.code() == 404) {
+                            // Request ID not found, likely expired
+                            _state.value = _state.value.copy(
+                                isLoading = false,
+                                error = "Seedance T2V request expired or not found"
+                            )
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("VideoGen", "Seedance T2V polling exception: ${e.message}", e)
+                    // Don't fail immediately on network errors, retry
+                }
+            }
+            
+            // Timeout reached
+            if (_state.value.isLoading) {
+                android.util.Log.e("VideoGen", "Seedance T2V generation timed out after $attempts attempts")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Seedance T2V video generation timed out after ${(attempts * delayMillis) / 60000} minutes"
+                )
+            }
+        }
+    }
+    
+    private fun pollSeedanceT2VWithFetchUrl(fetchUrl: String, prompt: String) {
+        viewModelScope.launch {
+            var attempts = 0
+            val maxAttempts = 60 // Poll for up to 10 minutes
+            val delayMillis = 10000L // 10 seconds between polls
+            
+            android.util.Log.d("VideoGen", "Starting Seedance T2V polling with fetch URL: $fetchUrl")
+            
+            while (attempts < maxAttempts && _state.value.isLoading) {
+                attempts++
+                android.util.Log.d("VideoGen", "Seedance T2V fetch poll attempt $attempts/$maxAttempts")
+                
+                // Wait before polling (except for first attempt)
+                if (attempts > 1) {
+                    delay(delayMillis)
+                }
+                
+                try {
+                    // Extract request ID from fetch URL to use the proper API endpoint
+                    val requestId = fetchUrl.substringAfterLast("/").toLongOrNull()
+                    if (requestId != null) {
+                        // Use the proper Retrofit API service with POST method
+                        val response = withContext(Dispatchers.IO) {
+                            val fetchRequest = SeedanceFetchRequest(
+                                key = ModelsLabApiClient.API_KEY
+                            )
+                            ModelsLabApiClient.apiService.checkSeedanceGenerationStatus(
+                                requestId = requestId,
+                                body = fetchRequest
+                            )
+                        }
+                        
+                        android.util.Log.d("VideoGen", "Seedance T2V fetch response code: ${response.code()}")
+                        
+                        if (response.isSuccessful) {
+                            val responseBody = response.body()
+                            android.util.Log.d("VideoGen", "Seedance T2V fetch response: $responseBody")
+                            
+                            if (responseBody != null) {
+                                when {
+                                    responseBody.status.equals("success", true) || responseBody.status.equals("completed", true) -> {
+                                        if (!responseBody.outputUrls.isNullOrEmpty()) {
+                                            val videoUrl = responseBody.outputUrls.first()
+                                            android.util.Log.d("VideoGen", "Seedance T2V video ready via fetch: $videoUrl")
+                                            
+                                            // Save to history
+                                            saveVideoToHistory(prompt, videoUrl, "Seedance T2V")
+                                            
+                                            _state.value = _state.value.copy(
+                                                isLoading = false,
+                                                videoUrl = videoUrl
+                                            )
+                                            return@launch
+                                        }
+                                    }
+                                    responseBody.status.equals("failed", true) || responseBody.status.equals("error", true) -> {
+                                        val errorMsg = responseBody.error ?: responseBody.message ?: "Video generation failed"
+                                        android.util.Log.e("VideoGen", "Seedance T2V generation failed: $errorMsg")
+                                        _state.value = _state.value.copy(
+                                            isLoading = false,
+                                            error = "Seedance T2V generation failed: $errorMsg"
+                                        )
+                                        return@launch
+                                    }
+                                    responseBody.status.equals("processing", true) || responseBody.status.equals("pending", true) || responseBody.status.equals("queued", true) -> {
+                                        android.util.Log.d("VideoGen", "Seedance T2V still processing, ETA: ${responseBody.eta} seconds")
+                                        // Continue polling
+                                    }
+                                    else -> {
+                                        android.util.Log.w("VideoGen", "Seedance T2V unknown status via fetch: ${responseBody.status}")
+                                        // Continue polling for unknown status
+                                    }
+                                }
+                            }
+                        } else {
+                            android.util.Log.e("VideoGen", "Seedance T2V fetch error - Code: ${response.code()}")
+                            
+                            // Don't fail immediately on polling errors, retry
+                            if (response.code() == 404) {
+                                // Request ID not found, likely expired
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    error = "Seedance T2V request expired or not found"
+                                )
+                                return@launch
+                            }
+                        }
+                    } else {
+                        // Fallback: create POST request manually with API key in body
+                        val response = withContext(Dispatchers.IO) {
+                            val json = JSONObject()
+                            json.put("key", ModelsLabApiClient.API_KEY)
+                            val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+                            
+                            val request = Request.Builder()
+                                .url(fetchUrl)
+                                .post(body)
+                                .addHeader("Content-Type", "application/json")
+                                .build()
+                            
+                            client.newCall(request).execute()
+                        }
+                        
+                        android.util.Log.d("VideoGen", "Seedance T2V fetch response code: ${response.code}")
+                        
+                        if (response.isSuccessful) {
+                            val responseBody = response.body?.string()
+                            android.util.Log.d("VideoGen", "Seedance T2V fetch response: $responseBody")
+                        
+                            // Try to parse as JSON
+                            try {
+                                val json = JSONObject(responseBody ?: "{}")
+                                val status = json.optString("status", "")
+                            
+                            when {
+                                status.equals("success", true) || status.equals("completed", true) -> {
+                                    // Check for output URL in various possible fields
+                                    val videoUrl = json.optString("output", "")
+                                        .takeIf { it.isNotEmpty() }
+                                        ?: json.optJSONArray("output")?.optString(0, "")
+                                        ?: json.optString("url", "")
+                                        ?: json.optString("video_url", "")
+                                    
+                                    if (!videoUrl.isNullOrEmpty()) {
+                                        android.util.Log.d("VideoGen", "Seedance T2V video ready via fetch: $videoUrl")
+                                        
+                                        // Save to history
+                                        saveVideoToHistory(prompt, videoUrl, "Seedance T2V")
+                                        
+                                        _state.value = _state.value.copy(
+                                            isLoading = false,
+                                            videoUrl = videoUrl
+                                        )
+                                        return@launch
+                                    }
+                                }
+                                status.equals("failed", true) || status.equals("error", true) -> {
+                                    val errorMsg = json.optString("error", json.optString("message", "Video generation failed"))
+                                    android.util.Log.e("VideoGen", "Seedance T2V generation failed: $errorMsg")
+                                    _state.value = _state.value.copy(
+                                        isLoading = false,
+                                        error = "Seedance T2V generation failed: $errorMsg"
+                                    )
+                                    return@launch
+                                }
+                                status.equals("processing", true) || status.equals("pending", true) || status.equals("queued", true) -> {
+                                    val eta = json.optDouble("eta", 0.0)
+                                    android.util.Log.d("VideoGen", "Seedance T2V still processing, ETA: $eta seconds")
+                                    // Continue polling
+                                }
+                                else -> {
+                                    android.util.Log.w("VideoGen", "Seedance T2V unknown status via fetch: $status")
+                                    // Continue polling for unknown status
+                                }
+                            }
+                            } catch (e: Exception) {
+                                android.util.Log.e("VideoGen", "Error parsing fetch response: ${e.message}")
+                            }
+                        } else {
+                            android.util.Log.e("VideoGen", "Seedance T2V fetch error - Code: ${response.code}")
+                        
+                            // Don't fail immediately on polling errors, retry
+                            if (response.code == 404) {
+                                // URL not found, likely expired
+                                _state.value = _state.value.copy(
+                                    isLoading = false,
+                                    error = "Seedance T2V request expired or not found"
+                                )
+                                return@launch
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("VideoGen", "Seedance T2V fetch polling exception: ${e.message}", e)
+                    // Don't fail immediately on network errors, retry
+                }
+            }
+            
+            // Timeout reached
+            if (_state.value.isLoading) {
+                android.util.Log.e("VideoGen", "Seedance T2V generation timed out after $attempts attempts")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "Seedance T2V video generation timed out after ${(attempts * delayMillis) / 60000} minutes"
                 )
             }
         }

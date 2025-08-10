@@ -1,5 +1,6 @@
 package max.ohm.oneai.homescreen
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +39,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -130,9 +139,8 @@ fun ModernGlassmorphismHomeScreen(
                         subtitle = "Create stunning videos from text",
                         icon = Icons.Outlined.VideoLibrary,
                         gradient = listOf(GradientOrange, GradientPink),
-                        route = "videoGeneration",
-                        category = "Generator",
-                        isSoon = true
+                        route = "enhancedVideoGeneration",
+                        category = "Generator"
                     )
                 )
             )
@@ -773,10 +781,22 @@ private fun RecentImageCard(image: GeneratedImage) {
 
 @Composable
 private fun RecentVideoCard(video: GeneratedVideo) {
+    val context = LocalContext.current
+    var showVideoPlayer by remember { mutableStateOf(false) }
+    
+    if (showVideoPlayer) {
+        // Full screen video player dialog
+        VideoPlayerDialog(
+            videoUrl = video.videoUrl,
+            onDismiss = { showVideoPlayer = false }
+        )
+    }
+    
     Card(
         modifier = Modifier
-            .width(120.dp)
-            .height(120.dp),
+            .width(160.dp)
+            .height(120.dp)
+            .clickable { showVideoPlayer = true },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = GlassBackground
@@ -787,12 +807,151 @@ private fun RecentVideoCard(video: GeneratedVideo) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                Icons.Default.PlayArrow,
-                contentDescription = "Play",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
+            // Show thumbnail if available, otherwise show a placeholder
+            if (video.thumbnailPath != null) {
+                AsyncImage(
+                    model = video.thumbnailPath,
+                    contentDescription = "Video thumbnail",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Placeholder background with gradient
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    GradientPurple.copy(alpha = 0.3f),
+                                    GradientPink.copy(alpha = 0.3f)
+                                )
+                            )
+                        )
+                )
+            }
+            
+            // Overlay with play button and duration info
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.5f)
+                            )
+                        )
+                    )
+            ) {
+                // Play button in center
+                Icon(
+                    Icons.Default.PlayCircleFilled,
+                    contentDescription = "Play Video",
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier
+                        .size(48.dp)
+                        .align(Alignment.Center)
+                )
+                
+                // Video indicator badge
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color.Black.copy(alpha = 0.7f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Videocam,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "VIDEO",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoPlayerDialog(
+    videoUrl: String,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .clickable { onDismiss() }
+        ) {
+            // Video Player
+            DisposableEffect(videoUrl) {
+                val exoPlayer = ExoPlayer.Builder(context).build().apply {
+                    val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
+                    setMediaItem(mediaItem)
+                    playWhenReady = true
+                    prepare()
+                }
+                
+                onDispose {
+                    exoPlayer.release()
+                }
+            }
+            
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center),
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        useController = true
+                        player = ExoPlayer.Builder(ctx).build().apply {
+                            val mediaItem = MediaItem.fromUri(Uri.parse(videoUrl))
+                            setMediaItem(mediaItem)
+                            playWhenReady = true
+                            prepare()
+                        }
+                    }
+                }
             )
+            
+            // Close button
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
     }
 }

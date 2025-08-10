@@ -11,7 +11,9 @@ import android.widget.Toast
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,12 +23,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -35,13 +42,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -175,13 +189,27 @@ fun VideoGenerationScreen(
                         .background(Color.DarkGray)
                 ) {
                     if (generatedVideoUrl != null) {
-                        VideoPlayer(
-                            videoUrl = generatedVideoUrl!!,
-                            autoplay = true,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black)
-                        )
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            VideoPlayer(
+                                videoUrl = generatedVideoUrl!!,
+                                autoplay = true,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black)
+                            )
+                            
+                            // Colorful Download button overlay
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp)
+                            ) {
+                                ColorfulDownloadButton(
+                                    videoUrl = generatedVideoUrl!!,
+                                    context = context
+                                )
+                            }
+                        }
                     } else {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -289,7 +317,7 @@ fun VideoGenerationScreen(
                         Text(if (isLoading && viewModel.isUsingModelsLab.collectAsState().value) "Generating..." else "Generate with CogVideoX (ModelsLab)")
                     }
                     
-                    // Download button
+                    // Traditional Download button (keeping as secondary option)
                     if (generatedVideoUrl != null) {
                         Button(
                             onClick = {
@@ -297,8 +325,17 @@ fun VideoGenerationScreen(
                                     ?: Toast.makeText(context, "No video to download", Toast.LENGTH_SHORT).show()
                             },
                             enabled = generatedVideoUrl != null && !isLoading,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text("Download Video")
                         }
                     }
@@ -456,6 +493,118 @@ fun VideoPlayer(
 }
 
 @OptIn(DelicateCoroutinesApi::class)
+@Composable
+fun ColorfulDownloadButton(
+    videoUrl: String,
+    context: Context
+) {
+    var isDownloading by remember { mutableStateOf(false) }
+    
+    // Auto-reset download state after 3 seconds
+    LaunchedEffect(isDownloading) {
+        if (isDownloading) {
+            kotlinx.coroutines.delay(3000)
+            isDownloading = false
+        }
+    }
+    
+    // Gradient colors for animated effect
+    val infiniteTransition = rememberInfiniteTransition(label = "download_animation")
+    val animatedOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "gradient_animation"
+    )
+    
+    val gradientColors = listOf(
+        Color(0xFF00D4FF),  // Cyan
+        Color(0xFF00FF88),  // Green
+        Color(0xFFFFD700),  // Gold
+        Color(0xFFFF6B6B),  // Coral
+        Color(0xFF8B5CF6),  // Purple
+        Color(0xFFFF1493),  // Deep Pink
+        Color(0xFF00CED1)   // Dark Turquoise
+    )
+    
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .shadow(
+                elevation = 12.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = Color(0xFFFF6B6B).copy(alpha = 0.4f),
+                spotColor = Color(0xFF8B5CF6).copy(alpha = 0.4f)
+            )
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.sweepGradient(
+                    colors = if (isDownloading) {
+                        gradientColors + gradientColors.first()
+                    } else {
+                        listOf(
+                            Color(0xFF8B5CF6),  // Purple
+                            Color(0xFFFF6B6B),  // Coral
+                            Color(0xFFFFD700),  // Gold
+                            Color(0xFF00FF88),  // Green
+                            Color(0xFF00D4FF),  // Cyan
+                            Color(0xFF8B5CF6)   // Back to Purple
+                        )
+                    },
+                    center = Offset(0.5f, 0.5f)
+                )
+            )
+            .clickable {
+                if (!isDownloading) {
+                    downloadVideo(context, videoUrl)
+                    isDownloading = true
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        // Inner glow effect
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { 
+                    alpha = if (isDownloading) 0.9f else 0.6f
+                }
+        ) {
+            val radiusValue = size.minDimension * (0.5f + animatedOffset * 0.5f)
+            if (radiusValue > 0f) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.4f),
+                            Color.Transparent
+                        ),
+                        radius = radiusValue
+                    )
+                )
+            }
+        }
+        
+        // Icon with animation
+        Icon(
+            imageVector = if (isDownloading) Icons.Filled.CloudDownload else Icons.Filled.Download,
+            contentDescription = "Download Video",
+            tint = Color.White,
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer {
+                    if (isDownloading) {
+                        scaleX = 0.8f + (animatedOffset * 0.4f)
+                        scaleY = 0.8f + (animatedOffset * 0.4f)
+                        rotationZ = animatedOffset * 360f
+                    }
+                }
+        )
+    }
+}
+
 fun downloadVideo(context: Context, videoUrl: String) {
     if (videoUrl.isEmpty()) {
         Toast.makeText(context, "Video URL is empty.", Toast.LENGTH_SHORT).show()
