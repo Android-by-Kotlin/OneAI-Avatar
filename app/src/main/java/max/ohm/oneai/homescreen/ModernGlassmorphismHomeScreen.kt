@@ -62,7 +62,8 @@ data class AITool(
     val gradient: List<Color>,
     val route: String,
     val category: String,
-    val isPro: Boolean = false
+    val isPro: Boolean = false,
+    val isSoon: Boolean = false
 )
 
 data class CategorySection(
@@ -115,23 +116,8 @@ fun ModernGlassmorphismHomeScreen(
                         route = "imageToImage",
                         category = "Editor"
                     ),
-                    AITool(
-                        title = "Video Generation",
-                        subtitle = "Create stunning videos from text",
-                        icon = Icons.Outlined.VideoLibrary,
-                        gradient = listOf(GradientOrange, GradientPink),
-                        route = "videoGeneration",
-                        category = "Generator",
-                        isPro = true
-                    )
-                )
-            ),
-            CategorySection(
-                title = "AI Conversation",
-                description = "Intelligent chat and voice interactions",
-                icon = Icons.Outlined.Chat,
-                tools = listOf(
-                    AITool(
+
+                      AITool(
                         title = "AI Chat Assistant",
                         subtitle = "Intelligent conversations powered by AI",
                         icon = Icons.Outlined.Chat,
@@ -140,16 +126,40 @@ fun ModernGlassmorphismHomeScreen(
                         category = "Assistant"
                     ),
                     AITool(
-                        title = "AI Talk",
-                        subtitle = "Voice conversations with AI",
-                        icon = Icons.Outlined.RecordVoiceOver,
-                        gradient = listOf(GradientGreen, GradientCyan),
-                        route = "aiTalk",
-                        category = "Voice",
-                        isPro = true
+                        title = "Video Generation",
+                        subtitle = "Create stunning videos from text",
+                        icon = Icons.Outlined.VideoLibrary,
+                        gradient = listOf(GradientOrange, GradientPink),
+                        route = "videoGeneration",
+                        category = "Generator",
+                        isSoon = true
                     )
                 )
             )
+//            CategorySection(
+//                title ="AI Conversation",
+//                description = "Intelligent chat and voice interactions",
+//                icon = Icons.Outlined.Chat,
+//                tools = listOf(
+//                    AITool(
+//                        title = "AI Chat Assistant",
+//                        subtitle = "Intelligent conversations powered by AI",
+//                        icon = Icons.Outlined.Chat,
+//                        gradient = listOf(GradientIndigo, GradientBlue),
+//                        route = "chatbot",
+//                        category = "Assistant"
+//                    ),
+//                    AITool(
+//                        title = "AI Talk",
+//                        subtitle = "Voice conversations with AI",
+//                        icon = Icons.Outlined.RecordVoiceOver,
+//                        gradient = listOf(GradientGreen, GradientCyan),
+//                        route = "aiTalk",
+//                        category = "Voice",
+//                        isPro = true
+//                    )
+//                )
+//            )
         )
     }
     
@@ -276,15 +286,7 @@ fun ModernGlassmorphismHomeScreen(
                 GlassmorphicHeader(navController)
             }
             
-            // Welcome Section
-            item {
-                WelcomeSection()
-            }
-            
-            // Quick Actions Grid
-            item {
-                QuickActionsSection(aiTools.flatMap { it.tools }.take(4), navController)
-            }
+
             
             // Categories Section
             items(aiTools) { category ->
@@ -464,9 +466,9 @@ private fun QuickActionsSection(tools: List<AITool>, navController: NavControlle
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
-            TextButton(onClick = { /* See All */ }) {
-                Text("See All", color = AccentPurple, fontSize = 14.sp)
-            }
+//            TextButton(onClick = { /* See All */ }) {
+//                Text("See All", color = AccentPurple, fontSize = 14.sp)
+//            }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -488,7 +490,13 @@ private fun QuickActionCard(tool: AITool, navController: NavController) {
         modifier = Modifier
             .width(110.dp)
             .height(110.dp)
-            .clickable { navController.navigate(tool.route) },
+            .then(
+                if (!tool.isSoon) {
+                    Modifier.clickable { navController.navigate(tool.route) }
+                } else {
+                    Modifier
+                }
+            ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = GlassBackground
@@ -518,6 +526,22 @@ private fun QuickActionCard(tool: AITool, navController: NavController) {
                             .size(14.dp)
                             .align(Alignment.End)
                     )
+                } else if (tool.isSoon) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Red,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(4.dp)
+                    ) {
+                        Text(
+                            text = "Soon",
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
                 }
                 
                 Box(
@@ -559,17 +583,17 @@ private fun CategoryCard(category: CategorySection, navController: NavController
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(
-            text = "Categories",
+            text = " Categories",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "See All",
-            fontSize = 14.sp,
-            color = AccentPurple
-        )
+       // Spacer(modifier = Modifier.height(4.dp))
+//        Text(
+//            text = "See All",
+//            fontSize = 14.sp,
+//            color = AccentPurple
+//        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -592,7 +616,13 @@ private fun CategoryToolCard(tool: AITool, navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
-            .clickable { navController.navigate(tool.route) },
+            .then(
+                if (!tool.isSoon) {
+                    Modifier.clickable { navController.navigate(tool.route) }
+                } else {
+                    Modifier
+                }
+            ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = GlassBackground
@@ -649,6 +679,20 @@ private fun CategoryToolCard(tool: AITool, navController: NavController) {
                             tint = AccentOrange,
                             modifier = Modifier.size(16.dp)
                         )
+                    } else if (tool.isSoon) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.Red,
+                            modifier = Modifier.padding(2.dp)
+                        ) {
+                            Text(
+                                text = "Soon",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
                 
