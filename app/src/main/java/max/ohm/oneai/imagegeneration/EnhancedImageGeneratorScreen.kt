@@ -1193,11 +1193,11 @@ private fun GalleryOverlay(
         color = DarkBackground
     ) {
         Column {
-            // Gallery Header
+            // Gallery Header - Transparent
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = CardBackground,
-                shadowElevation = 4.dp
+                color = Color.Transparent,
+                shadowElevation = 0.dp
             ) {
                 Row(
                     modifier = Modifier
