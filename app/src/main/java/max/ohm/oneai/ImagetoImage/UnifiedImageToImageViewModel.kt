@@ -104,6 +104,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
     // Context for Stability AI
     private var context: Context? = null
     
+    // History data store
+    private var historyDataStore: ImageToImageHistoryDataStore? = null
+    
 
     // Batch Processing properties
     var batchImages by mutableStateOf<List<Bitmap>>(emptyList())
@@ -207,6 +210,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
     fun setContext(context: Context) {
         this.context = context
+        this.historyDataStore = ImageToImageHistoryDataStore(context)
     }
     
     fun updateSelectedImage(bitmap: Bitmap?) {
@@ -3110,6 +3114,46 @@ class UnifiedImageToImageViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.e("UnifiedImg2Img", "Error in Stability AI upscale", e)
             errorMessage = "Stability AI Upscale Error: ${e.localizedMessage}"
+        }
+    }
+    
+    // Save generated image to history
+    fun saveToHistory() {
+        viewModelScope.launch {
+            try {
+                if (historyDataStore == null) {
+                    Log.e("UnifiedImg2Img", "History data store not initialized")
+                    return@launch
+                }
+                
+                // Determine what to save based on what's available
+                val imageData: Any? = when {
+                    generatedImageBitmap != null -> generatedImageBitmap
+                    generatedImageUrl != null -> generatedImageUrl
+                    else -> null
+                }
+                
+                if (imageData == null) {
+                    Log.e("UnifiedImg2Img", "No generated image to save")
+                    return@launch
+                }
+                
+                // Save to history
+                val historyItem = historyDataStore!!.saveImage(
+                    prompt = prompt.ifEmpty { "Image to Image transformation" },
+                    originalImage = selectedImage,
+                    generatedImageData = imageData,
+                    model = selectedModel
+                )
+                
+                if (historyItem != null) {
+                    Log.d("UnifiedImg2Img", "Successfully saved to history: ${historyItem.id}")
+                } else {
+                    Log.e("UnifiedImg2Img", "Failed to save to history")
+                }
+            } catch (e: Exception) {
+                Log.e("UnifiedImg2Img", "Error saving to history", e)
+            }
         }
     }
 }

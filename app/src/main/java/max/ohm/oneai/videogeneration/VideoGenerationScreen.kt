@@ -8,56 +8,34 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.animateColor
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -78,6 +56,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
+import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.components.*
+import max.ohm.oneai.utils.SetStatusBarColor
+import max.ohm.oneai.utils.StatusBarUtils
 
 // Helper function to find an Activity from a Context
 fun Context.findActivity(): Activity? {
@@ -99,245 +81,647 @@ fun formatSecondsToMMSS(seconds: Long): String {
     return String.format("%02d:%02d", minutes, remainingSeconds)
 }
 
+// Data class for model choices
+data class VideoModelChoice(
+    val displayName: String,
+    val internalName: String,
+    val apiType: String // "original", "a4f", or "modelslab"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoGenerationScreen(
     viewModel: VideoGenerationViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val prompt by viewModel.prompt.collectAsState()
     val generatedVideoUrl by viewModel.videoUrl.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val context = LocalContext.current
-
+    val isUsingA4F by viewModel.isUsingA4F.collectAsState()
+    val isUsingModelsLab by viewModel.isUsingModelsLab.collectAsState()
+    
     val elapsedTimeInSeconds by viewModel.elapsedTimeInSeconds.collectAsState()
     val totalGenerationTimeInSeconds by viewModel.totalGenerationTimeInSeconds.collectAsState()
-
-    // Infinite transition for animations when loading
-    val infiniteTransition = rememberInfiniteTransition(label = "loading_transition")
-
-    val animatedScreenBackgroundColor by infiniteTransition.animateColor(
-        initialValue = MaterialTheme.colorScheme.background,
-        targetValue = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), // Subtle change
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = 1500, easing = LinearEasing),
-            RepeatMode.Reverse
-        ),
-        label = "screen_bg_color_anim"
-    )
-
-    val animatedButtonContainerColor by infiniteTransition.animateColor(
-        initialValue = MaterialTheme.colorScheme.primary,
-        targetValue = MaterialTheme.colorScheme.secondary,
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = 1000, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse
-        ),
-        label = "button_container_color_anim"
-    )
-
-    val animatedButtonBorderColor by infiniteTransition.animateColor(
-        initialValue = MaterialTheme.colorScheme.primaryContainer, // Or another distinct color
-        targetValue = MaterialTheme.colorScheme.tertiary,      // Pulsate to this
-        animationSpec = infiniteRepeatable(
-            tween(durationMillis = 700, easing = LinearEasing),
-            RepeatMode.Reverse
-        ),
-        label = "button_border_color_anim"
-    )
-
-    val currentScreenBg = if (isLoading) animatedScreenBackgroundColor else MaterialTheme.colorScheme.background
     
-    // Button colors and border for OutlinedButton
-    val generateButtonContainerColor = if (isLoading) animatedButtonContainerColor else MaterialTheme.colorScheme.primary
-    val generateButtonBorder = if (isLoading) {
-        BorderStroke(2.dp, animatedButtonBorderColor)
-    } else {
-        ButtonDefaults.outlinedButtonBorder // Default border when not loading
-    }
-    val generateButtonColors = ButtonDefaults.outlinedButtonColors(
-        containerColor = generateButtonContainerColor,
-        disabledContainerColor = ButtonDefaults.outlinedButtonColors().disabledContainerColor,
-        // Content color can be specified if needed, e.g., based on container animation
-        contentColor = if (isLoading) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary,
-        disabledContentColor = ButtonDefaults.outlinedButtonColors().disabledContentColor
+    var promptText by remember { mutableStateOf(TextFieldValue("")) }
+    var modelMenuExpanded by remember { mutableStateOf(false) }
+    var selectedModel by remember { mutableStateOf<VideoModelChoice?>(null) }
+    
+    val modelChoices = listOf(
+        VideoModelChoice("Original API", "original", "original"),
+        VideoModelChoice("A4F Text-to-Video", "a4f", "a4f"),
+        VideoModelChoice("CogVideoX (ModelsLab)", "modelslab", "modelslab")
     )
+    
+    val currentSelectedModel = selectedModel ?: modelChoices.first()
 
-    Scaffold(
-        containerColor = currentScreenBg, // Apply animated background to Scaffold
-        topBar = {
-            TopAppBar(title = { Text("AI Video Generation") })
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-        ) {
-            Column(
+    // Animations
+    val infiniteTransition = rememberInfiniteTransition(label = "loading_animation")
+    
+    val gradientRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "gradient_rotation"
+    )
+    
+    // Update prompt in viewmodel when text changes
+    LaunchedEffect(promptText) {
+        viewModel.setPrompt(promptText.text)
+    }
+    
+    // Set status bar color for video generation screen
+    SetStatusBarColor(StatusBarUtils.VideoGenerationStatusBarColor)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        DarkBackground,
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
+                    )
+                )
+            )
+    ) {
+        // Animated background orbs
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Enhanced Top Bar with Glass Effect (No Border)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.Transparent,
+                shadowElevation = 0.dp
             ) {
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(250.dp)
-                        .background(Color.DarkGray)
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    if (generatedVideoUrl != null) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            VideoPlayer(
-                                videoUrl = generatedVideoUrl!!,
-                                autoplay = true,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black)
+                    // App Title with emotion indicator
+                    Column {
+                        Text(
+                            text = "OneAI Video Studio",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            modifier = Modifier.graphicsLayer(alpha = 0.99f)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        EmotionStatusIndicator(
+                            status = "Video Creation",
+                            emotion = EmotionState.Creative,
+                            icon = Icons.Outlined.VideoLibrary
+                        )
+                    }
+                    
+                    // Action buttons
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        IconButton(
+                            onClick = { /* Settings */ }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Settings",
+                                tint = TextPrimary
                             )
-                            
-                            // Colorful Download button overlay
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(12.dp)
+                        }
+                    }
+                }
+            }
+            
+            // Main Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Enhanced Video Display with Premium Glass Effect
+                PremiumGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 320.dp)  // Increased minimum height for loading animation
+                        .aspectRatio(16f/10f)  // Changed to 16:10 for more vertical space
+                        .animateContentSize(),
+                    accentType = GlassAccentType.Purple,
+                    cornerRadius = 24.dp,
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when {
+                            isLoading -> {
+                                LoadingAnimation(
+                                    gradientRotation = gradientRotation,
+                                    elapsedTime = elapsedTimeInSeconds
+                                )
+                            }
+                            generatedVideoUrl != null -> {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    VideoPlayer(
+                                        videoUrl = generatedVideoUrl!!,
+                                        autoplay = true,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black)
+                                    )
+                                    
+                                    // Download button overlay with glassmorphic style
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(12.dp)
+                                    ) {
+                                        GlassDownloadButton(
+                                            videoUrl = generatedVideoUrl!!,
+                                            context = context
+                                        )
+                                    }
+                                }
+                            }
+                            else -> {
+                                EmptyStateDisplay()
+                            }
+                        }
+                    }
+                }
+                
+                // Error message display
+                AnimatedVisibility(
+                    visible = !isLoading && error != null,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    GlassCard(
+                        backgroundColor = Color(0xFFDC2626).copy(alpha = 0.08f),
+                        borderColor = Color(0xFFDC2626).copy(alpha = 0.25f),
+                        cornerRadius = 16.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Error,
+                                contentDescription = null,
+                                tint = Color(0xFFDC2626),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column(
+                                modifier = Modifier.weight(1f)
                             ) {
-                                ColorfulDownloadButton(
-                                    videoUrl = generatedVideoUrl!!,
-                                    context = context
+                                Text(
+                                    text = error ?: "",
+                                    color = Color(0xFFDC2626),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            IconButton(
+                                onClick = { /* Clear error */ },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Dismiss",
+                                    tint = Color(0xFFDC2626),
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isLoading) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator(color = Color.White)
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "Generating video... (${formatSecondsToMMSS(elapsedTimeInSeconds)})",
-                                        color = Color.White
-                                    )
-                                }
-                            } else {
-                                Text("Generated video will appear here", color = Color.White)
-                            }
-                        }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (totalGenerationTimeInSeconds != null && error == null) {
-                    Text(
-                        text = "Video generated in ${formatSecondsToMMSS(totalGenerationTimeInSeconds!!)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                } else if (error != null) {
-                     Text(
-                        text = "Error: $error",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.fillMaxWidth().padding(vertical=8.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    
-                    // Add a retry button when there's an error
-                    Button(
-                        onClick = { viewModel.generateVideo() },
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Text("Retry Video Generation")
-                    }
-                } else {
-                    val textHeight = MaterialTheme.typography.bodyMedium.lineHeight.value.dp + 16.dp
-                    Spacer(modifier = Modifier.height(textHeight))
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                OutlinedTextField(
-                    value = prompt,
-                    onValueChange = { viewModel.setPrompt(it) },
-                    label = { Text("Enter video prompt") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(percent = 50)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
                 
-                // Two generation options
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // Generation time display
+                AnimatedVisibility(
+                    visible = !isLoading && totalGenerationTimeInSeconds != null && totalGenerationTimeInSeconds!! > 0L,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
                 ) {
-                    // Original video generation button
-                    OutlinedButton(
-                        onClick = { viewModel.generateVideo() },
-                        enabled = !isLoading && prompt.isNotBlank(),
-                        colors = generateButtonColors,
-                        border = generateButtonBorder,
-                        modifier = Modifier.fillMaxWidth()
+                    GlassCard(
+                        backgroundColor = AccentPurple.copy(alpha = 0.08f),
+                        borderColor = AccentPurple.copy(alpha = 0.25f),
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text(if (isLoading && !viewModel.isUsingA4F.collectAsState().value && !viewModel.isUsingModelsLab.collectAsState().value) "Generating..." else "Generate Video (Original API)")
-                    }
-                    
-                    // New text-to-video generation button
-                    Button(
-                        onClick = { viewModel.generateTextToVideo() },
-                        enabled = !isLoading && prompt.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Text(if (isLoading && viewModel.isUsingA4F.collectAsState().value) "Generating..." else "Generate from Text (A4F API)")
-                    }
-                    
-                    // ModelsLab video generation button  
-                    Button(
-                        onClick = { viewModel.generateModelsLabVideo() },
-                        enabled = !isLoading && prompt.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        )
-                    ) {
-                        Text(if (isLoading && viewModel.isUsingModelsLab.collectAsState().value) "Generating..." else "Generate with CogVideoX (ModelsLab)")
-                    }
-                    
-                    // Traditional Download button (keeping as secondary option)
-                    if (generatedVideoUrl != null) {
-                        Button(
-                            onClick = {
-                                generatedVideoUrl?.let { url -> downloadVideo(context, url) }
-                                    ?: Toast.makeText(context, "No video to download", Toast.LENGTH_SHORT).show()
-                            },
-                            enabled = generatedVideoUrl != null && !isLoading,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Download,
+                                imageVector = Icons.Outlined.Timer,
                                 contentDescription = null,
+                                tint = AccentPurple,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Generated in ${formatSecondsToMMSS(totalGenerationTimeInSeconds ?: 0L)}",
+                                color = TextPrimary,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+                
+                // Model Selection Card
+                ModelSelectionCard(
+                    currentModel = currentSelectedModel,
+                    modelChoices = modelChoices,
+                    expanded = modelMenuExpanded,
+                    onExpandedChange = { modelMenuExpanded = it },
+                    onModelSelected = { model ->
+                        selectedModel = model
+                        modelMenuExpanded = false
+                    }
+                )
+                
+                // Enhanced Prompt Input with Emotion Intelligence
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Transparent)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = null,
+                                tint = TextSecondary,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Download Video")
+                            Text(
+                                text = "Video Prompt",
+                                color = TextSecondary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
+                        
+                        EmotionIntelligentTextField(
+                            value = promptText.text,
+                            onValueChange = { newText -> promptText = TextFieldValue(newText) },
+                            emotion = EmotionState.Creative,
+                            placeholder = "Describe your video vision...",
+                            enabled = !isLoading,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(
+                                            GradientPurple.copy(alpha = 0.6f),
+                                            GradientPink.copy(alpha = 0.7f),
+                                            GradientCyan.copy(alpha = 0.5f),
+                                            GradientPurple.copy(alpha = 0.4f)
+                                        )
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ),
+                            maxLines = 5
+                        )
+                    }
+                }
+                
+                // Generate Button with Dark Background
+                Button(
+                    onClick = { 
+                        when (currentSelectedModel.apiType) {
+                            "original" -> viewModel.generateVideo()
+                            "a4f" -> viewModel.generateTextToVideo()
+                            "modelslab" -> viewModel.generateModelsLabVideo()
+                        }
+                    },
+                    enabled = !isLoading && promptText.text.isNotEmpty(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    GradientPurple.copy(alpha = 0.4f),
+                                    GradientPink.copy(alpha = 0.3f),
+                                    GradientCyan.copy(alpha = 0.3f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!isLoading && promptText.text.isNotEmpty()) {
+                            Color(0xFF1F2937).copy(alpha = 0.8f) // Dark background
+                        } else {
+                            Color(0xFF1F2937).copy(alpha = 0.4f) // Lighter when disabled
+                        },
+                        disabledContainerColor = Color(0xFF1F2937).copy(alpha = 0.4f)
+                    )
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = TextPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.VideoLibrary,
+                                contentDescription = null,
+                                tint = TextPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isLoading) "Generating..." else "Generate Video",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadingAnimation(
+    gradientRotation: Float,
+    elapsedTime: Long
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier.size(120.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { rotationZ = gradientRotation }
+            ) {
+                drawCircle(
+                    brush = Brush.sweepGradient(
+                        colors = listOf(
+                            AccentPurple,
+                            AccentPink,
+                            AccentPurple.copy(alpha = 0.5f),
+                            AccentPink.copy(alpha = 0.5f),
+                            AccentPurple
+                        )
+                    ),
+                    radius = size.minDimension / 2,
+                    style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
+                )
+            }
+            
+            Icon(
+                imageVector = Icons.Outlined.VideoLibrary,
+                contentDescription = null,
+                tint = TextPrimary,
+                modifier = Modifier.size(48.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Creating your video masterpiece...",
+            color = TextPrimary,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = formatSecondsToMMSS(elapsedTime),
+            color = TextSecondary,
+            fontSize = 16.sp
+        )
+    }
+}
+
+@Composable
+private fun EmptyStateDisplay() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(120.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            AccentPurple.copy(alpha = 0.2f),
+                            Color.Transparent
+                        )
+                    )
+                )
+            }
+            Icon(
+                imageVector = Icons.Outlined.VideoLibrary,
+                contentDescription = null,
+                tint = AccentPurple,
+                modifier = Modifier.size(64.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Ready to create videos",
+            color = TextPrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Enter a prompt below and watch AI bring your video to life",
+            color = TextSecondary,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ModelSelectionCard(
+    currentModel: VideoModelChoice,
+    modelChoices: List<VideoModelChoice>,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onModelSelected: (VideoModelChoice) -> Unit
+) {
+    // AI Model Card with No Border for Clean Glass Look
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "AI Model",
+                color = TextSecondary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Box {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = DarkBackground,
+                    onClick = { onExpandedChange(!expanded) }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = currentModel.displayName,
+                            color = TextPrimary,
+                            fontSize = 16.sp
+                        )
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = TextSecondary
+                        )
+                    }
+                }
+                
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { onExpandedChange(false) },
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .background(CardBackground)
+                ) {
+                    modelChoices.forEach { model ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = model.displayName,
+                                    color = TextPrimary
+                                )
+                            },
+                            onClick = { onModelSelected(model) },
+                            leadingIcon = {
+                                RadioButton(
+                                    selected = model == currentModel,
+                                    onClick = null,
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = AccentPurple
+                                    )
+                                )
+                            }
+                        )
                     }
                 }
             }
@@ -492,9 +876,8 @@ fun VideoPlayer(
     }
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun ColorfulDownloadButton(
+private fun GlassDownloadButton(
     videoUrl: String,
     context: Context
 ) {

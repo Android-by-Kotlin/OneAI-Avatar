@@ -965,6 +965,37 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 }
                             }
                             
+                            // Save to History button - show only when there's a generated image
+                            if (viewModel.generatedImageUrl != null || viewModel.generatedImageBitmap != null) {
+                                Button(
+                                    onClick = { 
+                                        viewModel.saveToHistory()
+                                        Toast.makeText(context, "Saved to history!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF6366F1).copy(alpha = 0.2f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Save,
+                                        contentDescription = null,
+                                        tint = Color(0xFF6366F1),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Save to History",
+                                        color = Color(0xFF6366F1),
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            
                             // Clear button
                             IconButton(
                                 onClick = { 

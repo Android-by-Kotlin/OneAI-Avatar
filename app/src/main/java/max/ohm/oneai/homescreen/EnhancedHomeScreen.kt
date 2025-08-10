@@ -48,6 +48,8 @@ import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.ui.theme.*
 import max.ohm.oneai.videogeneration.GeneratedVideo
 import max.ohm.oneai.videogeneration.VideoHistoryDataStore
+import max.ohm.oneai.imagetoimage.ImageToImageHistoryDataStore
+import max.ohm.oneai.imagetoimage.ImageToImageHistoryItem
 import java.text.SimpleDateFormat
 import java.util.*
 import java.io.File
@@ -71,6 +73,7 @@ private val DarkSecondary = Color(0xFF1A1F3A)
 sealed class CreationItem {
     data class ImageItem(val image: GeneratedImage) : CreationItem()
     data class VideoItem(val video: GeneratedVideo) : CreationItem()
+    data class ImageToImageItem(val image: GeneratedImage) : CreationItem()
 }
 private val AccentPurple = Color(0xFF6366F1)
 private val AccentPink = Color(0xFFEC4899)
@@ -183,8 +186,13 @@ listOf(
     val videoHistoryStore = remember { VideoHistoryDataStore(context) }
     val persistedVideoHistory by videoHistoryStore.videoHistory.collectAsState(initial = emptyList())
     
+    // Load image-to-image history
+    val imageToImageHistoryStore = remember { ImageToImageHistoryDataStore(context) }
+    val persistedImageToImageHistory by imageToImageHistoryStore.imageHistory.collectAsState(initial = emptyList())
+    
     var imageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
     var videoHistory by remember { mutableStateOf(listOf<GeneratedVideo>()) }
+    var imageToImageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
     var selectedImage by remember { mutableStateOf<GeneratedImage?>(null) }
     var selectedVideo by remember { mutableStateOf<GeneratedVideo?>(null) }
     var showFullScreen by remember { mutableStateOf(false) }
@@ -216,6 +224,21 @@ listOf(
                     thumbnailPath = item.thumbnailPath,
                     timestamp = item.timestamp,
                     model = item.model
+                )
+            } else null
+        }
+    }
+    
+    LaunchedEffect(persistedImageToImageHistory) {
+        imageToImageHistory = persistedImageToImageHistory.take(6).mapNotNull { item ->
+            val imageData = imageToImageHistoryStore.getImageData(item)
+            if (imageData != null) {
+                GeneratedImage(
+                    id = item.id,
+                    prompt = item.prompt,
+                    imageData = imageData,
+                    timestamp = item.timestamp,
+                    model = "Image2Image - ${item.model}"
                 )
             } else null
         }
@@ -383,18 +406,20 @@ listOf(
                     }
                 }
                 
-                if (imageHistory.isEmpty() && videoHistory.isEmpty()) {
+                if (imageHistory.isEmpty() && videoHistory.isEmpty() && imageToImageHistory.isEmpty()) {
                     EmptyGalleryState(
                         onCreateClick = { navController.navigate("enhancedImageGenerator") }
                     )
                 } else {
                     // Combine and sort items by timestamp
                     val allItems = (imageHistory.map { CreationItem.ImageItem(it) } + 
-                                   videoHistory.map { CreationItem.VideoItem(it) })
+                                   videoHistory.map { CreationItem.VideoItem(it) } +
+                                   imageToImageHistory.map { CreationItem.ImageToImageItem(it) })
                         .sortedByDescending { 
                             when (it) {
                                 is CreationItem.ImageItem -> it.image.timestamp
                                 is CreationItem.VideoItem -> it.video.timestamp
+                                is CreationItem.ImageToImageItem -> it.image.timestamp
                             }
                         }
                     
@@ -430,6 +455,24 @@ listOf(
                                         aspectRatio = 16f/9f, // Standard video aspect ratio
                                         onClick = {
                                             // No longer navigate, just handled within the card
+                                        }
+                                    )
+                                }
+                                is CreationItem.ImageToImageItem -> {
+                                    val aspectRatio = remember { 
+                                        // Generate random aspect ratios for variety
+                                        when (Random.nextInt(3)) {
+                                            0 -> 1f // Square
+                                            1 -> 0.7f // Portrait
+                                            else -> 1.3f // Landscape
+                                        }
+                                    }
+                                    GeneratedImageCard(
+                                        image = item.image,
+                                        aspectRatio = aspectRatio,
+                                        onClick = {
+                                            selectedImage = item.image
+                                            showFullScreen = true
                                         }
                                     )
                                 }

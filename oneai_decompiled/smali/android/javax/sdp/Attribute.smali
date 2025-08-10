@@ -1,0 +1,48 @@
+.class public interface abstract Landroid/javax/sdp/Attribute;
+.super Ljava/lang/Object;
+.source "Attribute.java"
+
+# interfaces
+.implements Landroid/javax/sdp/Field;
+
+
+# virtual methods
+.method public abstract getName()Ljava/lang/String;
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Landroid/javax/sdp/SdpParseException;
+        }
+    .end annotation
+.end method
+
+.method public abstract getValue()Ljava/lang/String;
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Landroid/javax/sdp/SdpParseException;
+        }
+    .end annotation
+.end method
+
+.method public abstract hasValue()Z
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Landroid/javax/sdp/SdpParseException;
+        }
+    .end annotation
+.end method
+
+.method public abstract setName(Ljava/lang/String;)V
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Landroid/javax/sdp/SdpException;
+        }
+    .end annotation
+.end method
+
+.method public abstract setValue(Ljava/lang/String;)V
+    .annotation system Ldalvik/annotation/Throws;
+        value = {
+            Landroid/javax/sdp/SdpException;
+        }
+    .end annotation
+.end method

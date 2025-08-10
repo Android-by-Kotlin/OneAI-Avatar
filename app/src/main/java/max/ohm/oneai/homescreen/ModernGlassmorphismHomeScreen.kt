@@ -54,6 +54,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import max.ohm.oneai.imagegeneration.GeneratedImage
 import max.ohm.oneai.imagegeneration.ImageHistoryDataStore
+import max.ohm.oneai.imagetoimage.ImageToImageHistoryDataStore
+import max.ohm.oneai.imagetoimage.ImageToImageHistoryItem
 import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.ui.theme.*
@@ -171,17 +173,20 @@ fun ModernGlassmorphismHomeScreen(
         )
     }
     
-    // Load image and video history
+    // Load image, image to image, and video history
     val imageHistoryStore = remember { ImageHistoryDataStore(context) }
     val persistedImageHistory by imageHistoryStore.imageHistory.collectAsState(initial = emptyList())
+    
+    val imageToImageHistoryStore = remember { ImageToImageHistoryDataStore(context) }
+    val persistedImageToImageHistory by imageToImageHistoryStore.imageHistory.collectAsState(initial = emptyList())
     
     val videoHistoryStore = remember { VideoHistoryDataStore(context) }
     val persistedVideoHistory by videoHistoryStore.videoHistory.collectAsState(initial = emptyList())
     
     var recentCreations by remember { mutableStateOf(listOf<Any>()) }
     
-    LaunchedEffect(persistedImageHistory, persistedVideoHistory) {
-        val images = persistedImageHistory.take(4).mapNotNull { item ->
+    LaunchedEffect(persistedImageHistory, persistedImageToImageHistory, persistedVideoHistory) {
+        val images = persistedImageHistory.take(3).mapNotNull { item ->
             val imageData = imageHistoryStore.getImageData(item)
             if (imageData != null) {
                 GeneratedImage(
@@ -193,6 +198,8 @@ fun ModernGlassmorphismHomeScreen(
                 )
             } else null
         }
+        
+        val imageToImages = persistedImageToImageHistory.take(3)
         
         val videos = persistedVideoHistory.take(2).mapNotNull { item ->
             val videoData = videoHistoryStore.getVideoData(item)
@@ -208,9 +215,10 @@ fun ModernGlassmorphismHomeScreen(
             } else null
         }
         
-        recentCreations = (images + videos).sortedByDescending { 
+        recentCreations = (images + imageToImages + videos).sortedByDescending { 
             when (it) {
                 is GeneratedImage -> it.timestamp
+                is ImageToImageHistoryItem -> it.timestamp
                 is GeneratedVideo -> it.timestamp
                 else -> 0L
             }
@@ -304,7 +312,7 @@ fun ModernGlassmorphismHomeScreen(
             // Recent Creations
             if (recentCreations.isNotEmpty()) {
                 item {
-                    RecentCreationsSection(recentCreations, navController)
+                    RecentCreationsSection(recentCreations, navController, imageToImageHistoryStore)
                 }
             }
             
@@ -727,7 +735,7 @@ private fun CategoryToolCard(tool: AITool, navController: NavController) {
 }
 
 @Composable
-private fun RecentCreationsSection(creations: List<Any>, navController: NavController) {
+private fun RecentCreationsSection(creations: List<Any>, navController: NavController, imageToImageHistoryStore: ImageToImageHistoryDataStore) {
     Column(
         modifier = Modifier.padding(16.dp)
     ) {
@@ -746,6 +754,9 @@ private fun RecentCreationsSection(creations: List<Any>, navController: NavContr
                 when (creation) {
                     is GeneratedImage -> {
                         RecentImageCard(creation)
+                    }
+                    is ImageToImageHistoryItem -> {
+                        RecentImageToImageCard(creation, imageToImageHistoryStore)
                     }
                     is GeneratedVideo -> {
                         RecentVideoCard(creation)
@@ -771,6 +782,30 @@ private fun RecentImageCard(image: GeneratedImage) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = image.imageData,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecentImageToImageCard(item: ImageToImageHistoryItem, dataStore: ImageToImageHistoryDataStore) {
+    Card(
+        modifier = Modifier
+            .width(120.dp)
+            .height(120.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = GlassBackground
+        ),
+        border = BorderStroke(1.dp, GlassBorder)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            val imageData = dataStore.getImageData(item)
+            AsyncImage(
+                model = imageData,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -831,7 +866,7 @@ private fun RecentVideoCard(video: GeneratedVideo) {
                 )
             }
             
-            // Overlay with play button and duration info
+            // Overlay with play button - removed VIDEO badge
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -853,34 +888,6 @@ private fun RecentVideoCard(video: GeneratedVideo) {
                         .size(48.dp)
                         .align(Alignment.Center)
                 )
-                
-                // Video indicator badge
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(4.dp),
-                    color = Color.Black.copy(alpha = 0.7f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Videocam,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "VIDEO",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
             }
         }
     }

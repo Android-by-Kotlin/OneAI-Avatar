@@ -288,15 +288,28 @@ fun EnhancedImageGeneratorScreen(
                 color = Color.Transparent,
                 shadowElevation = 0.dp
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(16.dp)
                 ) {
-                    // App Title with emotion indicator
-                    Column {
+                    // Back button on the left
+                    IconButton(
+                        onClick = { /* Back action */ },
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = TextPrimary
+                        )
+                    }
+                    
+                    // App Title with emotion indicator in the center
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = "OneAI Studio",
                             fontSize = 20.sp,
@@ -305,47 +318,53 @@ fun EnhancedImageGeneratorScreen(
                             modifier = Modifier.graphicsLayer(alpha = 0.99f)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        EmotionStatusIndicator(
-                            status = "Creative Mode",
-                            emotion = EmotionState.Creative,
-                            icon = Icons.Outlined.Palette
-                        )
-                    }
-                    
-                    // Action buttons
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Gallery button with badge
-                        Box {
-                            IconButton(
-                                onClick = { showGallery = true }
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = GradientPurple.copy(alpha = 0.1f),
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.PhotoLibrary,
-                                    contentDescription = "Gallery",
-                                    tint = TextPrimary
+                                    imageVector = Icons.Outlined.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = GradientPurple,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Creation Mode",
+                                    color = GradientPurple,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
-                            if (imageHistory.isNotEmpty()) {
-                                Badge(
-                                    modifier = Modifier.align(Alignment.TopEnd),
-                                    containerColor = AccentPink
-                                ) {
-                                    Text("${imageHistory.size}")
-                                }
+                        }
+                    }
+                    
+                    // Gallery button on the right
+                    Box(
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        IconButton(
+                            onClick = { showGallery = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.PhotoLibrary,
+                                contentDescription = "Gallery",
+                                tint = TextPrimary
+                            )
+                        }
+                        if (imageHistory.isNotEmpty()) {
+                            Badge(
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                containerColor = AccentPink
+                            ) {
+                                Text("${imageHistory.size}")
                             }
                         }
-                        
-//                        IconButton(
-//                            onClick = { /* Theme toggle */ }
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Outlined.DarkMode,
-//                                contentDescription = "Toggle Theme",
-//                                tint = TextPrimary
-//                            )
-//                        }
                     }
                 }
             }

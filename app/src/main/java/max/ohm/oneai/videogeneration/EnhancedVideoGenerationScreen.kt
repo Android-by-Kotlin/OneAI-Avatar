@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,7 +22,9 @@ import android.app.DownloadManager
 import android.net.Uri
 import android.os.Environment
 import android.content.Context
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +42,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
+import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.components.EmotionIntelligentButton
+import max.ohm.oneai.components.EmotionIntelligentTextField
+import max.ohm.oneai.components.EmotionState
+import max.ohm.oneai.components.EmotionStatusIndicator
+import androidx.compose.ui.text.TextStyle
 
 // Data class for model choices
 data class ModelChoice(
@@ -46,14 +55,6 @@ data class ModelChoice(
     val internalName: String
 )
 
-// Enhanced color scheme matching AI Art Studio
-private val DarkBackground = Color(0xFF0A0E27)
-private val CardBackground = Color(0xFF1A1F3A)
-private val AccentPurple = Color(0xFF6366F1)
-private val AccentPink = Color(0xFFEC4899)
-private val TextPrimary = Color(0xFFFFFFFF)
-private val TextSecondary = Color(0xFFB8BCC8)
-private val BorderColor = Color(0xFF2D3748)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,23 +125,79 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                 )
             )
     ) {
+        // Animated background orbs for glassmorphic effect
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val offsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val offsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = offsetX.dp, y = offsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
+        }
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Enhanced Top Bar
+            // Enhanced Top Bar with Glass Effect (No Border, matching image gen)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = CardBackground.copy(alpha = 0.9f),
-                shadowElevation = 8.dp
+                color = Color.Transparent,
+                shadowElevation = 0.dp
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .padding(16.dp)
                 ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    // Back button on the left
+                    IconButton(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
@@ -148,14 +205,50 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                         )
                     }
                     
-                    Text(
-                        text = "AI Video Studio",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
+                    // App Title with emotion indicator in the center
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Video Studio",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            modifier = Modifier.graphicsLayer(alpha = 0.99f)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = GradientPurple.copy(alpha = 0.1f),
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Videocam,
+                                    contentDescription = null,
+                                    tint = GradientPurple,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Cinematic Mode",
+                                    color = GradientPurple,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
                     
-                    IconButton(onClick = { /* Settings */ }) {
+                    // Settings button on the right
+                    IconButton(
+                        onClick = { /* Settings */ },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
                             contentDescription = "Settings",
@@ -166,40 +259,23 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
             }
             
             // Main Content
-            Box(
-                modifier = Modifier.fillMaxSize()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 8.dp),  // Add bottom padding for spacing
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)  // Reduced spacing
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp)
-                        .padding(bottom = 80.dp), // Add padding for the button
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                // Video Display Card
-                Card(
+                // Enhanced Video Display with Premium Glass Effect
+                PremiumGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f/9f)
+                        .weight(0.85f)  // Slightly reduced to make room for button
                         .animateContentSize(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = CardBackground
-                    ),
-                    border = BorderStroke(
-                        width = 1.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                AccentPurple.copy(alpha = 0.5f),
-                                AccentPink.copy(alpha = 0.5f)
-                            ),
-                            start = Offset(0f, 0f),
-                            end = Offset(1000f, 1000f)
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    accentType = GlassAccentType.Cyan,
+                    cornerRadius = 24.dp,
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -237,40 +313,8 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                     }
                 }
                 
-                // Generation time display
-                AnimatedVisibility(
-                    visible = !state.isLoading && totalGenerationTimeInSeconds != null,
-                    enter = fadeIn() + slideInVertically(),
-                    exit = fadeOut() + slideOutVertically()
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = AccentPurple.copy(alpha = 0.1f)
-                        ),
-                        border = BorderStroke(1.dp, AccentPurple.copy(alpha = 0.3f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Timer,
-                                contentDescription = null,
-                                tint = AccentPurple,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Generated in ${formatSecondsToMMSS(totalGenerationTimeInSeconds ?: 0L)}",
-                                color = TextPrimary,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-                
-                // Model Selection
-                ModelSelectionCard(
+                // Model Selection with Glass Effect
+                ModelSelectionGlassCard(
                     currentModel = currentSelectedModelChoice,
                     modelChoices = modelChoices,
                     expanded = modelMenuExpanded,
@@ -281,21 +325,31 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                     }
                 )
                 
-                // Prompt Input
-                PromptInputCard(
+                // Prompt Input with Glass Effect
+                PromptInputGlassCard(
                     prompt = prompt,
                     isLoading = state.isLoading,
                     onPromptChange = { prompt = it }
                 )
                 
-                // Error display
+                // Generate Button
+                GenerateButton(
+                    isLoading = state.isLoading,
+                    enabled = !state.isLoading && prompt.isNotEmpty(),
+                    onClick = { 
+                        startTime = System.currentTimeMillis()
+                        totalGenerationTimeInSeconds = null
+                        viewModel.generateVideo(prompt, selectedModel) 
+                    }
+                )
+                
+                // Error display with Glass Effect
                 if (state.error != null) {
-                    Card(
+                    PremiumGlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Red.copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        accentType = GlassAccentType.Pink,
+                        cornerRadius = 12.dp,
+                        contentPadding = PaddingValues(16.dp)
                     ) {
                         Text(
                             text = state.error!!,
@@ -306,35 +360,7 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                     }
                 }
             }
-            
-            // Generate Button at the bottom
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                DarkBackground.copy(alpha = 0.9f),
-                                DarkBackground
-                            )
-                        )
-                    )
-                    .padding(16.dp)
-            ) {
-                GenerateButton(
-                    isLoading = state.isLoading,
-                    enabled = !state.isLoading && prompt.isNotEmpty(),
-                    onClick = { 
-                        startTime = System.currentTimeMillis()
-                        totalGenerationTimeInSeconds = null
-                        viewModel.generateVideo(prompt, selectedModel) 
-                    }
-                )
-            }
         }
-    }
     }
 }
 
@@ -346,7 +372,9 @@ private fun LoadingAnimation(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)  // Add padding to prevent content from touching edges
     ) {
         Box(
             modifier = Modifier.size(120.dp),
@@ -452,20 +480,19 @@ private fun EmptyStateDisplay() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModelSelectionCard(
+private fun ModelSelectionGlassCard(
     currentModel: ModelChoice,
     modelChoices: List<ModelChoice>,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onModelSelected: (ModelChoice) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderColor)
+    // Transparent container - no outer box
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -483,7 +510,7 @@ private fun ModelSelectionCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = DarkBackground,
+                    color = DarkBackground.copy(alpha = 0.8f),
                     onClick = { onExpandedChange(!expanded) }
                 ) {
                     Row(
@@ -511,7 +538,14 @@ private fun ModelSelectionCard(
                     onDismissRequest = { onExpandedChange(false) },
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
-                        .background(CardBackground)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    DarkBackground.copy(alpha = 0.95f),
+                                    DarkBackground
+                                )
+                            )
+                        )
                 ) {
                     modelChoices.forEach { model ->
                         DropdownMenuItem(
@@ -541,21 +575,21 @@ private fun ModelSelectionCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PromptInputCard(
+private fun PromptInputGlassCard(
     prompt: String,
     isLoading: Boolean,
     onPromptChange: (String) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = CardBackground
-        ),
-        border = BorderStroke(1.dp, BorderColor)
+    // Transparent container matching enhanced image generation
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -568,34 +602,33 @@ private fun PromptInputCard(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "Prompt",
+                    text = "Creative Prompt",
                     color = TextSecondary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            OutlinedTextField(
+            EmotionIntelligentTextField(
                 value = prompt,
                 onValueChange = onPromptChange,
-                placeholder = {
-                    Text(
-                        "Describe your video vision...",
-                        color = TextSecondary.copy(alpha = 0.6f)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
+                emotion = EmotionState.Creative,
+                placeholder = "Describe your cinematic vision...",
                 enabled = !isLoading,
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    containerColor = DarkBackground,
-                    cursorColor = AccentPurple,
-                    focusedBorderColor = AccentPurple,
-                    unfocusedBorderColor = BorderColor
-                ),
-                shape = RoundedCornerShape(12.dp),
-                minLines = 3,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                GradientPurple.copy(alpha = 0.6f),
+                                GradientPink.copy(alpha = 0.7f),
+                                GradientCyan.copy(alpha = 0.5f),
+                                GradientPurple.copy(alpha = 0.4f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
                 maxLines = 5
             )
         }
@@ -608,43 +641,16 @@ private fun GenerateButton(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    Button(
+    EmotionIntelligentButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = AccentPurple,
-            disabledContainerColor = AccentPurple.copy(alpha = 0.5f)
-        )
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = TextPrimary,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.VideoLibrary,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isLoading) "Generating..." else "Generate Video",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
+        emotion = if (isLoading) EmotionState.Energetic else EmotionState.Creative,
+        text = if (isLoading) "Creating Magic..." else "Generate Video",
+        icon = if (isLoading) Icons.Outlined.HourglassEmpty else Icons.Outlined.VideoCall
+    )
 }
 
 @Composable
@@ -684,14 +690,14 @@ private fun DownloadButton(
     
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(36.dp)  // Reduced from 48.dp
             .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(24.dp),
+                elevation = 6.dp,  // Reduced from 8.dp
+                shape = RoundedCornerShape(18.dp),  // Adjusted for smaller size
                 ambientColor = AccentPink.copy(alpha = 0.3f),
                 spotColor = AccentPurple.copy(alpha = 0.3f)
             )
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(18.dp))  // Adjusted for smaller size
             .background(
                 Brush.sweepGradient(
                     colors = if (isDownloading) {
@@ -742,7 +748,7 @@ private fun DownloadButton(
             contentDescription = "Download Video",
             tint = Color.White,
             modifier = Modifier
-                .size(24.dp)
+                .size(18.dp)  // Reduced from 24.dp
                 .graphicsLayer {
                     if (isDownloading) {
                         scaleX = 0.9f + (animatedOffset * 0.2f)
@@ -773,4 +779,5 @@ private fun downloadVideo(videoUrl: String, context: Context) {
         Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
+
 
