@@ -85,10 +85,10 @@ class MainActivity : ComponentActivity() {
         // Make the app draw edge-to-edge for full screen experience
         WindowCompat.setDecorFitsSystemWindows(window, false)
         
-        // Set status bar and navigation bar colors to same theme color for full view
+        // Set status bar and navigation bar to transparent for glassmorphism effect
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.statusBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()
-            window.navigationBarColor = StatusBarUtils.DefaultStatusBarColor.toArgb()
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
         }
         
         // Configure window controller for immersive experience

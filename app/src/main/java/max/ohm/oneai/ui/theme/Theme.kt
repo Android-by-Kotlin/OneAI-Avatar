@@ -91,14 +91,10 @@ fun OneAITheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Set status bar color for modern design
-            window.statusBarColor = if (modernDesign) {
-                DarkBackground.toArgb()
-            } else {
-                colorScheme.primary.toArgb()
-            }
+            // Set status bar to transparent for glassmorphism effect
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
             
-            // Configure status bar content color
+            // Configure status bar content color (white icons for dark backgrounds)
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }

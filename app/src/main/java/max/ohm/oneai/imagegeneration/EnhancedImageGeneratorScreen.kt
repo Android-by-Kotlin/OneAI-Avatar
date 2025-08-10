@@ -1947,7 +1947,6 @@ private fun ReportImageDialog(
                 }
             }
         }
+        }
     }
-}
-
 }

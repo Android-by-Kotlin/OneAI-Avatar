@@ -3727,7 +3727,6 @@ private fun ImageToImageReportDialog(
                 }
             }
         }
+        }
     }
-}
-
 }
