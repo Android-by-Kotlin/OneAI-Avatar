@@ -298,7 +298,7 @@ fun EnhancedImageGeneratorScreen(
                     // App Title with emotion indicator
                     Column {
                         Text(
-                            text = "AI Art Studio",
+                            text = "OneAI Studio",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,

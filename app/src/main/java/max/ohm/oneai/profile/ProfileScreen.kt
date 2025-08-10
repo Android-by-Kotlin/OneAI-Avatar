@@ -31,16 +31,7 @@ import max.ohm.oneai.login.LoginState
 import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
-
-// Enhanced color scheme for professional look
-private val DarkBackground = Color(0xFF0A0E27)
-private val CardBackground = Color(0xFF1A1F3A)
-private val AccentPurple = Color(0xFF6366F1)
-private val AccentPink = Color(0xFFEC4899)
-private val AccentGreen = Color(0xFF10B981)
-private val TextPrimary = Color(0xFFFFFFFF)
-private val TextSecondary = Color(0xFFB8BCC8)
-private val BorderColor = Color(0xFF2D3748)
+import max.ohm.oneai.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,14 +79,66 @@ fun ProfileScreen(
                 Brush.verticalGradient(
                     colors = listOf(
                         DarkBackground,
-                        Color(0xFF1A1F3A),
-                        Color(0xFF2D1B69)
+                        DarkBackground.copy(alpha = 0.95f),
+                        Color(0xFF0F172A)
                     )
                 )
             )
     ) {
-        // Animated background elements
-        AnimatedBackgroundElements(floatingOffset)
+        // Animated background orbs - same as EnhancedImageGeneratorScreen
+        repeat(3) { index ->
+            val infiniteTransition = rememberInfiniteTransition(label = "orb_$index")
+            val orbOffsetX by infiniteTransition.animateFloat(
+                initialValue = -200f + index * 300f,
+                targetValue = 200f + index * 300f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 8000 + index * 2000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_x_$index"
+            )
+            val orbOffsetY by infiniteTransition.animateFloat(
+                initialValue = -100f + index * 200f,
+                targetValue = 100f + index * 200f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = 10000 + index * 1000,
+                        easing = EaseInOutSine
+                    ),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "orb_offset_y_$index"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .offset(x = orbOffsetX.dp, y = orbOffsetY.dp)
+                    .size(200.dp + (index * 50).dp)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = when (index) {
+                                0 -> listOf(
+                                    GradientPurple.copy(alpha = 0.1f),
+                                    Color.Transparent
+                                )
+                                1 -> listOf(
+                                    GradientPink.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                                else -> listOf(
+                                    GradientCyan.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            }
+                        ),
+                        shape = CircleShape
+                    )
+                    .blur(60.dp)
+            )
+        }
         
         LazyColumn(
             modifier = Modifier
@@ -117,7 +160,7 @@ fun ProfileScreen(
                             .align(Alignment.CenterStart)
                             .size(48.dp)
                             .background(
-                                CardBackground.copy(alpha = 0.8f),
+                                Color.Black.copy(alpha = 0.3f),
                                 CircleShape
                             )
                     ) {
@@ -187,65 +230,7 @@ fun ProfileScreen(
 }
 
 
-@Composable
-fun AnimatedBackgroundElements(floatingOffset: Float) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .alpha(0.3f)
-    ) {
-        // Floating orbs
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .offset(x = (-50).dp, y = (-100).dp + floatingOffset.dp)
-                .blur(40.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            AccentPurple.copy(alpha = 0.4f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = CircleShape
-                )
-        )
-        
-        Box(
-            modifier = Modifier
-                .size(150.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = 50.dp, y = 50.dp + (-floatingOffset).dp)
-                .blur(30.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            AccentPink.copy(alpha = 0.3f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = CircleShape
-                )
-        )
-        
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.TopEnd)
-                .offset(x = 30.dp, y = 200.dp + floatingOffset.dp)
-                .blur(25.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            AccentGreen.copy(alpha = 0.3f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = CircleShape
-                )
-        )
-    }
-}
+
 
 @Composable
 fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
@@ -255,19 +240,19 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
             .shadow(
                 elevation = 20.dp,
                 shape = RoundedCornerShape(24.dp),
-                ambientColor = AccentPurple.copy(alpha = 0.3f),
-                spotColor = AccentPink.copy(alpha = 0.3f)
+                ambientColor = GradientPurple.copy(alpha = 0.3f),
+                spotColor = GradientPink.copy(alpha = 0.3f)
             ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground.copy(alpha = 0.9f)
+            containerColor = Color.Black.copy(alpha = 0.3f)
         ),
         border = BorderStroke(
             1.dp,
             Brush.linearGradient(
                 colors = listOf(
-                    AccentPurple.copy(alpha = 0.5f),
-                    AccentPink.copy(alpha = 0.5f)
+                    GradientPurple.copy(alpha = 0.5f),
+                    GradientPink.copy(alpha = 0.5f)
                 )
             )
         )
@@ -290,7 +275,7 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    AccentPurple.copy(alpha = 0.3f),
+                                    GradientPurple.copy(alpha = 0.3f),
                                     Color.Transparent
                                 )
                             ),
@@ -305,7 +290,7 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(
-                                colors = listOf(AccentPurple, AccentPink)
+                                colors = listOf(GradientPurple, GradientPink)
                             )
                         )
                         .padding(4.dp),
@@ -333,7 +318,7 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(CircleShape)
-                                .background(CardBackground),
+                                .background(Color.Black.copy(alpha = 0.3f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -373,7 +358,7 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
             // Status Badge
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = AccentGreen.copy(alpha = 0.2f),
+                color = GradientCyan.copy(alpha = 0.2f),
                 modifier = Modifier.padding(horizontal = 16.dp)
             ) {
                 Row(
@@ -383,12 +368,12 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
                     Box(
                         modifier = Modifier
                             .size(8.dp)
-                            .background(AccentGreen, CircleShape)
+                            .background(GradientCyan, CircleShape)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "User ID: ${user?.id?.take(12) ?: "Not available"}",
-                        color = AccentGreen,
+                        color = GradientCyan,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -408,38 +393,47 @@ fun ActionButtonsSection(onLogout: () -> Unit) {
     ) {
     
       
-        // Logout Button
+        // Logout Button - styled like Generate Art button
         Button(
             onClick = onLogout,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
+                .height(56.dp)
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            GradientPurple.copy(alpha = 0.4f),
+                            GradientPink.copy(alpha = 0.3f),
+                            GradientCyan.copy(alpha = 0.3f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent
-            ),
-            border = BorderStroke(
-                2.dp,
-                Brush.linearGradient(
-                    colors = listOf(AccentPurple, AccentPink)
-                )
+                containerColor = Color(0xFF1F2937).copy(alpha = 0.8f)
             )
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Logout,
-                contentDescription = "Logout",
-                tint = AccentPink,
-                modifier = Modifier.size(20.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Text(
-                text = "Logout",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
-            )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Logout,
+                    contentDescription = null,
+                    tint = TextPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Logout",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
         }
     }
 }
