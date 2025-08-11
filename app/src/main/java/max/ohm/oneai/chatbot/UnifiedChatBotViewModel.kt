@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import max.ohm.oneai.data.model.Chat
 import max.ohm.oneai.data.repository.ChatRepository
 import max.ohm.oneai.a4f.A4FChatService
@@ -24,6 +25,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     private var geminiProGenerativeModel: GenerativeModel? = null
     private val chatRepository = ChatRepository()
     private val auth = FirebaseAuth.getInstance()
+    private val errorHandler = ChatBotErrorHandler()
 
     var messages by mutableStateOf(listOf<Message>())
         private set
@@ -44,6 +46,14 @@ class UnifiedChatBotViewModel : ViewModel() {
         internal set
 
     var selectedModel by mutableStateOf("gemini-2.0-flash") // Default model
+    
+    // Track if we're in auto-retry mode with a different model
+    var isAutoRetrying by mutableStateOf(false)
+        private set
+    
+    // Track the original failed model for display purposes
+    var failedModel by mutableStateOf<String?>(null)
+        private set
 
     // Current chat ID
     var currentChatId by mutableStateOf<String?>(null)
@@ -486,24 +496,43 @@ class UnifiedChatBotViewModel : ViewModel() {
                             Log.e(TAG, "Failed to save bot message", saveResult.exceptionOrNull())
                             errorMessage = "Failed to save AI response: ${saveResult.exceptionOrNull()?.message}"
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error generating AI response", e)
-                        errorMessage = "Error generating AI response: ${e.message}"
                         
-                        // Add error message to chat
-                        val errorBotMessage = Message(
-                            text = "Sorry, I encountered an error while generating a response. Please try again.",
-                            isUser = false,
-                            id = System.currentTimeMillis()
+                        // Reset error handler on successful response
+                        errorHandler.resetFailedModels()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error generating AI response with Gemini", e)
+                        
+                        // Get the last user message for retry
+                        val lastUserMessage = messages.lastOrNull { it.isUser } ?: Message("", true)
+                        
+                        // Handle the error with automatic model switching
+                        handleApiError(
+                            exception = e,
+                            responseCode = when {
+                                e.message?.contains("429") == true -> 429
+                                e.message?.contains("quota", true) == true -> 402
+                                e.message?.contains("503") == true -> 503
+                                else -> null
+                            },
+                            responseBody = e.message,
+                            currentModel = "gemini-2.0-flash",
+                            originalUserMessage = lastUserMessage
                         )
-                        messages = messages + errorBotMessage
                     }
                 }
-                "a4f-gpt-4.1-nano" -> {
-                    Log.d(TAG, "Generating response with A4F GPT-4.1-Nano model")
+                "a4f-gpt-4.1-nano",
+                "provider-3/kimi-k2",
+                "provider-1/deepseek-r1-0528",
+                "provider-6/r1-1776",
+                "provider-2/qwen-3-235b",
+                "provider-6/horizon-beta",
+                "provider-3/gpt-5-nano",
+                "provider-6/gpt-4o",
+                "provider-6/gemini-2.5-flash" -> {
+                    Log.d(TAG, "Generating response with A4F model: $selectedModel")
                     val userPrompt = messages.lastOrNull { it.isUser }?.text ?: ""
                     try {
-                        val responseText = a4fChatService.getCompletion(userPrompt, "provider-3/gpt-4.1-nano")
+                        val responseText = a4fChatService.getCompletion(userPrompt, selectedModel)
                         // Check if responseText is a function_call JSON
                         if (responseText.trim().startsWith("{") && responseText.contains("function_call")) {
                             val messageJson = JSONObject(responseText)
@@ -585,14 +614,9 @@ class UnifiedChatBotViewModel : ViewModel() {
                             errorMessage = "Failed to save AI response: ${saveResult.exceptionOrNull()?.message}"
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error generating AI response", e)
-                        errorMessage = "Error generating AI response: ${e.message}"
-                        val errorBotMessage = Message(
-                            text = "Sorry, I encountered an error while generating a response. Please try again.",
-                            isUser = false,
-                            id = System.currentTimeMillis()
-                        )
-                        messages = messages + errorBotMessage
+                        Log.e(TAG, "Error with A4F model", e)
+                        val lastUserMessage = messages.lastOrNull { it.isUser } ?: Message("", true)
+                        handleApiError(e, null, null, selectedModel, lastUserMessage)
                     }
                 }
                 else -> {
@@ -606,6 +630,105 @@ class UnifiedChatBotViewModel : ViewModel() {
         } finally {
             isLoading = false
         }
+    }
+    
+    /**
+     * Handle API errors with automatic model switching
+     */
+    private fun handleApiError(
+        exception: Exception?, 
+        responseCode: Int? = null, 
+        responseBody: String? = null,
+        currentModel: String,
+        originalUserMessage: Message
+    ) {
+        viewModelScope.launch {
+            try {
+                // Parse the error and get recovery suggestions
+                val apiError = errorHandler.parseError(
+                    exception = exception,
+                    responseCode = responseCode,
+                    responseBody = responseBody,
+                    currentModel = currentModel
+                )
+                
+                // Display user-friendly error message
+                val errorMessage = errorHandler.generateRecoveryMessage(apiError)
+                
+                // Check if we should retry with a different model
+                if (apiError.suggestedModel != null && apiError.retryable && !isAutoRetrying) {
+                    // Show intermediate message about switching models
+                    val switchingMessage = Message(
+                        text = errorMessage,
+                        isUser = false,
+                        id = System.currentTimeMillis(),
+                        isSystemMessage = true
+                    )
+                    messages = messages + switchingMessage
+                    
+                    // Track that we're auto-retrying
+                    isAutoRetrying = true
+                    failedModel = currentModel
+                    
+                    // Wait a bit if there's a retry-after value
+                    apiError.retryAfterSeconds?.let { seconds ->
+                        delay(seconds * 1000L)
+                    }
+                    
+                    // Switch to the suggested model and retry
+                    selectedModel = apiError.suggestedModel
+                    Log.d(TAG, "Switching from $currentModel to ${apiError.suggestedModel}")
+                    
+                    // Retry the message with the new model
+                    generateAIResponse()
+                    
+                    // Reset auto-retry flag after successful retry
+                    isAutoRetrying = false
+                    failedModel = null
+                    errorHandler.resetFailedModels()
+                } else {
+                    // No more models to try or not retryable
+                    val finalErrorMessage = Message(
+                        text = if (isAutoRetrying) {
+                            "😔 All available AI models are currently unavailable. Please try again later."
+                        } else {
+                            errorMessage
+                        },
+                        isUser = false,
+                        id = System.currentTimeMillis(),
+                        isError = true
+                    )
+                    messages = messages + finalErrorMessage
+                    
+                    // Reset flags
+                    isAutoRetrying = false
+                    failedModel = null
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in handleApiError", e)
+                val criticalErrorMessage = Message(
+                    text = "⚠️ A critical error occurred. Please restart the chat.",
+                    isUser = false,
+                    id = System.currentTimeMillis(),
+                    isError = true
+                )
+                messages = messages + criticalErrorMessage
+            }
+        }
+    }
+    
+    /**
+     * Get available models for display in UI
+     */
+    fun getAvailableModels(): List<Pair<String, String>> {
+        return errorHandler.getAvailableModelsForDisplay()
+    }
+    
+    /**
+     * Check if a specific model is available
+     */
+    fun isModelAvailable(modelId: String): Boolean {
+        return errorHandler.isModelAvailable(modelId)
     }
 }
 
