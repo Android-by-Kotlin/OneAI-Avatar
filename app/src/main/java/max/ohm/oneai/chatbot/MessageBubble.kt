@@ -84,7 +84,8 @@ fun MessageBubble(
     message: Message,
     isNewMessage: Boolean = false,
     isTyping: Boolean = false,
-    isTypingSoundEnabled: Boolean = true
+    isTypingSoundEnabled: Boolean = true,
+    isThinking: Boolean = false
 ) {
     val isBot = !message.isUser
     val context = LocalContext.current

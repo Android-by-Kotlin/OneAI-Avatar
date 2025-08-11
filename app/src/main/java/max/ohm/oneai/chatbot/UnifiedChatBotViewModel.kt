@@ -81,6 +81,21 @@ class UnifiedChatBotViewModel : ViewModel() {
 
     // Add a4f service instance
     private val a4fChatService = A4FChatService()
+    
+    /**
+     * Clean response text by removing thinking tags and content
+     */
+    private fun cleanResponseText(responseText: String): String {
+        // Remove <think>...</think> tags and their content
+        val cleanedText = responseText
+            .replace(Regex("<think>.*?</think>", RegexOption.DOT_MATCHES_ALL), "")
+            .replace(Regex("<thinking>.*?</thinking>", RegexOption.DOT_MATCHES_ALL), "")
+            .replace(Regex("<THINK>.*?</THINK>", RegexOption.DOT_MATCHES_ALL), "")
+            .replace(Regex("<THINKING>.*?</THINKING>", RegexOption.DOT_MATCHES_ALL), "")
+            .trim()
+        
+        return if (cleanedText.isBlank()) "I'm processing your request..." else cleanedText
+    }
 
     init {
         initializeGeminiProModel()
@@ -477,7 +492,8 @@ class UnifiedChatBotViewModel : ViewModel() {
                     
                     try {
                         val response = geminiProGenerativeModel!!.generateContent(*chatHistory.toTypedArray())
-                        val responseText = response.text ?: "No response from bot"
+                        val rawResponseText = response.text ?: "No response from bot"
+                        val responseText = cleanResponseText(rawResponseText)
                         Log.d(TAG, "Received AI response: ${responseText.take(50)}...")
                         
                         val botMessage = Message(
@@ -585,8 +601,9 @@ class UnifiedChatBotViewModel : ViewModel() {
                                 messagesArray.put(functionResponseMessage)
                                 // Call the model again with the full history (no manual assistant message)
                                 val followupResponse = a4fChatService.getCompletionWithMessages(messagesArray, "provider-3/gpt-4.1-nano")
+                                val cleanedFollowupResponse = cleanResponseText(followupResponse)
                                 val botMessage = Message(
-                                    text = followupResponse,
+                                    text = cleanedFollowupResponse,
                                     isUser = false,
                                     image = null,
                                     id = System.currentTimeMillis()
@@ -600,9 +617,10 @@ class UnifiedChatBotViewModel : ViewModel() {
                                 return
                             }
                         }
-                        // Normal text response
+                        // Normal text response - clean thinking tags
+                        val cleanedResponseText = cleanResponseText(responseText)
                         val botMessage = Message(
-                            text = responseText,
+                            text = cleanedResponseText,
                             isUser = false,
                             image = null,
                             id = System.currentTimeMillis()

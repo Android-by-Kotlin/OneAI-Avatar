@@ -154,7 +154,11 @@ fun ChatBotScreen(
 
     // Add another LaunchedEffect to handle scrolling during typing
     LaunchedEffect(isLoading) {
-        if (!isLoading && messages.isNotEmpty()) {
+        if (isLoading && messages.isNotEmpty()) {
+            // When loading starts, scroll to show the thinking animation
+            delay(100) // Short delay for smoother experience
+            listState.animateScrollToItem(messages.size)
+        } else if (!isLoading && messages.isNotEmpty()) {
             // When loading completes (message is received), scroll to the bottom
             delay(100) // Short delay for smoother experience
             listState.animateScrollToItem(messages.size - 1)
@@ -393,24 +397,30 @@ fun ChatBotScreen(
                                 )
                             }
                             
+                            // Show thinking bubble when loading
+                            if (isLoading) {
+                                item {
+                                    MessageBubble(
+                                        message = Message(
+                                            text = "",
+                                            isUser = false,
+                                            image = null,
+                                            id = -1 // Special ID for thinking bubble
+                                        ),
+                                        isNewMessage = false,
+                                        isTyping = true,
+                                        isTypingSoundEnabled = false,
+                                        isThinking = true
+                                    )
+                                }
+                            }
+                            
                             // Add a spacer at the bottom for better UX
                             item {
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
-                    
-                    // Loading indicator overlay
-//                    if (isLoading) {
-//                        Box(
-//                            modifier = Modifier
-//                                .fillMaxSize()
-//                                .background(Color.Black.copy(alpha = 0.3f)),
-//                            contentAlignment = Alignment.Center
-//                        ) {
-//                           // CircularProgressIndicator(color = AccentGreen)
-//                        }
-//                    }
                 }
                 
                 // Input area
