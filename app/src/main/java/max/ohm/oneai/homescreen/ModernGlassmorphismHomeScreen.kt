@@ -112,7 +112,7 @@ fun ModernGlassmorphismHomeScreen(
                 icon = Icons.Outlined.Brush,
                 tools = listOf(
                     AITool(
-                        title = "AI Image Generator",
+                        title = "Image Generation",
                         subtitle = "Transform your ideas into beautiful artwork",
                         icon = Icons.Outlined.Image,
                         gradient = listOf(GradientPurple, GradientPink),
@@ -120,7 +120,7 @@ fun ModernGlassmorphismHomeScreen(
                         category = "Generator"
                     ),
                     AITool(
-                        title = "Image to Image",
+                        title = "Image Editing",
                         subtitle = "Transform and enhance existing images",
                         icon = Icons.Outlined.Transform,
                         gradient = listOf(GradientBlue, GradientCyan),
@@ -129,7 +129,7 @@ fun ModernGlassmorphismHomeScreen(
                     ),
 
                       AITool(
-                        title = "AI Chat Assistant",
+                        title = "Chat Assistant",
                         subtitle = "Intelligent conversations powered by AI",
                         icon = Icons.Outlined.Chat,
                         gradient = listOf(GradientIndigo, GradientBlue),

@@ -186,10 +186,10 @@ class UnifiedImageToImageViewModel : ViewModel() {
 
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
-        "headshot-img2img" to "Headshot",
+       // "headshot-img2img" to "Headshot",
       //  "Enhance-img2img" to "Enhance",
-        "Remove-img2img" to "Remove Background",
-        "Sketch Img2Img" to "ControlNet",
+       // "Remove-img2img" to "Remove Background",
+        "Sketch Img2Img" to "ControlNet/Sketch",
 //        "anime-style" to "Anime Style Transfer",
 //        "oil-painting" to "Oil Painting Style",
 //        "watercolor" to "Watercolor Style",
