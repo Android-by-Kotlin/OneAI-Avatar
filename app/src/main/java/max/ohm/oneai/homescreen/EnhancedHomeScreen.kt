@@ -92,7 +92,17 @@ data class BannerItem(
     val icon: ImageVector,
     val imageUrl: String,
     val gradientColors: List<Color>,
-    val route: String
+    val route: String,
+    val hasDropdown: Boolean = false,
+    val dropdownOptions: List<DropdownOption> = emptyList()
+)
+
+// Dropdown option data class
+data class DropdownOption(
+    val title: String,
+    val subtitle: String,
+    val route: String,
+    val modelType: String? = null
 )
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -114,7 +124,7 @@ fun EnhancedHomeScreen(
         }
     }
     
-    // Banner items
+    // Banner items with dropdown functionality
     val bannerItems = remember {
 listOf(
             BannerItem(
@@ -127,11 +137,38 @@ listOf(
             ),
             BannerItem(
                 title = "Image Generation",
-                subtitle = "Transform ideas into beautiful artwork",
+                subtitle = "Choose from multiple AI models",
                 icon = Icons.Outlined.Image,
                 imageUrl = "https://cdn.pixabay.com/photo/2017/11/07/20/43/christmas-tree-2928142_1280.jpg",
                 gradientColors = listOf(Color(0xFF4FACFE), Color(0xFF00F2FE)),
-                route = "enhancedImageGenerator"
+                route = "enhancedImageGenerator",
+                hasDropdown = true,
+                dropdownOptions = listOf(
+                    DropdownOption(
+                        title = "FLUX Kontext Max",
+                        subtitle = "Maximum quality & performance",
+                        route = "enhancedImageGenerator",
+                        modelType = "provider-2/FLUX.1-kontext-max"
+                    ),
+                    DropdownOption(
+                        title = "FLUX Kontext Pro",
+                        subtitle = "Professional grade quality",
+                        route = "enhancedImageGenerator",
+                        modelType = "provider-1/FLUX.1-kontext-pro"
+                    ),
+                    DropdownOption(
+                        title = "DALL-E 3",
+                        subtitle = "OpenAI's creative model",
+                        route = "enhancedImageGenerator",
+                        modelType = "provider-3/dall-e-3"
+                    ),
+                    DropdownOption(
+                        title = "Flux Ultra Pro",
+                        subtitle = "Ultra high definition",
+                        route = "enhancedImageGenerator",
+                        modelType = "provider-3/FLUX.1.1-pro-ultra"
+                    )
+                )
             ),
             BannerItem(
                 title = "Image to Image",
@@ -140,6 +177,41 @@ listOf(
                 imageUrl = "https://cdn.pixabay.com/photo/2022/08/27/00/11/plant-7413415_1280.png",
                 gradientColors = listOf(Color(0xFFFA709A), Color(0xFFFEE140)),
                 route = "imageToImage"
+            ),
+            BannerItem(
+                title = "Video Generation",
+                subtitle = "Create stunning videos from text",
+                icon = Icons.Outlined.VideoLibrary,
+                imageUrl = "https://cdn.pixabay.com/photo/2019/04/24/21/55/cinema-4153289_1280.jpg",
+                gradientColors = listOf(Color(0xFFF093FB), Color(0xFFF5576C)),
+                route = "videoGeneration",
+                hasDropdown = true,
+                dropdownOptions = listOf(
+                    DropdownOption(
+                        title = "Runway Gen-3 Alpha",
+                        subtitle = "High quality video generation",
+                        route = "videoGeneration",
+                        modelType = "runway-gen3"
+                    ),
+                    DropdownOption(
+                        title = "Stable Video Diffusion",
+                        subtitle = "Stable and consistent videos",
+                        route = "videoGeneration",
+                        modelType = "stable-video"
+                    ),
+                    DropdownOption(
+                        title = "Pika Labs",
+                        subtitle = "Creative video synthesis",
+                        route = "videoGeneration",
+                        modelType = "pika-labs"
+                    ),
+                    DropdownOption(
+                        title = "LumaLabs Dream Machine",
+                        subtitle = "Advanced video AI",
+                        route = "videoGeneration",
+                        modelType = "lumalabs-dream"
+                    )
+                )
             ),
             // BannerItem(
             //     title = "Video Generation (Coming Soon)",
@@ -341,7 +413,14 @@ listOf(
                 ) { page ->
                     BannerCard(
                         item = bannerItems[page],
-                        onClick = { navController.navigate(bannerItems[page].route) }
+                        onMainClick = { navController.navigate(bannerItems[page].route) },
+                        onDropdownClick = { option ->
+                            if (option.modelType != null) {
+                                navController.navigate("${option.route}?modelType=${option.modelType}")
+                            } else {
+                                navController.navigate(option.route)
+                            }
+                        }
                     )
                 }
                 
@@ -503,13 +582,21 @@ listOf(
 @Composable
 private fun BannerCard(
     item: BannerItem,
-    onClick: () -> Unit
+    onMainClick: () -> Unit,
+    onDropdownClick: (DropdownOption) -> Unit = {}
 ) {
+    var showDropdown by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable { onClick() },
+            .clickable { 
+                if (item.hasDropdown && item.dropdownOptions.isNotEmpty()) {
+                    showDropdown = true
+                } else {
+                    onMainClick()
+                }
+            },
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -595,6 +682,225 @@ private fun BannerCard(
                         tint = Color.White,
                         modifier = Modifier.size(48.dp)
                     )
+                    
+                    // Dropdown indicator
+                    if (item.hasDropdown) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Dropdown",
+                            tint = Color.White,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.BottomEnd)
+                                .background(
+                                    Color.Black.copy(alpha = 0.7f),
+                                    CircleShape
+                                )
+                                .padding(2.dp)
+                        )
+                    }
+                }
+                
+            }
+            
+            // Dropdown menu overlay
+            if (showDropdown && item.hasDropdown) {
+                DropdownOptionsOverlay(
+                    options = item.dropdownOptions,
+                    onDismiss = { showDropdown = false },
+                    onOptionClick = { option ->
+                        showDropdown = false
+                        onDropdownClick(option)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DropdownOptionsOverlay(
+    options: List<DropdownOption>,
+    onDismiss: () -> Unit,
+    onOptionClick: (DropdownOption) -> Unit
+) {
+    // Full screen dialog for dropdown
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { onDismiss() }
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .pointerInput(Unit) {
+                        // Prevent clicks from propagating to the background
+                        detectTapGestures {}
+                    },
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = CardBackground
+                ),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 12.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Choose Model",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    
+                    Text(
+                        text = "Select the AI model you want to use",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(bottom = 20.dp)
+                    )
+                    
+                    // Options list
+                    options.forEach { option ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                                .clickable { onOptionClick(option) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = DarkSecondary.copy(alpha = 0.8f)
+                            ),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        AccentPurple.copy(alpha = 0.3f),
+                                        AccentCyan.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Model icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                            Brush.linearGradient(
+                                                colors = when {
+                                                    option.title.contains("FLUX") -> listOf(
+                                                        AccentPurple.copy(alpha = 0.2f),
+                                                        AccentCyan.copy(alpha = 0.2f)
+                                                    )
+                                                    option.title.contains("DALL") -> listOf(
+                                                        AccentCyan.copy(alpha = 0.2f),
+                                                        Color(0xFF06B6D4).copy(alpha = 0.2f)
+                                                    )
+                                                    option.title.contains("Runway") -> listOf(
+                                                        AccentPink.copy(alpha = 0.2f),
+                                                        Color(0xFFEC4899).copy(alpha = 0.2f)
+                                                    )
+                                                    else -> listOf(
+                                                        AccentPurple.copy(alpha = 0.2f),
+                                                        AccentPink.copy(alpha = 0.2f)
+                                                    )
+                                                }
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = when {
+                                            option.title.contains("Ultra") -> Icons.Outlined.Stars
+                                            option.title.contains("Pro") || option.title.contains("Max") -> Icons.Outlined.WorkspacePremium
+                                            option.title.contains("DALL") -> Icons.Outlined.Palette
+                                            option.title.contains("Runway") || option.title.contains("Video") -> Icons.Outlined.VideoLibrary
+                                            option.title.contains("Stable") -> Icons.Outlined.Landscape
+                                            else -> Icons.Outlined.AutoAwesome
+                                        },
+                                        contentDescription = null,
+                                        tint = when {
+                                            option.title.contains("FLUX") -> AccentPurple
+                                            option.title.contains("DALL") -> AccentCyan
+                                            option.title.contains("Runway") -> AccentPink
+                                            else -> AccentPurple
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                
+                                // Model details
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = option.title,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = TextPrimary
+                                    )
+                                    
+                                    Text(
+                                        text = option.subtitle,
+                                        fontSize = 12.sp,
+                                        color = TextSecondary,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
+                                
+                                // Arrow icon
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = null,
+                                    tint = TextSecondary.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -48,6 +48,15 @@ import max.ohm.oneai.components.EmotionIntelligentTextField
 import max.ohm.oneai.components.EmotionState
 import max.ohm.oneai.components.EmotionStatusIndicator
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 
 // Data class for model choices
 data class ModelChoice(
@@ -487,6 +496,16 @@ private fun ModelSelectionGlassCard(
     onExpandedChange: (Boolean) -> Unit,
     onModelSelected: (ModelChoice) -> Unit
 ) {
+    // Animation for arrow rotation
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "arrow_rotation"
+    )
+    
     // Transparent container - no outer box
     Box(
         modifier = Modifier
@@ -506,12 +525,26 @@ private fun ModelSelectionGlassCard(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Box {
+            Column {
+                // Enhanced Trigger with Premium Styling
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onExpandedChange(!expanded) },
                     shape = RoundedCornerShape(12.dp),
-                    color = DarkBackground.copy(alpha = 0.8f),
-                    onClick = { onExpandedChange(!expanded) }
+                    color = if (expanded) {
+                        Color(0xFF1A1F3A).copy(alpha = 0.6f)
+                    } else {
+                        DarkBackground.copy(alpha = 0.8f)
+                    },
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = if (expanded) {
+                            GradientCyan.copy(alpha = 0.5f)
+                        } else {
+                            Color.White.copy(alpha = 0.2f)
+                        }
+                    )
                 ) {
                     Row(
                         modifier = Modifier
@@ -520,52 +553,286 @@ private fun ModelSelectionGlassCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = currentModel.displayName,
-                            color = TextPrimary,
-                            fontSize = 16.sp
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Dynamic Icon based on selected model
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        Brush.linearGradient(
+                                            colors = when {
+                                                currentModel.displayName.contains("Seedance") -> listOf(
+                                                    GradientPurple.copy(alpha = 0.2f),
+                                                    GradientCyan.copy(alpha = 0.2f)
+                                                )
+                                                currentModel.displayName.contains("MiniMax") -> listOf(
+                                                    GradientPink.copy(alpha = 0.2f),
+                                                    AccentPink.copy(alpha = 0.2f)
+                                                )
+                                                else -> listOf(
+                                                    GradientCyan.copy(alpha = 0.2f),
+                                                    AccentPurple.copy(alpha = 0.2f)
+                                                )
+                                            }
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when {
+                                        currentModel.displayName.contains("Seedance") -> Icons.Outlined.VideoLibrary
+                                        currentModel.displayName.contains("MiniMax") -> Icons.Outlined.MovieFilter
+                                        else -> Icons.Outlined.VideoSettings
+                                    },
+                                    contentDescription = null,
+                                    tint = when {
+                                        currentModel.displayName.contains("Seedance") -> GradientPurple
+                                        currentModel.displayName.contains("MiniMax") -> GradientPink
+                                        else -> GradientCyan
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = currentModel.displayName,
+                                    color = TextPrimary,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                
+                                // Model Type Badge
+                                Text(
+                                    text = when {
+                                        currentModel.displayName.contains("Seedance") -> "Advanced • High Quality"
+                                        currentModel.displayName.contains("MiniMax") -> "Professional • Director Mode"
+                                        currentModel.displayName.contains("CogVideo") -> "Cognitive • AI Enhanced"
+                                        else -> "Standard • Video Generation"
+                                    },
+                                    color = when {
+                                        currentModel.displayName.contains("Seedance") -> GradientPurple.copy(alpha = 0.9f)
+                                        else -> TextSecondary.copy(alpha = 0.7f)
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Normal
+                                )
+                            }
+                        }
+                        
+                        // Animated Arrow Icon
                         Icon(
-                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            imageVector = Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = TextSecondary
+                            tint = GradientCyan,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer {
+                                    rotationZ = rotationAngle
+                                }
                         )
                     }
                 }
                 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { onExpandedChange(false) },
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    DarkBackground.copy(alpha = 0.95f),
-                                    DarkBackground
-                                )
-                            )
+                // Enhanced Dropdown Menu
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessLow
                         )
+                    ) + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
                 ) {
-                    modelChoices.forEach { model ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = model.displayName,
-                                    color = TextPrimary
-                                )
-                            },
-                            onClick = { onModelSelected(model) },
-                            leadingIcon = {
-                                RadioButton(
-                                    selected = model == currentModel,
-                                    onClick = null,
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = AccentPurple
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF1A1F3A).copy(alpha = 0.95f),
+                                        Color(0xFF0F172A).copy(alpha = 0.98f)
                                     )
                                 )
+                            )
+                            .border(
+                                width = 1.dp,
+                                brush = Brush.linearGradient(
+                                    colors = listOf(
+                                        GradientCyan.copy(alpha = 0.3f),
+                                        GradientPurple.copy(alpha = 0.2f)
+                                    )
+                                ),
+                                shape = RoundedCornerShape(16.dp)
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        modelChoices.forEachIndexed { index, model ->
+                            val isSelected = model == currentModel
+                            
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = 8.dp,
+                                        vertical = if (index == 0) 8.dp else 2.dp
+                                    )
+                                    .animateContentSize(),
+                                color = if (isSelected) {
+                                    GradientPurple.copy(alpha = 0.1f)
+                                } else {
+                                    Color.Transparent
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                onClick = {
+                                    onModelSelected(model)
+                                    onExpandedChange(false)
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    // Selection Indicator with Animation
+                                    Box(
+                                        modifier = Modifier.size(20.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isSelected) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = GradientPurple,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .border(
+                                                        width = 2.dp,
+                                                        color = TextSecondary.copy(alpha = 0.3f),
+                                                        shape = CircleShape
+                                                    )
+                                            )
+                                        }
+                                    }
+                                    
+                                    // Model Icon
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(
+                                                if (isSelected) {
+                                                    Brush.linearGradient(
+                                                        colors = listOf(
+                                                            GradientPurple.copy(alpha = 0.2f),
+                                                            GradientCyan.copy(alpha = 0.2f)
+                                                        )
+                                                    )
+                                                } else {
+                                                    Brush.linearGradient(
+                                                        colors = listOf(
+                                                            Color.White.copy(alpha = 0.05f),
+                                                            Color.White.copy(alpha = 0.02f)
+                                                        )
+                                                    )
+                                                }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = when {
+                                                model.displayName.contains("Seedance") -> Icons.Outlined.VideoLibrary
+                                                model.displayName.contains("MiniMax") -> Icons.Outlined.MovieFilter
+                                                model.displayName.contains("CogVideo") -> Icons.Outlined.SmartDisplay
+                                                model.displayName.contains("I2V") -> Icons.Outlined.Transform
+                                                else -> Icons.Outlined.VideoSettings
+                                            },
+                                            contentDescription = null,
+                                            tint = if (isSelected) {
+                                                GradientPurple
+                                            } else {
+                                                TextSecondary.copy(alpha = 0.7f)
+                                            },
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    
+                                    // Model Details
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = model.displayName,
+                                            color = if (isSelected) TextPrimary else TextPrimary.copy(alpha = 0.9f),
+                                            fontSize = 14.sp,
+                                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                        
+                                        // Add special badges or descriptions
+                                        Text(
+                                            text = when {
+                                                model.displayName.contains("Seedance") -> "High-quality video synthesis"
+                                                model.displayName.contains("MiniMax") -> "Director-grade cinematics"
+                                                model.displayName.contains("CogVideo") -> "Cognitive video AI"
+                                                model.displayName.contains("I2V") -> "Image to video transformation"
+                                                model.displayName.contains("WAN") -> "Advanced neural synthesis"
+                                                else -> "Standard video generation"
+                                            },
+                                            fontSize = 10.sp,
+                                            color = TextSecondary.copy(alpha = 0.6f)
+                                        )
+                                        
+                                        // Premium badge for certain models
+                                        if (model.displayName.contains("MiniMax") || model.displayName.contains("Director")) {
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = AccentPink.copy(alpha = 0.15f),
+                                                border = BorderStroke(
+                                                    width = 0.5.dp,
+                                                    color = AccentPink.copy(alpha = 0.3f)
+                                                )
+                                            ) {
+                                                Text(
+                                                    "PREMIUM",
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = AccentPink
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        )
+                            
+                            if (index < modelChoices.size - 1) {
+                                Divider(
+                                    color = Color.White.copy(alpha = 0.1f),
+                                    thickness = 0.5.dp,
+                                    modifier = Modifier.padding(horizontal = 12.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }

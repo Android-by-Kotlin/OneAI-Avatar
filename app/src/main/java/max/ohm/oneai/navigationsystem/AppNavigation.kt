@@ -193,7 +193,7 @@ fun AppNavigation() {
                     }
                 }
             }
-            EnhancedVideoGenerationScreen(navController = navController)
+            VideoGenerationScreen()
         }
         composable("aiTalk") { // Add AI Talk destination
             // Check if user is logged in

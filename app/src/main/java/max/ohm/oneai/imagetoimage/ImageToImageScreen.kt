@@ -27,6 +27,15 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.material3.*
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.ButtonDefaults
@@ -591,19 +600,36 @@ Column(
                     // Regular image to image inputs
                    // RegularImageToImageInputs(viewModel)
                     
-                    // Model Selection Dropdown
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        GlassSurface(
+                    // Enhanced Model Selection Dropdown with Animation
+                    val rotationAngle by animateFloatAsState(
+                        targetValue = if (expanded) 180f else 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "arrow_rotation"
+                    )
+                    
+                    Column {
+                        // Enhanced Trigger with Premium Styling
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(),
+                                .clickable { expanded = !expanded },
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.White.copy(alpha = 0.05f),
-                            borderColor = if (expanded) Color(0xFF6366F1).copy(alpha = 0.5f) else GlassMorphism.GlassBorderSubtle
+                            color = if (expanded) {
+                                Color(0xFF1A1F3A).copy(alpha = 0.6f)
+                            } else {
+                                Color.White.copy(alpha = 0.05f)
+                            },
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = if (expanded) {
+                                    Color(0xFF6366F1).copy(alpha = 0.5f)
+                                } else {
+                                    Color.White.copy(alpha = 0.2f)
+                                }
+                            )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -613,118 +639,322 @@ Column(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
                                 ) {
-                                    Icon(
-                                        Icons.Outlined.ModelTraining,
-                                        contentDescription = null,
-                                        tint = Color(0xFF6366F1),
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    // Dynamic Icon based on selected model
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(
+                                                Brush.linearGradient(
+                                                    colors = when {
+                                                        viewModel.selectedModel.contains("flux") -> listOf(
+                                                            Color(0xFF6366F1).copy(alpha = 0.2f),
+                                                            Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                                        )
+                                                        viewModel.selectedModel.contains("fashion") -> listOf(
+                                                            Color(0xFFEC4899).copy(alpha = 0.2f),
+                                                            Color(0xFF10B981).copy(alpha = 0.2f)
+                                                        )
+                                                        else -> listOf(
+                                                            Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                                                            Color(0xFF06B6D4).copy(alpha = 0.2f)
+                                                        )
+                                                    }
+                                                )
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = when {
+                                                viewModel.selectedModel.contains("flux") -> Icons.Outlined.AutoAwesome
+                                                viewModel.selectedModel.contains("fashion") -> Icons.Outlined.Checkroom
+                                                viewModel.selectedModel.contains("face") -> Icons.Outlined.Face
+                                                viewModel.selectedModel.contains("upscale") -> Icons.Outlined.ZoomIn
+                                                else -> Icons.Outlined.ModelTraining
+                                            },
+                                            contentDescription = null,
+                                            tint = when {
+                                                viewModel.selectedModel.contains("flux") -> Color(0xFF6366F1)
+                                                viewModel.selectedModel.contains("fashion") -> Color(0xFFEC4899)
+                                                else -> Color(0xFF8B5CF6)
+                                            },
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    
                                     Spacer(modifier = Modifier.width(12.dp))
                                     
-                                    val selectedModelName = viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Select Model"
-                                    
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Column(
+                                        modifier = Modifier.weight(1f)
                                     ) {
+                                        val selectedModelName = viewModel.availableModels.find { it.first == viewModel.selectedModel }?.second ?: "Select Model"
+                                        
                                         Text(
                                             text = selectedModelName,
                                             color = Color.White,
-                                            fontSize = 14.sp
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.SemiBold
                                         )
                                         
-                                        // Add tags/icons directly next to text without extra space
-                                        when (viewModel.selectedModel) {
-                                            "flux-kontext-pro-img2img" -> {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                GlassSurface(
-                                                    shape = RoundedCornerShape(4.dp),
-                                                    color = Color(0xFFDC2626).copy(alpha = 0.15f),
-                                                    borderColor = Color(0xFFDC2626).copy(alpha = 0.3f),
-                                                    borderWidth = 0.5.dp
-                                                ) {
-                                                    Text(
-                                                        "Multimodel",
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFFDC2626)
-                                                    )
-                                                }
-                                            }
-                                            "fashion-try-on" -> {
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    "👗",
-                                                    fontSize = 14.sp
-                                                )
-                                            }
-                                        }
+                                        // Model Type Badge
+                                        Text(
+                                            text = when {
+                                                viewModel.selectedModel.contains("flux") -> "Advanced • High Quality"
+                                                viewModel.selectedModel.contains("fashion") -> "Fashion • Try-On"
+                                                viewModel.selectedModel.contains("face") -> "Face • Swap"
+                                                viewModel.selectedModel.contains("upscale") -> "Enhancement • 4x"
+                                                viewModel.selectedModel.contains("remove") -> "Background • Removal"
+                                                else -> "Standard • Transform"
+                                            },
+                                            color = when {
+                                                viewModel.selectedModel.contains("flux") -> Color(0xFF8B5CF6).copy(alpha = 0.9f)
+                                                else -> Color.White.copy(alpha = 0.7f)
+                                            },
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Normal
+                                        )
                                     }
                                 }
                                 
+                                // Animated Arrow Icon
                                 Icon(
-                                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    imageVector = Icons.Default.KeyboardArrowDown,
                                     contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(24.dp)
+                                    tint = Color(0xFF06B6D4),
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .graphicsLayer {
+                                            rotationZ = rotationAngle
+                                        }
                                 )
                             }
                         }
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.background(Color(0xFF1A1F3A))
+                        
+                        // Enhanced Dropdown Menu
+                        AnimatedVisibility(
+                            visible = expanded,
+                            enter = expandVertically(
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioLowBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            ) + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
                         ) {
-                            viewModel.availableModels.forEach { model ->
-                                DropdownMenuItem(
-                                    onClick = {
-                                        viewModel.updateSelectedModel(model.first)
-                                        expanded = false
-                                    },
-                                    text = { 
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = model.second,
-                                                color = Color.White,
-                                                fontSize = 13.sp
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFF1A1F3A).copy(alpha = 0.95f),
+                                                Color(0xFF0F172A).copy(alpha = 0.98f)
                                             )
-                                            
-                                            // Add tags/icons directly next to text
-                                            when (model.first) {
-                                                "flux-kontext-pro-img2img" -> {
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Surface(
-                                                        shape = RoundedCornerShape(4.dp),
-                                                        color = Color(0xFFDC2626).copy(alpha = 0.2f)
-                                                    ) {
-                                                        Text(
-                                                            "Multimodel",
-                                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                            fontSize = 9.sp,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = Color(0xFFDC2626)
-                                                        )
-                                                    }
-                                                }
-                                                "fashion-try-on" -> {
-                                                    Spacer(modifier = Modifier.width(4.dp))
-                                                    Text(
-                                                        "👗",
-                                                        fontSize = 13.sp
+                                        )
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(
+                                                Color(0xFF06B6D4).copy(alpha = 0.3f),
+                                                Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                            )
+                                        ),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                viewModel.availableModels.forEachIndexed { index, model ->
+                                    val isSelected = model.first == viewModel.selectedModel
+                                    
+                                    Surface(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(
+                                                horizontal = 8.dp,
+                                                vertical = if (index == 0) 8.dp else 2.dp
+                                            )
+                                            .animateContentSize(),
+                                        color = if (isSelected) {
+                                            Color(0xFF8B5CF6).copy(alpha = 0.1f)
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        onClick = {
+                                            viewModel.updateSelectedModel(model.first)
+                                            expanded = false
+                                        }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            // Selection Indicator with Animation
+                                            Box(
+                                                modifier = Modifier.size(20.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.CheckCircle,
+                                                        contentDescription = null,
+                                                        tint = Color(0xFF8B5CF6),
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
+                                                } else {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(20.dp)
+                                                            .border(
+                                                                width = 2.dp,
+                                                                color = Color.White.copy(alpha = 0.3f),
+                                                                shape = CircleShape
+                                                            )
                                                     )
                                                 }
                                             }
+                                            
+                                            // Model Icon
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(
+                                                        if (isSelected) {
+                                                            Brush.linearGradient(
+                                                                colors = listOf(
+                                                                    Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                                                                    Color(0xFF06B6D4).copy(alpha = 0.2f)
+                                                                )
+                                                            )
+                                                        } else {
+                                                            Brush.linearGradient(
+                                                                colors = listOf(
+                                                                    Color.White.copy(alpha = 0.05f),
+                                                                    Color.White.copy(alpha = 0.02f)
+                                                                )
+                                                            )
+                                                        }
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = when {
+                                                        model.first.contains("flux") -> Icons.Outlined.AutoAwesome
+                                                        model.first.contains("fashion") -> Icons.Outlined.Checkroom
+                                                        model.first.contains("face") -> Icons.Outlined.Face
+                                                        model.first.contains("upscale") -> Icons.Outlined.ZoomIn
+                                                        model.first.contains("sketch") -> Icons.Outlined.Brush
+                                                        model.first.contains("structure") -> Icons.Outlined.Architecture
+                                                        model.first.contains("search") -> Icons.Outlined.Search
+                                                        model.first.contains("remove") -> Icons.Outlined.RemoveCircleOutline
+                                                        model.first.contains("style") -> Icons.Outlined.Palette
+                                                        else -> Icons.Outlined.ModelTraining
+                                                    },
+                                                    contentDescription = null,
+                                                    tint = if (isSelected) {
+                                                        Color(0xFF8B5CF6)
+                                                    } else {
+                                                        Color.White.copy(alpha = 0.7f)
+                                                    },
+                                                    modifier = Modifier.size(22.dp)
+                                                )
+                                            }
+                                            
+                                            // Model Details
+                                            Column(
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text(
+                                                    text = model.second,
+                                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.9f),
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                                )
+                                                
+                                                // Add special badges or descriptions
+                                                when (model.first) {
+                                                    "flux-kontext-pro-img2img" -> {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                        ) {
+                                                            Surface(
+                                                                shape = RoundedCornerShape(4.dp),
+                                                                color = Color(0xFFDC2626).copy(alpha = 0.15f),
+                                                                border = BorderStroke(
+                                                                    width = 0.5.dp,
+                                                                    color = Color(0xFFDC2626).copy(alpha = 0.3f)
+                                                                )
+                                                            ) {
+                                                                Text(
+                                                                    "PREMIUM",
+                                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                                    fontSize = 9.sp,
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    color = Color(0xFFDC2626)
+                                                                )
+                                                            }
+                                                            Text(
+                                                                "• High Quality",
+                                                                fontSize = 10.sp,
+                                                                color = Color.White.copy(alpha = 0.6f)
+                                                            )
+                                                        }
+                                                    }
+                                                    "fashion-try-on" -> {
+                                                        Text(
+                                                            "👗 Virtual clothing try-on",
+                                                            fontSize = 10.sp,
+                                                            color = Color.White.copy(alpha = 0.6f)
+                                                        )
+                                                    }
+                                                    "stability-ai-upscale" -> {
+                                                        Text(
+                                                            "4x resolution enhancement",
+                                                            fontSize = 10.sp,
+                                                            color = Color.White.copy(alpha = 0.6f)
+                                                        )
+                                                    }
+                                                    else -> {
+                                                        Text(
+                                                            when {
+                                                                model.first.contains("face") -> "Face swapping technology"
+                                                                model.first.contains("sketch") -> "Transform sketches to images"
+                                                                model.first.contains("structure") -> "Preserve structural elements"
+                                                                model.first.contains("search") -> "Smart object replacement"
+                                                                model.first.contains("remove") -> "Clean background removal"
+                                                                model.first.contains("style") -> "Artistic style transfer"
+                                                                else -> "Image transformation"
+                                                            },
+                                                            fontSize = 10.sp,
+                                                            color = Color.White.copy(alpha = 0.6f)
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
-                                    },
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = Color.White
-                                    )
-                                )
+                                    }
+                                    
+                                    if (index < viewModel.availableModels.size - 1) {
+                                        Divider(
+                                            color = Color.White.copy(alpha = 0.1f),
+                                            thickness = 0.5.dp,
+                                            modifier = Modifier.padding(horizontal = 12.dp)
+                                        )
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
