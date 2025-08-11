@@ -6,12 +6,14 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +45,18 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material.icons.outlined.Stars
+import androidx.compose.material.icons.outlined.TipsAndUpdates
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RocketLaunch
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material3.Surface
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -285,54 +298,17 @@ fun ChatBotScreen(
                         // Title display removed from top bar - titles only show in sidebar
                     }
                     
-                    // Model selector
-                    Box {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.Transparent)
-                                .border(
-                                    width = 2.dp,
-                                    color = Color(0xFF00C853), // Bright green
-                                    shape = RoundedCornerShape(16.dp)
-                                )
-                                .clickable { showModelSelector = true }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = modelOptions.find { it.first == selectedModel }?.second ?: "Select Model",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                modifier = Modifier.padding(end = 4.dp)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Select Model",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
+                    // Enhanced Model Selector
+                    EnhancedChatModelSelector(
+                        selectedModel = selectedModel,
+                        modelOptions = modelOptions,
+                        expanded = showModelSelector,
+                        onExpandedChange = { showModelSelector = it },
+                        onModelSelected = { modelId ->
+                            unifiedChatBotViewModel.updateSelectedModel(modelId)
+                            showModelSelector = false
                         }
-
-                        DropdownMenu(
-                            expanded = showModelSelector,
-                            onDismissRequest = { showModelSelector = false },
-                            modifier = Modifier.background(DarkGreen)
-                        ) {
-                            modelOptions.forEach { (modelId, modelName) ->
-                                DropdownMenuItem(
-                                    text = { Text(modelName, color = Color.White) },
-                                    onClick = {
-                                        unifiedChatBotViewModel.updateSelectedModel(modelId)
-                                        showModelSelector = false
-                                    },
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = Color.White
-                                    )
-                                )
-                            }
-                        }
-                    }
+                    )
                 }
                 
                 // Chat messages
@@ -796,6 +772,367 @@ fun ConversationsDrawer(
                                 modifier = Modifier.size(14.dp)
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EnhancedChatModelSelector(
+    selectedModel: String,
+    modelOptions: List<Pair<String, String>>,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onModelSelected: (String) -> Unit
+) {
+    // Animation for arrow rotation
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "arrow_rotation"
+    )
+    
+    val currentModelName = modelOptions.find { it.first == selectedModel }?.second ?: "Select Model"
+    
+    Box {
+        // Enhanced Trigger with Matrix/Hacker Styling
+        Surface(
+            modifier = Modifier
+                .clickable { onExpandedChange(!expanded) }
+                .width(180.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = if (expanded) {
+                Color(0xFF0A0E27).copy(alpha = 0.9f)
+            } else {
+                Color.Black.copy(alpha = 0.8f)
+            },
+            border = BorderStroke(
+                width = 1.5.dp,
+                color = if (expanded) {
+                    Color(0xFF00FF88).copy(alpha = 0.8f) // Bright green when expanded
+                } else {
+                    Color(0xFF00C853).copy(alpha = 0.6f) // Chatbot green
+                }
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // AI Brain Icon
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    colors = when {
+                                        currentModelName.contains("GPT") -> listOf(
+                                            Color(0xFF00FF88).copy(alpha = 0.2f),
+                                            Color(0xFF00C853).copy(alpha = 0.2f)
+                                        )
+                                        currentModelName.contains("Gemini") -> listOf(
+                                            Color(0xFF06B6D4).copy(alpha = 0.2f),
+                                            Color(0xFF0EA5E9).copy(alpha = 0.2f)
+                                        )
+                                        currentModelName.contains("DeepSeek") -> listOf(
+                                            Color(0xFF8B5CF6).copy(alpha = 0.2f),
+                                            Color(0xFFEC4899).copy(alpha = 0.2f)
+                                        )
+                                        else -> listOf(
+                                            Color(0xFF10B981).copy(alpha = 0.2f),
+                                            Color(0xFF06B6D4).copy(alpha = 0.2f)
+                                        )
+                                    }
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                currentModelName.contains("GPT-5") || currentModelName.contains("GPT-4.1") -> Icons.Outlined.Stars
+                                currentModelName.contains("GPT") -> Icons.Outlined.AutoAwesome
+                                currentModelName.contains("Gemini") -> Icons.Outlined.Psychology
+                                currentModelName.contains("DeepSeek") -> Icons.Outlined.TipsAndUpdates
+                                currentModelName.contains("Perplexity") -> Icons.Outlined.RocketLaunch
+                                else -> Icons.Outlined.Psychology
+                            },
+                            contentDescription = null,
+                            tint = when {
+                                currentModelName.contains("GPT") -> Color(0xFF00FF88)
+                                currentModelName.contains("Gemini") -> Color(0xFF06B6D4)
+                                currentModelName.contains("DeepSeek") -> Color(0xFF8B5CF6)
+                                else -> Color(0xFF10B981)
+                            },
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Column {
+                        Text(
+                            text = currentModelName,
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        // Model Type Badge
+                        Text(
+                            text = when {
+                                currentModelName.contains("GPT-5") -> "Next-Gen • Ultra"
+                                currentModelName.contains("GPT-4.1") -> "Advanced • Nano"
+                                currentModelName.contains("GPT-4o") -> "Optimized • Fast"
+                                currentModelName.contains("Gemini 2.5") -> "Latest • Enhanced"
+                                currentModelName.contains("Gemini") -> "Multimodal • Smart"
+                                currentModelName.contains("DeepSeek") -> "Reasoning • Deep"
+                                currentModelName.contains("Perplexity") -> "Research • R1"
+                                currentModelName.contains("Qwen") -> "Multilingual • 3B"
+                                else -> "Conversational • AI"
+                            },
+                            color = when {
+                                currentModelName.contains("GPT-5") || currentModelName.contains("GPT-4.1") -> 
+                                    Color(0xFF00FF88).copy(alpha = 0.9f)
+                                else -> Color.White.copy(alpha = 0.6f)
+                            },
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+                
+                // Animated Arrow Icon
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Color(0xFF00C853),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .graphicsLayer {
+                            rotationZ = rotationAngle
+                        }
+                )
+            }
+        }
+        
+        // Enhanced Dropdown Menu
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ) + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Surface(
+                modifier = Modifier
+                    .width(280.dp) // Adjusted width to fit better
+                    .padding(top = 4.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                color = Color(0xFF0A0E27).copy(alpha = 0.95f),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = Color(0xFF00C853).copy(alpha = 0.3f)
+                ),
+                shadowElevation = 12.dp
+            ) {
+                LazyColumn(
+                    modifier = Modifier.padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    items(modelOptions.size) { index ->
+                        val (modelId, modelName) = modelOptions[index]
+                        val isSelected = modelId == selectedModel
+                        
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(),
+                            color = if (isSelected) {
+                                Color(0xFF00C853).copy(alpha = 0.15f)
+                            } else {
+                                Color.Transparent
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            onClick = {
+                                onModelSelected(modelId)
+                                onExpandedChange(false)
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Selection Indicator
+                                Box(
+                                    modifier = Modifier.size(18.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Color(0xFF00FF88),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(18.dp)
+                                                .border(
+                                                    width = 1.5.dp,
+                                                    color = Color.White.copy(alpha = 0.3f),
+                                                    shape = CircleShape
+                                                )
+                                        )
+                                    }
+                                }
+                                
+                                // Model Icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (isSelected) {
+                                                Brush.linearGradient(
+                                                    colors = listOf(
+                                                        Color(0xFF00FF88).copy(alpha = 0.2f),
+                                                        Color(0xFF00C853).copy(alpha = 0.2f)
+                                                    )
+                                                )
+                                            } else {
+                                                Brush.linearGradient(
+                                                    colors = listOf(
+                                                        Color.White.copy(alpha = 0.05f),
+                                                        Color.White.copy(alpha = 0.02f)
+                                                    )
+                                                )
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = when {
+                                            modelName.contains("GPT-5") || modelName.contains("GPT-4.1") -> Icons.Outlined.Stars
+                                            modelName.contains("GPT-4o") -> Icons.Outlined.WorkspacePremium
+                                            modelName.contains("GPT") -> Icons.Outlined.AutoAwesome
+                                            modelName.contains("Gemini 2.5") -> Icons.Outlined.Stars
+                                            modelName.contains("Gemini") -> Icons.Outlined.Psychology
+                                            modelName.contains("DeepSeek") -> Icons.Outlined.TipsAndUpdates
+                                            modelName.contains("Perplexity") -> Icons.Outlined.RocketLaunch
+                                            modelName.contains("Kimi") -> Icons.Outlined.Palette
+                                            modelName.contains("Qwen") -> Icons.Outlined.Bolt
+                                            else -> Icons.Outlined.Psychology
+                                        },
+                                        contentDescription = null,
+                                        tint = if (isSelected) {
+                                            Color(0xFF00FF88)
+                                        } else {
+                                            Color.White.copy(alpha = 0.7f)
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                // Model Details
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = modelName,
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.9f),
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                    )
+                                    
+                                    // Model Features/Tags
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Quality Badge
+                                        val (badgeText, badgeColor) = when {
+                                            modelName.contains("GPT-5") -> "Next-Gen" to Color(0xFF00FF88)
+                                            modelName.contains("GPT-4.1") -> "Advanced" to Color(0xFF00FF88)
+                                            modelName.contains("GPT-4o") -> "Optimized" to Color(0xFF10B981)
+                                            modelName.contains("Gemini 2.5") -> "Latest" to Color(0xFF06B6D4)
+                                            modelName.contains("Gemini") -> "Smart" to Color(0xFF06B6D4)
+                                            modelName.contains("DeepSeek") -> "Reasoning" to Color(0xFF8B5CF6)
+                                            modelName.contains("Perplexity") -> "Research" to Color(0xFFEC4899)
+                                            modelName.contains("Horizon") -> "Beta" to Color(0xFFF59E0B)
+                                            else -> "Standard" to Color.White.copy(alpha = 0.6f)
+                                        }
+                                        
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = badgeColor.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = badgeText,
+                                                color = badgeColor,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        
+                                        // Premium indicator for advanced models
+                                        if (modelName.contains("GPT-5") || modelName.contains("GPT-4.1") || modelName.contains("Gemini 2.5")) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Bolt,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF00FF88),
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Text(
+                                                    text = "Premium",
+                                                    color = Color(0xFF00FF88),
+                                                    fontSize = 10.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (index < modelOptions.size - 1) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(0.5.dp)
+                                    .background(Color.White.copy(alpha = 0.1f))
+                            )
+                        }
+                    }
+                    
+                    item {
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
             }
