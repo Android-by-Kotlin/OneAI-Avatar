@@ -77,6 +77,8 @@ import max.ohm.oneai.ui.theme.PremiumGlassCard
 import max.ohm.oneai.ui.theme.GlassAccentType
 import max.ohm.oneai.imagegeneration.formatSecondsToMMSS
 import max.ohm.oneai.imagegeneration.rememberStoragePermissionState
+import max.ohm.oneai.audio.BackgroundMusicManager
+import androidx.compose.runtime.DisposableEffect
 
 // Data class for generated images history
 data class GeneratedImage(
@@ -155,9 +157,10 @@ fun EnhancedImageGeneratorScreen(
         label = "gradient_rotation"
     )
     
-    // Initialize model
+    // Initialize model and music manager
     LaunchedEffect(Unit) {
         unifiedImageViewModel.updateSelectedModel("provider-2/FLUX.1-kontext-max")
+        BackgroundMusicManager.initialize(context)
     }
     
     LaunchedEffect(initialModelType) {
@@ -212,6 +215,24 @@ fun EnhancedImageGeneratorScreen(
             // Don't clear the error message immediately, let it be displayed in the UI
             // Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             // unifiedImageViewModel.clearErrorMessage()
+        }
+    }
+    
+    // Handle music playback based on loading state
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            // Start playing music when generation starts
+            BackgroundMusicManager.startRandomMusic(context)
+        } else {
+            // Fade out and stop music when generation completes
+            BackgroundMusicManager.fadeOut(duration = 2000L)
+        }
+    }
+    
+    // Clean up music when screen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            BackgroundMusicManager.stopMusic()
         }
     }
     

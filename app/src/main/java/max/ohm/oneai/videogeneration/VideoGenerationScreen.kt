@@ -60,6 +60,7 @@ import max.ohm.oneai.ui.theme.*
 import max.ohm.oneai.components.*
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
+import max.ohm.oneai.audio.BackgroundMusicManager
 
 // Helper function to find an Activity from a Context
 fun Context.findActivity(): Activity? {
@@ -100,6 +101,29 @@ fun VideoGenerationScreen(
     val error by viewModel.error.collectAsState()
     val isUsingA4F by viewModel.isUsingA4F.collectAsState()
     val isUsingModelsLab by viewModel.isUsingModelsLab.collectAsState()
+    
+    // Initialize BackgroundMusicManager
+    LaunchedEffect(Unit) {
+        BackgroundMusicManager.initialize(context)
+    }
+    
+    // Handle music playback based on loading state
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            // Start playing music when generation starts
+            BackgroundMusicManager.startRandomMusic(context)
+        } else {
+            // Fade out and stop music when generation completes
+            BackgroundMusicManager.fadeOut(duration = 2000L)
+        }
+    }
+    
+    // Clean up music when screen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            BackgroundMusicManager.stopMusic()
+        }
+    }
     
     val elapsedTimeInSeconds by viewModel.elapsedTimeInSeconds.collectAsState()
     val totalGenerationTimeInSeconds by viewModel.totalGenerationTimeInSeconds.collectAsState()

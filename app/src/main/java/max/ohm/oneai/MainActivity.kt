@@ -24,6 +24,7 @@ import max.ohm.oneai.utils.FirebaseDebugger
 import max.ohm.oneai.utils.FirebaseUtils
 import max.ohm.oneai.utils.GeminiUtils
 import max.ohm.oneai.utils.StatusBarUtils
+import max.ohm.oneai.audio.BackgroundMusicManager
 
 
 class MainActivity : ComponentActivity() {
@@ -40,6 +41,9 @@ class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize BackgroundMusicManager
+        BackgroundMusicManager.initialize(this)
         
         // Force hide any title or action bar
         window.requestFeature(android.view.Window.FEATURE_NO_TITLE)
@@ -194,8 +198,33 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(permissionsToRequest)
         }
     }
+    
+    override fun onPause() {
+        super.onPause()
+        // Pause music when app goes to background
+        BackgroundMusicManager.pauseMusic()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Resume music if it was playing before
+        if (BackgroundMusicManager.isPlaying.value) {
+            BackgroundMusicManager.resumeMusic()
+        }
+    }
+    
+    override fun onStop() {
+        super.onStop()
+        // Stop music completely when app is stopped
+        BackgroundMusicManager.stopMusic()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Ensure music is stopped when app is destroyed
+        BackgroundMusicManager.stopMusic()
+    }
 }
-
 
 
 
