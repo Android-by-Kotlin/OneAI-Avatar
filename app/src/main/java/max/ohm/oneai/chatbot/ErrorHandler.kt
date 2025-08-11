@@ -56,7 +56,7 @@ class ChatBotErrorHandler {
             apiKey = GEMINI_API_KEY
         ),
         ModelConfig(
-            modelId = "a4f-gpt-4.1-nano",
+            modelId = "provider-3/gpt-4.1-nano",
             displayName = "GPT-4.1-Nano",
             provider = "a4f",
             priority = 2,

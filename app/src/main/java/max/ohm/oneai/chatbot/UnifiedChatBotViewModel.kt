@@ -536,7 +536,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                         )
                     }
                 }
-                "a4f-gpt-4.1-nano",
+                "provider-3/gpt-4.1-nano",
                 "provider-3/kimi-k2",
                 "provider-1/deepseek-r1-0528",
                 "provider-6/r1-1776",
@@ -600,7 +600,7 @@ class UnifiedChatBotViewModel : ViewModel() {
                                 messagesArray.put(userMessage)
                                 messagesArray.put(functionResponseMessage)
                                 // Call the model again with the full history (no manual assistant message)
-                                val followupResponse = a4fChatService.getCompletionWithMessages(messagesArray, "provider-3/gpt-4.1-nano")
+                                val followupResponse = a4fChatService.getCompletionWithMessages(messagesArray, selectedModel)
                                 val cleanedFollowupResponse = cleanResponseText(followupResponse)
                                 val botMessage = Message(
                                     text = cleanedFollowupResponse,
