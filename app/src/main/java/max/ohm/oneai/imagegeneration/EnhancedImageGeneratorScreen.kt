@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1072,79 +1073,420 @@ private fun ModelSelectionCard(
     onExpandedChange: (Boolean) -> Unit,
     onModelSelected: (ModelChoice) -> Unit
 ) {
-    // AI Model Card with No Border for Clean Glass Look
-    Box(
+    // Animation states
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "dropdown_rotation"
+    )
+    
+    val borderAlpha by animateFloatAsState(
+        targetValue = if (expanded) 0.8f else 0.3f,
+        animationSpec = tween(300),
+        label = "border_alpha"
+    )
+    
+    // Premium Glass Card for Model Selection
+    PremiumGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.Transparent)
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ),
+        accentType = GlassAccentType.Cyan,
+        cornerRadius = 20.dp,
+        contentPadding = PaddingValues(20.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "AI Model",
-                color = TextSecondary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Box {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = DarkBackground,
-                    onClick = { onExpandedChange(!expanded) }
+            // Header with icon and label
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Animated AI Icon
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    GradientCyan.copy(alpha = 0.2f),
+                                    GradientPurple.copy(alpha = 0.2f)
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = currentModel.displayName,
-                            color = TextPrimary,
-                            fontSize = 16.sp
-                        )
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = TextSecondary
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.Psychology,
+                        contentDescription = null,
+                        tint = GradientCyan,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { onExpandedChange(false) },
+                Column {
+                    Text(
+                        text = "AI Model",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "Select generation engine",
+                        color = TextSecondary.copy(alpha = 0.6f),
+                        fontSize = 10.sp
+                    )
+                }
+            }
+            
+            // Enhanced Dropdown Button
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                GradientCyan.copy(alpha = borderAlpha),
+                                GradientPurple.copy(alpha = borderAlpha),
+                                GradientPink.copy(alpha = borderAlpha * 0.8f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF1A1F3A).copy(alpha = 0.5f),
+                onClick = { onExpandedChange(!expanded) }
+            ) {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .background(CardBackground)
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    modelChoices.forEach { model ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = model.displayName,
-                                    color = TextPrimary
-                                )
-                            },
-                            onClick = { onModelSelected(model) },
-                            leadingIcon = {
-                                RadioButton(
-                                    selected = model == currentModel,
-                                    onClick = null,
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = AccentPurple
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // Model Icon with Gradient Background
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = when {
+                                            currentModel.displayName.contains("FLUX") -> listOf(
+                                                Color(0xFF6366F1).copy(alpha = 0.2f),
+                                                Color(0xFF8B5CF6).copy(alpha = 0.2f)
+                                            )
+                                            currentModel.displayName.contains("DALL") -> listOf(
+                                                Color(0xFF06B6D4).copy(alpha = 0.2f),
+                                                Color(0xFF0EA5E9).copy(alpha = 0.2f)
+                                            )
+                                            currentModel.displayName.contains("Shuttle") -> listOf(
+                                                Color(0xFFEC4899).copy(alpha = 0.2f),
+                                                Color(0xFFF59E0B).copy(alpha = 0.2f)
+                                            )
+                                            else -> listOf(
+                                                GradientPurple.copy(alpha = 0.2f),
+                                                GradientCyan.copy(alpha = 0.2f)
+                                            )
+                                        }
                                     )
-                                )
-                            }
-                        )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = when {
+                                    currentModel.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
+                                    currentModel.displayName.contains("Ultra") -> Icons.Outlined.Stars
+                                    currentModel.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
+                                    else -> Icons.Outlined.AutoAwesome
+                                },
+                                contentDescription = null,
+                                tint = when {
+                                    currentModel.displayName.contains("FLUX") -> Color(0xFF6366F1)
+                                    currentModel.displayName.contains("DALL") -> Color(0xFF06B6D4)
+                                    currentModel.displayName.contains("Shuttle") -> Color(0xFFEC4899)
+                                    else -> GradientPurple
+                                },
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = currentModel.displayName,
+                                color = TextPrimary,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            // Model Type Badge
+                            Text(
+                                text = when {
+                                    currentModel.displayName.contains("Ultra") -> "Premium • Ultra Quality"
+                                    currentModel.displayName.contains("Pro") -> "Professional • High Quality"
+                                    currentModel.displayName.contains("Max") -> "Maximum • Best Performance"
+                                    currentModel.displayName.contains("Dev") -> "Development • Fast Generation"
+                                    else -> "Standard • Balanced"
+                                },
+                                color = when {
+                                    currentModel.displayName.contains("Ultra") || currentModel.displayName.contains("Pro") -> 
+                                        GradientPink.copy(alpha = 0.9f)
+                                    else -> TextSecondary.copy(alpha = 0.7f)
+                                },
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
                     }
+                    
+                    // Animated Arrow Icon
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = GradientCyan,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .graphicsLayer {
+                                rotationZ = rotationAngle
+                            }
+                    )
+                }
+            }
+            
+            // Enhanced Dropdown Menu
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ) + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF1A1F3A).copy(alpha = 0.95f),
+                                    Color(0xFF0F172A).copy(alpha = 0.98f)
+                                )
+                            )
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    GradientCyan.copy(alpha = 0.3f),
+                                    GradientPurple.copy(alpha = 0.2f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    modelChoices.forEachIndexed { index, model ->
+                        val isSelected = model == currentModel
+                        
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = 8.dp,
+                                    vertical = if (index == 0) 8.dp else 2.dp
+                                )
+                                .animateContentSize(),
+                            color = if (isSelected) {
+                                GradientPurple.copy(alpha = 0.1f)
+                            } else {
+                                Color.Transparent
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            onClick = {
+                                onModelSelected(model)
+                                onExpandedChange(false)
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Selection Indicator with Animation
+                                Box(
+                                    modifier = Modifier.size(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = GradientPurple,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .border(
+                                                    width = 2.dp,
+                                                    color = TextSecondary.copy(alpha = 0.3f),
+                                                    shape = CircleShape
+                                                )
+                                        )
+                                    }
+                                }
+                                
+                                // Model Icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (isSelected) {
+                                                Brush.linearGradient(
+                                                    colors = listOf(
+                                                        GradientPurple.copy(alpha = 0.2f),
+                                                        GradientCyan.copy(alpha = 0.2f)
+                                                    )
+                                                )
+                                            } else {
+                                                Brush.linearGradient(
+                                                    colors = listOf(
+                                                        Color.White.copy(alpha = 0.05f),
+                                                        Color.White.copy(alpha = 0.02f)
+                                                    )
+                                                )
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = when {
+                                            model.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
+                                            model.displayName.contains("Ultra") -> Icons.Outlined.Stars
+                                            model.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
+                                            model.displayName.contains("DALL") -> Icons.Outlined.Palette
+                                            model.displayName.contains("Shuttle") -> Icons.Outlined.RocketLaunch
+                                            else -> Icons.Outlined.AutoAwesome
+                                        },
+                                        contentDescription = null,
+                                        tint = if (isSelected) {
+                                            GradientPurple
+                                        } else {
+                                            TextSecondary.copy(alpha = 0.7f)
+                                        },
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                
+                                // Model Info
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = model.displayName,
+                                        color = if (isSelected) TextPrimary else TextPrimary.copy(alpha = 0.9f),
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                                    )
+                                    
+                                    // Model Features/Tags
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Quality Badge
+                                        val (badgeText, badgeColor) = when {
+                                            model.displayName.contains("Ultra") -> "Ultra HD" to GradientPink
+                                            model.displayName.contains("Pro") -> "Pro" to GradientPurple
+                                            model.displayName.contains("Max") -> "Max" to GradientCyan
+                                            model.displayName.contains("DALL") -> "Creative" to Color(0xFF06B6D4)
+                                            model.displayName.contains("Shuttle") -> "Artistic" to Color(0xFFEC4899)
+                                            model.displayName.contains("Dev") -> "Fast" to GradientGreen
+                                            else -> "Standard" to TextSecondary
+                                        }
+                                        
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = badgeColor.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = badgeText,
+                                                color = badgeColor,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                        
+                                        // Performance indicator
+                                        if (model.displayName.contains("Ultra") || model.displayName.contains("Pro")) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Bolt,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFFF59E0B),
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Text(
+                                                    text = "Premium",
+                                                    color = Color(0xFFF59E0B),
+                                                    fontSize = 10.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Status indicator (if selected)
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(GradientGreen)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // Add divider except for last item
+                        if (index < modelChoices.size - 1) {
+                            Divider(
+                                color = Color.White.copy(alpha = 0.05f),
+                                thickness = 0.5.dp,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
+                    
+                    // Bottom padding
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
