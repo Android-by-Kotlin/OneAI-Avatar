@@ -30,15 +30,43 @@ object BackgroundMusicManager {
     // Online music URLs for generation screens
     // Using royalty-free music from various sources
     private val onlineMusicTracks = listOf(
+
+     "https://courageous-green-amwnyqz1nm.edgeone.app/Lovely-Long-Version-chosic.com_.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/Luke-Bergs-Waesto-Follow-The-Sun(chosic.com).mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/Powerful-Trap-(chosic.com).mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/acoustic-light-161985.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/bensound-creativeminds.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/country-acoustic-folk-travel-vlog-music-254543.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/growing-up-123251.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/inspired-acoustic-morning-252333.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/instrumental-acoustic-guitar-music-380085.mp3",
+     "https://courageous-green-amwnyqz1nm.edgeone.app/peacable-milieu-297513.mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/HEROICCC(chosic.com).mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/Hotham-Easy-Love-chosic.com_.mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/Luke-Bergs-Waesto-Take-Me-Back(chosic.com).mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/WinterWaltz-chosic.com_.mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/alex-productions-epic-cinematic-saga-trailer-myths(chosic.com).mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/maxkomusic-christmas-is-coming(chosic.com).mp3",
+     "https://personal-yellow-tsxplwzuql.edgeone.app/roa-music-summer-madness(chosic.com).mp3"
+
+
+
+
+
+
+
         // Calm ambient music for generation
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+       
+
+      //  "https://jumpshare.com/s/qkNRZG5W6nHEhfj9ekUH"
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+       // "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+     //   "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+      //  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
         // Alternative: Free music from Bensound (if needed, replace with your preferred URLs)
         // "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
         // "https://www.bensound.com/bensound-music/bensound-onceagain.mp3"
