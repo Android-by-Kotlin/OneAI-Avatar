@@ -32,6 +32,7 @@ import max.ohm.oneai.login.LoginViewModel
 import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
 import max.ohm.oneai.ui.theme.*
+import max.ohm.oneai.audio.BackgroundMusicManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -201,7 +202,22 @@ fun ProfileScreen(
 
             
             item {
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Settings Section with Music Toggle
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = slideInVertically(
+                        initialOffsetY = { it },
+                        animationSpec = tween(1200, delayMillis = 400, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(1200, delayMillis = 400))
+                ) {
+                    SettingsSection()
+                }
+            }
+            
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 // Action Buttons
                 AnimatedVisibility(
@@ -384,6 +400,114 @@ fun ProfileHeaderCard(user: max.ohm.oneai.data.model.User?) {
 }
 
 
+
+@Composable
+fun SettingsSection() {
+    val context = LocalContext.current
+    val isMusicEnabled by BackgroundMusicManager.isMusicEnabled.collectAsState()
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = GradientPurple.copy(alpha = 0.2f),
+                spotColor = GradientPink.copy(alpha = 0.2f)
+            ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Black.copy(alpha = 0.3f)
+        ),
+        border = BorderStroke(
+            1.dp,
+            Brush.linearGradient(
+                colors = listOf(
+                    GradientPurple.copy(alpha = 0.3f),
+                    GradientPink.copy(alpha = 0.3f)
+                )
+            )
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            // Settings Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = TextPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Settings",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Music Toggle Setting
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = if (isMusicEnabled) Icons.Filled.MusicNote else Icons.Outlined.MusicOff,
+                        contentDescription = "Music",
+                        tint = if (isMusicEnabled) GradientCyan else TextSecondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Background Music",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Play music during generation",
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
+                }
+                
+                Switch(
+                    checked = isMusicEnabled,
+                    onCheckedChange = { enabled ->
+                        BackgroundMusicManager.saveMusicPreference(context, enabled)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = GradientCyan,
+                        checkedTrackColor = GradientCyan.copy(alpha = 0.3f),
+                        uncheckedThumbColor = TextSecondary,
+                        uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                    )
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun ActionButtonsSection(onLogout: () -> Unit) {

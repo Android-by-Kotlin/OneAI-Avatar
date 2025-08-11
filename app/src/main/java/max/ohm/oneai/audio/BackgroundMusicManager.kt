@@ -1,6 +1,7 @@
 package max.ohm.oneai.audio
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
@@ -8,8 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import max.ohm.oneai.R
-import kotlin.random.Random
+import kotlinx.coroutines.withContext
 
 /**
  * Singleton manager for handling background music across the app
@@ -18,7 +18,7 @@ object BackgroundMusicManager {
     private const val TAG = "BackgroundMusicManager"
     
     private var mediaPlayer: MediaPlayer? = null
-    private var currentMusicResource: Int? = null
+    private var currentMusicUrl: String? = null
     
     // Music state flows
     private val _isMusicEnabled = MutableStateFlow(true)
@@ -27,14 +27,21 @@ object BackgroundMusicManager {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying
     
-    // Available music tracks for generation screens
-    // Currently using empty list - add music files to res/raw folder when available
-    private val musicTracks = listOf<Int>(
-         R.raw.generation_music_1,
-        // R.raw.generation_music_2,
-        // R.raw.generation_music_3,
-        // R.raw.generation_music_4,
-        // R.raw.generation_music_5
+    // Online music URLs for generation screens
+    // Using royalty-free music from various sources
+    private val onlineMusicTracks = listOf(
+        // Calm ambient music for generation
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+        // Alternative: Free music from Bensound (if needed, replace with your preferred URLs)
+        // "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
+        // "https://www.bensound.com/bensound-music/bensound-onceagain.mp3"
     )
     
     /**
@@ -74,7 +81,7 @@ object BackgroundMusicManager {
     }
     
     /**
-     * Start playing random background music
+     * Start playing random background music from online sources
      */
     fun startRandomMusic(context: Context) {
         if (!_isMusicEnabled.value) {
@@ -82,8 +89,8 @@ object BackgroundMusicManager {
             return
         }
         
-        if (musicTracks.isEmpty()) {
-            Log.d(TAG, "No music tracks available. Add music files to res/raw folder.")
+        if (onlineMusicTracks.isEmpty()) {
+            Log.d(TAG, "No online music tracks available.")
             return
         }
         
@@ -92,44 +99,85 @@ object BackgroundMusicManager {
                 // Stop any currently playing music
                 stopMusic()
                 
-                // Select a random track
-                val randomTrack = musicTracks.random()
-                currentMusicResource = randomTrack
+                // Select a random track URL
+                val randomTrackUrl = onlineMusicTracks.random()
+                Log.d(TAG, "Selected music URL: $randomTrackUrl")
                 
-                // Create and configure MediaPlayer
-                mediaPlayer = MediaPlayer.create(context, randomTrack)?.apply {
-                    isLooping = true
-                    setVolume(0.3f, 0.3f) // Set to 30% volume for background music
-                    
-                    setOnPreparedListener {
-                        start()
-                        _isPlaying.value = true
-                        Log.d(TAG, "Started playing background music: $randomTrack")
-                    }
-                    
-                    setOnErrorListener { _, what, extra ->
-                        Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
-                        stopMusic()
-                        true // Return true to indicate we handled the error
-                    }
-                    
-                    setOnCompletionListener {
-                        // Even though we're looping, handle completion just in case
-                        if (_isMusicEnabled.value) {
-                            // Start a new random track
-                            startRandomMusic(context)
-                        } else {
-                            stopMusic()
+                // Create and configure MediaPlayer for streaming
+                withContext(Dispatchers.Main) {
+                    mediaPlayer = MediaPlayer().apply {
+                        try {
+                            // Set audio attributes for music streaming
+                            val audioAttributes = AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .build()
+                            setAudioAttributes(audioAttributes)
+                            
+                            // Set the data source to the online URL
+                            setDataSource(randomTrackUrl)
+                            
+                            // Set volume for background music
+                            setVolume(0.3f, 0.3f)
+                            
+                            // Enable looping
+                            isLooping = true
+                            
+                            setOnPreparedListener {
+                                start()
+                                _isPlaying.value = true
+                                Log.d(TAG, "Started playing online music: $randomTrackUrl")
+                            }
+                            
+                            setOnErrorListener { _, what, extra ->
+                                Log.e(TAG, "MediaPlayer error: what=$what, extra=$extra")
+                                // Try another track if this one fails
+                                if (onlineMusicTracks.size > 1) {
+                                    val alternativeUrl = onlineMusicTracks.filter { it != randomTrackUrl }.random()
+                                    Log.d(TAG, "Trying alternative URL: $alternativeUrl")
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        stopMusic()
+                                        // Small delay before trying again
+                                        kotlinx.coroutines.delay(500)
+                                        startRandomMusic(context)
+                                    }
+                                } else {
+                                    stopMusic()
+                                }
+                                true // Return true to indicate we handled the error
+                            }
+                            
+                            setOnCompletionListener {
+                                // Even though we're looping, handle completion just in case
+                                if (_isMusicEnabled.value) {
+                                    // Start a new random track
+                                    startRandomMusic(context)
+                                } else {
+                                    stopMusic()
+                                }
+                            }
+                            
+                            setOnBufferingUpdateListener { _, percent ->
+                                Log.d(TAG, "Buffering: $percent%")
+                            }
+                            
+                            // Prepare async to not block the UI thread
+                            prepareAsync()
+                            
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error setting up MediaPlayer", e)
+                            release()
+                            mediaPlayer = null
                         }
                     }
                 }
                 
                 if (mediaPlayer == null) {
-                    Log.e(TAG, "Failed to create MediaPlayer for resource: $randomTrack")
+                    Log.e(TAG, "Failed to create MediaPlayer for URL: $randomTrackUrl")
                 }
                 
             } catch (e: Exception) {
-                Log.e(TAG, "Error starting music", e)
+                Log.e(TAG, "Error starting online music", e)
                 stopMusic()
             }
         }
@@ -156,14 +204,14 @@ object BackgroundMusicManager {
                 release()
             }
             mediaPlayer = null
-            currentMusicResource = null
+            currentMusicUrl = null
             _isPlaying.value = false
             Log.d(TAG, "Stopped background music")
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping music", e)
             // Force cleanup
             mediaPlayer = null
-            currentMusicResource = null
+            currentMusicUrl = null
             _isPlaying.value = false
         }
     }

@@ -42,6 +42,8 @@ import max.ohm.oneai.utils.SetStatusBarColor
 import max.ohm.oneai.utils.StatusBarUtils
 import max.ohm.oneai.ui.theme.*
 import max.ohm.oneai.components.AnimatedGlassOrb
+import max.ohm.oneai.audio.BackgroundMusicManager
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -222,6 +224,25 @@ fun ImageToImageScreen(
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.setContext(context)
+        BackgroundMusicManager.initialize(context)
+    }
+    
+    // Handle music playback based on loading state
+    LaunchedEffect(viewModel.isLoading) {
+        if (viewModel.isLoading) {
+            // Start playing music when generation starts
+            BackgroundMusicManager.startRandomMusic(context)
+        } else {
+            // Fade out and stop music when generation completes
+            BackgroundMusicManager.fadeOut(duration = 2000L)
+        }
+    }
+    
+    // Clean up music when screen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            BackgroundMusicManager.stopMusic()
+        }
     }
 
     val scrollState = rememberScrollState()
