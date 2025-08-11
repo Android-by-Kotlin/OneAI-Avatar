@@ -57,6 +57,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import max.ohm.oneai.audio.BackgroundMusicManager
+import androidx.compose.runtime.DisposableEffect
+import max.ohm.oneai.imagegeneration.formatSecondsToMMSS
 
 // Data class for model choices
 data class ModelChoice(
@@ -91,6 +94,11 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
     
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModel } ?: modelChoices[0]
     
+    // Initialize music manager
+    LaunchedEffect(Unit) {
+        BackgroundMusicManager.initialize(context)
+    }
+    
     // Timer effect
     LaunchedEffect(state.isLoading) {
         if (state.isLoading) {
@@ -102,6 +110,24 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
         } else if (state.videoUrl != null && startTime > 0) {
             totalGenerationTimeInSeconds = (System.currentTimeMillis() - startTime) / 1000
             startTime = 0L
+        }
+    }
+    
+    // Handle music playback based on loading state
+    LaunchedEffect(state.isLoading) {
+        if (state.isLoading) {
+            // Start playing music when generation starts
+            BackgroundMusicManager.startRandomMusic(context)
+        } else {
+            // Fade out and stop music when generation completes
+            BackgroundMusicManager.fadeOut(duration = 2000L)
+        }
+    }
+    
+    // Clean up music when screen is disposed
+    DisposableEffect(Unit) {
+        onDispose {
+            BackgroundMusicManager.stopMusic()
         }
     }
     
@@ -1046,5 +1072,6 @@ private fun downloadVideo(videoUrl: String, context: Context) {
         Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
+
 
 
