@@ -65,7 +65,7 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
     
     var prompt by remember { mutableStateOf("") }
     var modelMenuExpanded by remember { mutableStateOf(false) }
-    var selectedModel by remember { mutableStateOf("provider-6/wan-2.1") }
+    var selectedModel by remember { mutableStateOf("seedance-t2v") }
     
     // Timer state
     var elapsedTimeInSeconds by remember { mutableStateOf(0L) }
@@ -73,11 +73,11 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
     var startTime by remember { mutableStateOf(0L) }
     
     val modelChoices = listOf(
-        ModelChoice("WAN 2.1", "provider-6/wan-2.1"),
-        ModelChoice("MiniMax", "T2V-01-Director"),
-        ModelChoice("CogVideoX (ModelsLab)", "cogvideox"),
-        ModelChoice("Seedance I2V (Image to Video)", "seedance-i2v"),
-        ModelChoice("Seedance T2V (Text to Video)", "seedance-t2v")
+//        ModelChoice("WAN 2.1", "provider-6/wan-2.1"),
+//        ModelChoice("MiniMax", "T2V-01-Director"),
+//        ModelChoice("CogVideoX (ModelsLab)", "cogvideox"),
+//        ModelChoice("Seedance I2V (Image to Video)", "seedance-i2v"),
+        ModelChoice("Seedance", "seedance-t2v")
     )
     
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModel } ?: modelChoices[0]
@@ -245,16 +245,16 @@ fun EnhancedVideoGenerationScreen(navController: NavController) {
                     }
                     
                     // Settings button on the right
-                    IconButton(
-                        onClick = { /* Settings */ },
-                        modifier = Modifier.align(Alignment.CenterEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Settings",
-                            tint = TextPrimary
-                        )
-                    }
+//                    IconButton(
+//                        onClick = { /* Settings */ },
+//                        modifier = Modifier.align(Alignment.CenterEnd)
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Outlined.Settings,
+//                            contentDescription = "Settings",
+//                            tint = TextPrimary
+//                        )
+//                    }
                 }
             }
             

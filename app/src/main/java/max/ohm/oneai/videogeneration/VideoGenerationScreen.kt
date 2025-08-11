@@ -213,44 +213,26 @@ fun VideoGenerationScreen(
                 color = Color.Transparent,
                 shadowElevation = 0.dp
             ) {
-                Row(
+                // App Title with emotion indicator - centered
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // App Title with emotion indicator
-                    Column {
-                        Text(
-                            text = "OneAI Video Studio",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            modifier = Modifier.graphicsLayer(alpha = 0.99f)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        EmotionStatusIndicator(
-                            status = "Video Creation",
-                            emotion = EmotionState.Creative,
-                            icon = Icons.Outlined.VideoLibrary
-                        )
-                    }
-                    
-                    // Action buttons
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { /* Settings */ }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = "Settings",
-                                tint = TextPrimary
-                            )
-                        }
-                    }
+                    Text(
+                        text = "OneAI Video Studio",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        modifier = Modifier.graphicsLayer(alpha = 0.99f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    EmotionStatusIndicator(
+                        status = "Video Creation",
+                        emotion = EmotionState.Creative,
+                        icon = Icons.Outlined.VideoLibrary
+                    )
                 }
             }
             

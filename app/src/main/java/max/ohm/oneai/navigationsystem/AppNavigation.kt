@@ -119,7 +119,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "provider-4/imagen-4"
+                defaultValue = "provider-2/FLUX.1-kontext-max"
             })
         ) { backStackEntry ->
             // Check if user is logged in
@@ -132,7 +132,11 @@ fun AppNavigation() {
             }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedImageViewModel: UnifiedImageViewModel = viewModel()
-            EnhancedImageGeneratorScreen(unifiedImageViewModel = unifiedImageViewModel, initialModelType = modelType)
+            EnhancedImageGeneratorScreen(
+                unifiedImageViewModel = unifiedImageViewModel, 
+                initialModelType = modelType,
+                onBackClick = { navController.popBackStack() }
+            )
         }
         composable(
             "chatbot?model={modelType}", // Updated route to accept modelType

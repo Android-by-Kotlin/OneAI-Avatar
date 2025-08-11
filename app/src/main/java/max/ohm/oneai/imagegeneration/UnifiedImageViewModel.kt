@@ -67,7 +67,28 @@ class UnifiedImageViewModel : ViewModel() {
         }
     }
 
-    var selectedModel by mutableStateOf("provider-4/imagen-4") // Default model - ImageGen-4
+
+
+
+
+
+
+
+
+
+
+    var selectedModel by mutableStateOf("provider-2/FLUX.1-kontext-max") // Default model - FLUX Kontext Max
+
+
+
+
+
+
+
+
+
+
+
 
     private val _elapsedTimeInSeconds = MutableStateFlow(0L)
     val elapsedTimeInSeconds: StateFlow<Long> = _elapsedTimeInSeconds
@@ -81,7 +102,7 @@ class UnifiedImageViewModel : ViewModel() {
     // Initialize the ViewModel with default model
     init {
         // Ensure the default model is properly set
-        selectedModel = "provider-4/imagen-4"
+        selectedModel = "provider-2/FLUX.1-kontext-max"
     }
 
     fun updatePrompt(newPrompt: TextFieldValue) {
@@ -128,7 +149,7 @@ class UnifiedImageViewModel : ViewModel() {
         // Ensure we have a valid model selected
         if (selectedModel.isBlank()) {
             // Set to default model if somehow blank
-            selectedModel = "provider-4/imagen-4"
+            selectedModel = "provider-2/FLUX.1-kontext-max"
             Log.d("ImageGeneration", "Model was blank, set to default: $selectedModel")
         }
 
@@ -591,11 +612,11 @@ class UnifiedImageViewModel : ViewModel() {
                         Log.e("ImageGeneration", "Invalid model selected: '$selectedModel'")
                         
                         // Try to use the default model as a fallback
-                        if (selectedModel != "provider-4/imagen-4") {
-                            Log.d("ImageGeneration", "Falling back to provider-4/imagen-4 model")
-                            selectedModel = "provider-4/imagen-4"
+                        if (selectedModel != "provider-2/FLUX.1-kontext-max") {
+                            Log.d("ImageGeneration", "Falling back to provider-2/FLUX.1-kontext-max model")
+                            selectedModel = "provider-2/FLUX.1-kontext-max"
                             
-                            // Retry with the default model (ImageGen-4)
+                            // Retry with the default model (FLUX Kontext Max)
                             if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                                 errorMessage = "Please set your A4F API Key in A4FClient"
                                 isLoading = false
@@ -603,10 +624,10 @@ class UnifiedImageViewModel : ViewModel() {
                             }
                             
                             val request = FluxImageGenerationRequest(
-                                model = "provider-4/imagen-4",
+                                model = "provider-2/FLUX.1-kontext-max",
                                 prompt = prompt.text,
                                 n = 1,
-                                size = "1024x1792"
+                                size = "1024x1024"
                             )
                             val response = FluxApiClient.apiService.generateImage(request)
 
@@ -615,8 +636,8 @@ class UnifiedImageViewModel : ViewModel() {
                                 imageUrl = generatedFluxImage?.url
                             } else {
                                 val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                                val technicalError = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
-                                errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-4")
+                                val technicalError = "FLUX Kontext Max API Error: ${response.code()} - ${errorBody}"
+                                errorMessage = getUserFriendlyErrorMessage(technicalError, "FLUX Kontext Max")
                             }
                             isLoading = false
                         } else {

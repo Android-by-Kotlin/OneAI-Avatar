@@ -95,10 +95,21 @@ fun EmotionIntelligentButton(
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        emotionColor.copy(alpha = if (enabled) 1f else 0.5f),
-                        emotionColor.copy(alpha = if (enabled) 0.8f else 0.3f)
+                        DarkBackground.copy(alpha = if (enabled) 0.8f else 0.4f),
+                        DarkBackground.copy(alpha = if (enabled) 0.9f else 0.5f)
                     )
                 )
+            )
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        emotionColor.copy(alpha = if (enabled) 0.6f else 0.3f),
+                        emotionColor.copy(alpha = if (enabled) 0.4f else 0.2f),
+                        emotionColor.copy(alpha = if (enabled) 0.5f else 0.25f)
+                    )
+                ),
+                shape = RoundedCornerShape(16.dp)
             )
             .clickable(
                 enabled = enabled && !isLoading,
@@ -112,14 +123,14 @@ fun EmotionIntelligentButton(
             },
         contentAlignment = Alignment.Center
     ) {
-        // Glassmorphic overlay
+        // Glassmorphic overlay with subtle highlight
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.2f),
+                            Color.White.copy(alpha = if (enabled) 0.1f else 0.05f),
                             Color.Transparent
                         )
                     )

@@ -72,6 +72,11 @@ import max.ohm.oneai.components.AdaptiveGlassCard
 import max.ohm.oneai.components.EmotionIntelligentTextField
 import max.ohm.oneai.components.EmotionState
 import max.ohm.oneai.components.EmotionStatusIndicator
+import max.ohm.oneai.ui.theme.GlassCard
+import max.ohm.oneai.ui.theme.PremiumGlassCard
+import max.ohm.oneai.ui.theme.GlassAccentType
+import max.ohm.oneai.imagegeneration.formatSecondsToMMSS
+import max.ohm.oneai.imagegeneration.rememberStoragePermissionState
 
 // Data class for generated images history
 data class GeneratedImage(
@@ -86,7 +91,8 @@ data class GeneratedImage(
 @Composable
 fun EnhancedImageGeneratorScreen(
     unifiedImageViewModel: UnifiedImageViewModel = viewModel(),
-    initialModelType: String? = null
+    initialModelType: String? = null,
+    onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val prompt = unifiedImageViewModel.prompt
@@ -119,16 +125,16 @@ fun EnhancedImageGeneratorScreen(
     val modelChoices = listOf(
        // ModelChoice("Flux Schnell", "flux.1-schnell"),
         // ModelChoice("Image-1", "provider-5/gpt-image-1")
-        ModelChoice("ImageGen-4", "provider-4/imagen-4"),
-        ModelChoice("ImageGen-3", "provider-4/imagen-3"),
-        // ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
+       // ModelChoice("ImageGen-4", "provider-4/imagen-4"),
+       // ModelChoice("ImageGen-3", "provider-4/imagen-3"),
+         ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
         ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
         //ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
         ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
         ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
         ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
-       // ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
-        //ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
+        ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
+        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
         // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar"),
         ModelChoice("Flux Dev", "provider-3/FLUX.1-dev")
     )
@@ -151,7 +157,7 @@ fun EnhancedImageGeneratorScreen(
     
     // Initialize model
     LaunchedEffect(Unit) {
-        unifiedImageViewModel.updateSelectedModel("flux.1-schnell")
+        unifiedImageViewModel.updateSelectedModel("provider-2/FLUX.1-kontext-max")
     }
     
     LaunchedEffect(initialModelType) {
@@ -295,7 +301,7 @@ fun EnhancedImageGeneratorScreen(
                 ) {
                     // Back button on the left
                     IconButton(
-                        onClick = { /* Back action */ },
+                        onClick = onBackClick,
                         modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Icon(
@@ -662,6 +668,18 @@ fun EnhancedImageGeneratorScreen(
                         )
                     }
                 }
+                
+                // Traffic notice
+                Text(
+                    text = "⚠️ Some models may not work due to heavy traffic",
+                    color = Color(0xFFDC2626),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
         }
         
