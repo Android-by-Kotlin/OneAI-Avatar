@@ -1,4 +1,4 @@
-# OneAI Studio 🎨✨
+# OneAI  🎨✨
 
 <div align="center">
   
@@ -87,7 +87,7 @@
 ## 🚀 Install
 
 ### Google Play Store
-(https://play.google.com/store/apps/details?id=max.ohm.oneai)
+https://play.google.com/store/apps/details?id=max.ohm.oneai
 
 
 
@@ -123,10 +123,6 @@ Having issues or questions? We're here to help!
 
 
 
-## 📄 License
-
-This project is proprietary software. All rights reserved.
-
 ## ⭐ Show Your Support
 
 If you love OneAI app, please:
@@ -138,9 +134,9 @@ If you love OneAI app, please:
 
 <div align="center">
   
-  **OneAI Studio** - Where Creativity Meets AI
+  **OneAI** - One New Era of AI
   
-  Made with ❤️ by the OneAI Team
+  Made with ❤️ by the OneAI 
   
   [Download Now on Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
   
