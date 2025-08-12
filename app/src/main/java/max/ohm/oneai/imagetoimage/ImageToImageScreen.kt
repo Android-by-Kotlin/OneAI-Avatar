@@ -87,6 +87,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 import java.net.HttpURLConnection
+import max.ohm.oneai.utils.ContentFilter
 
 
 //@Composable
@@ -1632,7 +1633,15 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                         "stability-ai-sketch" -> {
                             OutlinedTextField(
                                 value = viewModel.prompt,
-                                onValueChange = { viewModel.prompt = it },
+                                onValueChange = { newText ->
+                                    viewModel.prompt = newText
+                                    // Show real-time warning for inappropriate content
+                                    if (ContentFilter.containsAdultContent(newText)) {
+                                        viewModel.errorMessage = "⚠️ This prompt may violate content policies"
+                                    } else if (viewModel.errorMessage?.contains("content policies") == true) {
+                                        viewModel.errorMessage = null
+                                    }
+                                },
                                 placeholder = { 
                                     Text(
                                         "What should your sketch become? (e.g., a medieval castle on a hill)",
@@ -1667,7 +1676,15 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                         "stability-ai-structure" -> {
                             OutlinedTextField(
                                 value = viewModel.prompt,
-                                onValueChange = { viewModel.prompt = it },
+                                onValueChange = { newText ->
+                                    viewModel.prompt = newText
+                                    // Show real-time warning for inappropriate content
+                                    if (ContentFilter.containsAdultContent(newText)) {
+                                        viewModel.errorMessage = "⚠️ This prompt may violate content policies"
+                                    } else if (viewModel.errorMessage?.contains("content policies") == true) {
+                                        viewModel.errorMessage = null
+                                    }
+                                },
                                 placeholder = { 
                                     Text(
                                         "What should this structure become? (e.g., a well manicured shrub in an english garden)",
@@ -2591,7 +2608,15 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             // Optional prompt for upscaling guidance
                             OutlinedTextField(
                                 value = viewModel.prompt,
-                                onValueChange = { viewModel.prompt = it },
+                                onValueChange = { newText ->
+                                    viewModel.prompt = newText
+                                    // Show real-time warning for inappropriate content
+                                    if (ContentFilter.containsAdultContent(newText)) {
+                                        viewModel.errorMessage = "⚠️ This prompt may violate content policies"
+                                    } else if (viewModel.errorMessage?.contains("content policies") == true) {
+                                        viewModel.errorMessage = null
+                                    }
+                                },
                                 placeholder = { 
                                     Text(
                                         "Optional: Describe details to enhance (e.g., 'sharp details, high quality')",
@@ -2627,10 +2652,18 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                             // Main Prompt Input for other models - Enhanced Styling to match EnhancedImageGeneratorScreen
                             OutlinedTextField(
                                 value = viewModel.prompt,
-                                onValueChange = { viewModel.prompt = it },
+                                onValueChange = { newText ->
+                                    viewModel.prompt = newText
+                                    // Show real-time warning for inappropriate content
+                                    if (ContentFilter.containsAdultContent(newText)) {
+                                        viewModel.errorMessage = "⚠️ This prompt may violate content policies"
+                                    } else if (viewModel.errorMessage?.contains("content policies") == true) {
+                                        viewModel.errorMessage = null
+                                    }
+                                },
                                 placeholder = { 
                                     Text(
-                                        "Describe your transformation...",
+                                        "Describe your transformation (family-friendly content only)...",
                                         color = Color.White.copy(alpha = 0.5f)
                                     ) 
                                 },
@@ -2640,12 +2673,20 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                     .border(
                                         width = 2.dp,
                                         brush = Brush.linearGradient(
-                                            colors = listOf(
-                                                Color(0xFF8B5CF6).copy(alpha = 0.6f), // GradientPurple
-                                                Color(0xFFEC4899).copy(alpha = 0.7f), // GradientPink
-                                                Color(0xFF06B6D4).copy(alpha = 0.5f), // GradientCyan
-                                                Color(0xFF8B5CF6).copy(alpha = 0.4f)  // GradientPurple
-                                            )
+                                            colors = if (ContentFilter.containsAdultContent(viewModel.prompt)) {
+                                                listOf(
+                                                    Color(0xFFF59E0B).copy(alpha = 0.8f),
+                                                    Color(0xFFDC2626).copy(alpha = 0.7f),
+                                                    Color(0xFFF59E0B).copy(alpha = 0.6f)
+                                                )
+                                            } else {
+                                                listOf(
+                                                    Color(0xFF8B5CF6).copy(alpha = 0.6f), // GradientPurple
+                                                    Color(0xFFEC4899).copy(alpha = 0.7f), // GradientPink
+                                                    Color(0xFF06B6D4).copy(alpha = 0.5f), // GradientCyan
+                                                    Color(0xFF8B5CF6).copy(alpha = 0.4f)  // GradientPurple
+                                                )
+                                            }
                                         ),
                                         shape = RoundedCornerShape(12.dp)
                                     ),

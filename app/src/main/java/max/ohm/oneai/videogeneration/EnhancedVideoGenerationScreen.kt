@@ -60,6 +60,7 @@ import androidx.compose.animation.fadeOut
 import max.ohm.oneai.audio.BackgroundMusicManager
 import androidx.compose.runtime.DisposableEffect
 import max.ohm.oneai.imagegeneration.formatSecondsToMMSS
+import max.ohm.oneai.utils.ContentFilter
 
 // Data class for model choices
 data class ModelChoice(
@@ -906,19 +907,27 @@ private fun PromptInputGlassCard(
                 value = prompt,
                 onValueChange = onPromptChange,
                 emotion = EmotionState.Creative,
-                placeholder = "Describe your cinematic vision...",
+                placeholder = "Describe your cinematic vision (family-friendly content only)...",
                 enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(
                         width = 2.dp,
                         brush = Brush.linearGradient(
-                            colors = listOf(
-                                GradientPurple.copy(alpha = 0.6f),
-                                GradientPink.copy(alpha = 0.7f),
-                                GradientCyan.copy(alpha = 0.5f),
-                                GradientPurple.copy(alpha = 0.4f)
-                            )
+                            colors = if (ContentFilter.containsAdultContent(prompt)) {
+                                listOf(
+                                    Color(0xFFF59E0B).copy(alpha = 0.8f),
+                                    Color(0xFFDC2626).copy(alpha = 0.7f),
+                                    Color(0xFFF59E0B).copy(alpha = 0.6f)
+                                )
+                            } else {
+                                listOf(
+                                    GradientPurple.copy(alpha = 0.6f),
+                                    GradientPink.copy(alpha = 0.7f),
+                                    GradientCyan.copy(alpha = 0.5f),
+                                    GradientPurple.copy(alpha = 0.4f)
+                                )
+                            }
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ),
