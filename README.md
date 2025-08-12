@@ -2,12 +2,11 @@
 
 <div align="center">
   
-  ![OneAI Studio Banner](https://img.shields.io/badge/OneAI-Studio-gradient?style=for-the-badge&logo=android&logoColor=white&color=8B5CF6)
   
   [![Google Play](https://img.shields.io/badge/Google_Play-Download-green?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=max.ohm.oneai)
-  ![Version](https://img.shields.io/badge/Version-1.0-blue?style=for-the-badge)
-  ![Platform](https://img.shields.io/badge/Platform-Android-brightgreen?style=for-the-badge&logo=android)
-  ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+  
+  ![Platform]
+  ![License]
   
   **Your Creative AI Companion - Transform Ideas into Visual Masterpieces**
   
