@@ -14,7 +14,7 @@
 
 ## 🌟 Overview
 
-**OneAI ** is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI provides you with powerful tools to generate, transform, and enhance images using state-of-the-art AI technology.
+OneAI is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI provides you with powerful tools to generate, transform, and enhance images using state-of-the-art AI technology.
 
 ## ✨ Features
 
@@ -37,12 +37,12 @@
 - Real-time responses with engaging visual effects
 
 ### 🎯 **Key Highlights**
-- ✅ **Multiple AI Models** - Choose from various cutting-edge AI models
-- ✅ **Fast Generation** - Create images in seconds, not minutes
-- ✅ **User-Friendly Interface** - Intuitive design for seamless navigation
-- ✅ **Gallery Management** - View and manage all your AI-generated creations
-- ✅ **High-Quality Output** - Professional-grade image generation
-- ✅ **Regular Updates** - New models and features added frequently
+-  **Multiple AI Models** - Choose from various cutting-edge AI models
+-  **Fast Generation** - Create images in seconds, not minutes
+-  **User-Friendly Interface** - Intuitive design for seamless navigation
+-  **Gallery Management** - View and manage all your AI-generated creations
+-  **High-Quality Output** - Professional-grade image generation
+-  **Regular Updates** - New models and features added frequently
 
 
 ## 🚀 Install
