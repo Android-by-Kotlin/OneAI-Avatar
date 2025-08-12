@@ -1,8 +1,8 @@
-# OneAI Studio 🎨✨
+# OneAI 🎨✨
 
 <div align="center">
   
-  ![OneAI Studio Banner](https://img.shields.io/badge/OneAI-Studio-gradient?style=for-the-badge&logo=android&logoColor=white&color=8B5CF6)
+  ![OneAI Banner](https://img.shields.io/badge/OneAI-App-gradient?style=for-the-badge&logo=android&logoColor=white&color=8B5CF6)
   
   [![Google Play](https://img.shields.io/badge/Google_Play-Download-green?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=max.ohm.oneai)
   ![Version](https://img.shields.io/badge/Version-1.0-blue?style=for-the-badge)
@@ -14,40 +14,6 @@
   [Download Now](https://play.google.com/store/apps/details?id=max.ohm.oneai) • [Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Contact](#contact)
   
 </div>
-
----
-
-## 🌟 Overview
-
-**OneAI Studio** is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI Studio provides you with powerful tools to generate, transform, and enhance images using state-of-the-art AI technology.
-
-## ✨ Features
-
-### 🎨 **Text to Image Generation**
-- Generate stunning images from text prompts
-- Access to multiple AI models including ImageGen-4
-- Quick generation times (under 3 seconds)
-- Save and share your creations instantly
-
-### 🔄 **Image to Image Transformation**
-- Transform existing images with AI-powered enhancements
-- Apply artistic styles and effects
-- Flux Kontext Pro Image-to-Image model integration
-- Before/after comparison view
-
-### 💬 **AI Chat Assistant**
-- Chat with your favorite AI models
-- Futuristic interface with sound effects
-- Multiple AI personalities including Gemini Flash
-- Real-time responses with engaging visual effects
-
-### 🎯 **Key Highlights**
-- ✅ **Multiple AI Models** - Choose from various cutting-edge AI models
-- ✅ **Fast Generation** - Create images in seconds, not minutes
-- ✅ **User-Friendly Interface** - Intuitive design for seamless navigation
-- ✅ **Gallery Management** - View and manage all your AI-generated creations
-- ✅ **High-Quality Output** - Professional-grade image generation
-- ✅ **Regular Updates** - New models and features added frequently
 
 ## 📱 Screenshots
 
@@ -78,10 +44,52 @@
 
 </div>
 
+---
+
+## 🌟 Overview
+
+**OneAI** is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI provides you with powerful tools to generate, transform, and enhance images and videos using state-of-the-art AI technology.
+
+## ✨ Features
+
+### 🎨 **Text to Image Generation**
+- Generate stunning images from text prompts
+- Access to multiple AI models including ImageGen-4
+- Quick generation times (under 3 seconds)
+- Save and share your creations instantly
+
+### 🔄 **Image to Image Transformation**
+- Transform existing images with AI-powered enhancements
+- Apply artistic styles and effects
+- Flux Kontext Pro Image-to-Image model integration
+- Before/after comparison view
+
+### 🎬 **AI Video Generation**
+- Create stunning videos from text prompts
+- Transform static images into dynamic videos
+- Multiple video styles and effects
+- High-quality video output with smooth animations
+- Export in various formats and resolutions
+
+### 💬 **AI Chat Assistant**
+- Chat with your favorite AI models
+- Futuristic interface with sound effects
+- Multiple AI personalities including Gemini Flash
+- Real-time responses with engaging visual effects
+
+### 🎯 **Key Highlights**
+- ✅ **Multiple AI Models** - Choose from various cutting-edge AI models
+- ✅ **Fast Generation** - Create images in seconds, not minutes
+- ✅ **User-Friendly Interface** - Intuitive design for seamless navigation
+- ✅ **Gallery Management** - View and manage all your AI-generated creations
+- ✅ **High-Quality Output** - Professional-grade image generation
+- ✅ **Video Generation** - Create dynamic videos from text and images
+- ✅ **Regular Updates** - New models and features added frequently
+
 ## 🚀 Installation
 
 ### From Google Play Store (Recommended)
-1. Visit the [OneAI Studio page on Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
+1. Visit the [OneAI page on Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
 2. Click "Install"
 3. Open the app and start creating!
 
@@ -93,19 +101,20 @@
 
 ## 🎮 How to Use
 
-1. **Launch OneAI Studio** on your Android device
+1. **Launch OneAI** on your Android device
 2. **Select a feature** from the home screen:
    - Image to Image for transformations
    - Text to Image for generation
+   - Video Generation for dynamic content
    - AI Chat for assistance
 3. **Choose your AI model** based on your needs
 4. **Enter your prompt** or upload an image
 5. **Generate** and watch the magic happen!
 6. **Save or share** your creations
 
-## 🛠️ Technologies
+## 🔧 Technologies
 
-- **AI Models:** State-of-the-art image generation models
+- **AI Models:** State-of-the-art image and video generation models
 - **Platform:** Native Android application
 - **Backend:** Cloud-based AI processing
 - **UI/UX:** Material Design principles
@@ -116,12 +125,13 @@
 |---------|------------|
 | Text to Image Generation | ~3 seconds |
 | Image Transformation | ~27 seconds |
+| Video Generation | ~45 seconds |
 | AI Chat Response | Real-time |
 | App Size | <50MB |
 
 ## 🔄 Updates
 
-We regularly update OneAI Studio with:
+We regularly update OneAI with:
 - New AI models and capabilities
 - Performance improvements
 - Bug fixes and stability enhancements
@@ -132,7 +142,7 @@ We regularly update OneAI Studio with:
 We welcome feedback and suggestions! Please:
 - Rate and review us on [Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
 - Report bugs through the app's feedback feature
-- Share your creations on social media with #OneAIStudio
+- Share your creations on social media with #OneAI
 
 ## 📞 Support
 
@@ -153,7 +163,7 @@ This project is proprietary software. All rights reserved.
 
 ## ⭐ Show Your Support
 
-If you love OneAI Studio, please:
+If you love OneAI, please:
 - ⭐ Rate us 5 stars on [Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
 - 📣 Share with friends and colleagues
 - 💬 Leave a positive review
@@ -162,7 +172,7 @@ If you love OneAI Studio, please:
 
 <div align="center">
   
-  **OneAI Studio** - Where Creativity Meets AI
+  **OneAI** - Where Creativity Meets AI
   
   Made with ❤️ by the OneAI Team
   
