@@ -34,9 +34,9 @@
     <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/home_screen.jpg" width="250" alt="Gallery View"></td>
   </tr>
   <tr>
-    <td align="center"><b>AI Editing</b><br><sub>Your creative AI companion</sub></td>
+    <td align="center"><b>Home Screen</b><br><sub>Your creative AI companion</sub></td>
     <td align="center"><b>AI Chat</b><br><sub>Chat with AI models</sub></td>
-    <td align="center"><b>Gallery</b><br><sub>Your masterpieces</sub></td>
+    <td align="center"><b>Available on Play Store</b><br><sub>Your masterpieces</sub></td>
   </tr>
 </table>
 
@@ -129,9 +129,9 @@ If you love OneAI, please:
 
 <div align="center">
   
-  **OneAI** - Where Creativity Meets AI
+  **OneAI** - One New Era of AI
   
-  Made with ❤️ by the OneAI Team
+  Made with ❤️ by the OneAI
   
   [Download Now on Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
   
