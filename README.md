@@ -5,9 +5,6 @@
   
   [![Google Play](https://img.shields.io/badge/Google_Play-Download-green?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=max.ohm.oneai)
   
-  ![Platform]
-  ![License]
-  
   **Your Creative AI Companion - Transform Ideas into Visual Masterpieces**
   
   [Download Now](https://play.google.com/store/apps/details?id=max.ohm.oneai) • [Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Contact](#contact)
