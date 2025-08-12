@@ -14,7 +14,7 @@
 
 ## 🌟 Overview
 
-**OneAI Studio** is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI Studio provides you with powerful tools to generate, transform, and enhance images using state-of-the-art AI technology.
+**OneAI ** is a cutting-edge mobile application that brings the power of advanced AI models directly to your fingertips. Whether you're an artist, designer, content creator, or AI enthusiast, OneAI provides you with powerful tools to generate, transform, and enhance images using state-of-the-art AI technology.
 
 ## ✨ Features
 
@@ -44,40 +44,6 @@
 - ✅ **High-Quality Output** - Professional-grade image generation
 - ✅ **Regular Updates** - New models and features added frequently
 
-## 📱 Screenshots
-
-<div align="center">
-<table>
-  <tr>
-    <td align="center">
-      <b>Home Screen</b><br>
-      <sub>Browse your creations</sub>
-    </td>
-    <td align="center">
-      <b>Text to Image</b><br>
-      <sub>Generate from prompts</sub>
-    </td>
-    <td align="center">
-      <b>Image Transformation</b><br>
-      <sub>AI-powered editing</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <b>AI Chat</b><br>
-      <sub>Interactive AI assistant</sub>
-    </td>
-    <td align="center">
-      <b>Gallery View</b><br>
-      <sub>Your masterpieces</sub>
-    </td>
-    <td align="center">
-      <b>Model Selection</b><br>
-      <sub>Choose your AI model</sub>
-    </td>
-  </tr>
-</table>
-</div>
 
 ## 🚀 Install
 
