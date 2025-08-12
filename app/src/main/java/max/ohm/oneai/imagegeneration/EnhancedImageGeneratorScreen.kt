@@ -80,6 +80,7 @@ import max.ohm.oneai.imagegeneration.formatSecondsToMMSS
 import max.ohm.oneai.imagegeneration.rememberStoragePermissionState
 import max.ohm.oneai.audio.BackgroundMusicManager
 import androidx.compose.runtime.DisposableEffect
+import max.ohm.oneai.utils.ContentFilter
 
 // Data class for generated images history
 data class GeneratedImage(
@@ -471,15 +472,24 @@ fun EnhancedImageGeneratorScreen(
                     }
                 }
                 
-                // Error message display
+                // Error message display with enhanced warning for inappropriate content
                 AnimatedVisibility(
                     visible = !isLoading && errorMessage != null,
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
+                    val isContentWarning = errorMessage?.contains("Play Store policies") == true
                     GlassCard(
-                        backgroundColor = Color(0xFFDC2626).copy(alpha = 0.08f),
-                        borderColor = Color(0xFFDC2626).copy(alpha = 0.25f),
+                        backgroundColor = if (isContentWarning) {
+                            Color(0xFFF59E0B).copy(alpha = 0.15f) // Orange for warnings
+                        } else {
+                            Color(0xFFDC2626).copy(alpha = 0.08f) // Red for errors
+                        },
+                        borderColor = if (isContentWarning) {
+                            Color(0xFFF59E0B).copy(alpha = 0.4f)
+                        } else {
+                            Color(0xFFDC2626).copy(alpha = 0.25f)
+                        },
                         cornerRadius = 16.dp,
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(0.dp)
@@ -490,17 +500,38 @@ fun EnhancedImageGeneratorScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Error,
+                                imageVector = if (isContentWarning) {
+                                    Icons.Outlined.Warning
+                                } else {
+                                    Icons.Outlined.Error
+                                },
                                 contentDescription = null,
-                                tint = Color(0xFFDC2626),
-                                modifier = Modifier.size(20.dp)
+                                tint = if (isContentWarning) {
+                                    Color(0xFFF59E0B)
+                                } else {
+                                    Color(0xFFDC2626)
+                                },
+                                modifier = Modifier.size(24.dp)
                             )
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
+                                if (isContentWarning) {
+                                    Text(
+                                        text = "Content Policy Warning",
+                                        color = Color(0xFFF59E0B),
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
                                 Text(
                                     text = errorMessage ?: "",
-                                    color = Color(0xFFDC2626),
+                                    color = if (isContentWarning) {
+                                        Color(0xFFF59E0B).copy(alpha = 0.9f)
+                                    } else {
+                                        Color(0xFFDC2626)
+                                    },
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -512,7 +543,11 @@ fun EnhancedImageGeneratorScreen(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Dismiss",
-                                    tint = Color(0xFFDC2626),
+                                    tint = if (isContentWarning) {
+                                        Color(0xFFF59E0B)
+                                    } else {
+                                        Color(0xFFDC2626)
+                                    },
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -611,21 +646,37 @@ fun EnhancedImageGeneratorScreen(
                         
                         EmotionIntelligentTextField(
                             value = prompt.text,
-                            onValueChange = { newText -> unifiedImageViewModel.updatePrompt(TextFieldValue(newText)) },
+                            onValueChange = { newText -> 
+                                unifiedImageViewModel.updatePrompt(TextFieldValue(newText))
+                                // Show real-time warning for inappropriate content
+                                if (ContentFilter.containsAdultContent(newText)) {
+                                    unifiedImageViewModel.errorMessage = "⚠️ This prompt may violate content policies"
+                                } else if (unifiedImageViewModel.errorMessage?.contains("content policies") == true) {
+                                    unifiedImageViewModel.clearErrorMessage()
+                                }
+                            },
                             emotion = EmotionState.Creative,
-                            placeholder = "Describe your artistic vision...",
+                            placeholder = "Describe your artistic vision (family-friendly content only)...",
                             enabled = !isLoading,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .border(
                                     width = 2.dp,
                                     brush = Brush.linearGradient(
-                                        colors = listOf(
-                                            GradientPurple.copy(alpha = 0.6f),
-                                            GradientPink.copy(alpha = 0.7f),
-                                            GradientCyan.copy(alpha = 0.5f),
-                                            GradientPurple.copy(alpha = 0.4f)
-                                        )
+                                        colors = if (ContentFilter.containsAdultContent(prompt.text)) {
+                                            listOf(
+                                                Color(0xFFF59E0B).copy(alpha = 0.8f),
+                                                Color(0xFFDC2626).copy(alpha = 0.7f),
+                                                Color(0xFFF59E0B).copy(alpha = 0.6f)
+                                            )
+                                        } else {
+                                            listOf(
+                                                GradientPurple.copy(alpha = 0.6f),
+                                                GradientPink.copy(alpha = 0.7f),
+                                                GradientCyan.copy(alpha = 0.5f),
+                                                GradientPurple.copy(alpha = 0.4f)
+                                            )
+                                        }
                                     ),
                                     shape = RoundedCornerShape(12.dp)
                                 ),
@@ -691,17 +742,29 @@ fun EnhancedImageGeneratorScreen(
                     }
                 }
                 
-                // Traffic notice
-                Text(
-                    text = "⚠️ Some models may not work due to heavy traffic",
-                    color = Color(0xFFDC2626),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    textAlign = TextAlign.Center,
+                // Traffic notice and content policy reminder
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "⚠️ Some models may not work due to heavy traffic",
+                        color = Color(0xFFDC2626),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "🛡️ This app enforces family-friendly content policies",
+                        color = Color(0xFF10B981),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
         

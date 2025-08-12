@@ -18,6 +18,7 @@ import max.ohm.oneai.fluxproimagegen.network.FluxApiClient
 import max.ohm.oneai.fluxproimagegen.network.FluxImageGenerationRequest
 import max.ohm.oneai.network.ApiClient
 import max.ohm.oneai.network.ImageGenerationRequest
+import max.ohm.oneai.utils.ContentFilter
 
 class UnifiedImageViewModel : ViewModel() {
 
@@ -34,7 +35,6 @@ class UnifiedImageViewModel : ViewModel() {
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
-        private set
 
     // Function to convert technical error messages to user-friendly ones
     private fun getUserFriendlyErrorMessage(technicalError: String, modelName: String): String {
@@ -143,6 +143,25 @@ class UnifiedImageViewModel : ViewModel() {
             return
         }
 
+        // Check for adult/NSFW content
+        if (ContentFilter.containsAdultContent(prompt.text)) {
+            errorMessage = ContentFilter.getWarningMessage()
+            Log.w("ContentFilter", "Adult content detected in prompt: ${ContentFilter.sanitizeForLogging(prompt.text)}")
+            
+            // Replace the prompt with a safe alternative
+            val safePrompt = ContentFilter.getSafePrompt(prompt.text)
+            prompt = TextFieldValue(safePrompt)
+            
+            // Show warning but continue with safe prompt
+            viewModelScope.launch {
+                delay(3000) // Show warning for 3 seconds
+                errorMessage = null
+                // Proceed with safe prompt
+                generateImageInternal(safePrompt)
+            }
+            return
+        }
+
         // Log the current model for debugging
         Log.d("ImageGeneration", "Selected model: $selectedModel")
 
@@ -152,6 +171,11 @@ class UnifiedImageViewModel : ViewModel() {
             selectedModel = "provider-2/FLUX.1-kontext-max"
             Log.d("ImageGeneration", "Model was blank, set to default: $selectedModel")
         }
+        
+        generateImageInternal(prompt.text)
+    }
+    
+    private fun generateImageInternal(promptText: String) {
 
         isLoading = true
         generatedImageData = null
@@ -161,8 +185,13 @@ class UnifiedImageViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
+                // Add safety negative prompts to all requests
+                val safePrompt = promptText
+                val negativePrompts = ContentFilter.getNegativePrompts()
+                
                 // Log the model being used for the API call
                 Log.d("ImageGeneration", "Using model for API call: $selectedModel")
+                Log.d("ImageGeneration", "Safe prompt: ${ContentFilter.sanitizeForLogging(safePrompt)}")
                 
                 when (selectedModel) {
                     "flux.1-schnell" -> {
@@ -171,7 +200,7 @@ class UnifiedImageViewModel : ViewModel() {
                             isLoading = false
                             return@launch
                         }
-                        val request = ImageGenerationRequest(prompt = prompt.text)
+                        val request = ImageGenerationRequest(prompt = safePrompt)
                         val response = ApiClient.instance.generateImage("Bearer $NEBIUS_API_KEY", request)
 
                         if (response.isSuccessful && response.body() != null) {
@@ -197,7 +226,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-5/gpt-image-1", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt. ${negativePrompts}",
                             n = 1,
                             size = "1024x1536"  //chatgpt app size
                             //size = "720x1280"
@@ -227,7 +256,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-4/imagen-4", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
@@ -286,7 +315,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/imagen-4.0-generate-preview-06-06", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
                             // size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
@@ -315,7 +344,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-4/imagen-3", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
                           //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
@@ -345,7 +374,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/imagen-3.0-generate-002", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
@@ -375,7 +404,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/FLUX.1.1-pro-ultra-raw", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -399,7 +428,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-1/FLUX.1.1-pro", // Use the pro model
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -423,7 +452,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/FLUX.1.1-pro-ultra",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -447,7 +476,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/dall-e-3",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -471,7 +500,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/shuttle-3.1-aesthetic",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -495,7 +524,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/shuttle-3-diffusion",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -519,7 +548,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/shuttle-jaguar",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -543,7 +572,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-3/FLUX.1-dev",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -567,7 +596,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-2/FLUX.1-kontext-max",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -591,7 +620,7 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         val request = FluxImageGenerationRequest(
                             model = "provider-1/FLUX.1-kontext-pro",
-                            prompt = prompt.text,
+                            prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
                         )
@@ -625,7 +654,7 @@ class UnifiedImageViewModel : ViewModel() {
                             
                             val request = FluxImageGenerationRequest(
                                 model = "provider-2/FLUX.1-kontext-max",
-                                prompt = prompt.text,
+                                prompt = "$safePrompt, safe for work, family-friendly",
                                 n = 1,
                                 size = "1024x1024"
                             )
