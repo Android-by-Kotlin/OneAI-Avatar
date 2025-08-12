@@ -7,7 +7,6 @@
   
   **Your Creative AI Companion - Transform Ideas into Visual Masterpieces**
   
-  [Download Now](https://play.google.com/store/apps/details?id=max.ohm.oneai) • [Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Contact](#contact)
   
 </div>
 
