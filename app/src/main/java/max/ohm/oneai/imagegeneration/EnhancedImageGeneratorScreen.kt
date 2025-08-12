@@ -1934,22 +1934,22 @@ private fun ImageDetailDialog(
                             )
                         }
                         
-                        Row {
-                            IconButton(onClick = onShare) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Share",
-                                    tint = Color.White
-                                )
-                            }
-                            IconButton(onClick = onDownload) {
-                                Icon(
-                                    imageVector = Icons.Default.Download,
-                                    contentDescription = "Download",
-                                    tint = Color.White
-                                )
-                            }
-                        }
+//                        Row {
+//                            IconButton(onClick = onShare) {
+//                                Icon(
+//                                    imageVector = Icons.Default.Share,
+//                                    contentDescription = "Share",
+//                                    tint = Color.White
+//                                )
+//                            }
+//                            IconButton(onClick = onDownload) {
+//                                Icon(
+//                                    imageVector = Icons.Default.Download,
+//                                    contentDescription = "Download",
+//                                    tint = Color.White
+//                                )
+//                            }
+//                        }
                     }
                 }
                 
