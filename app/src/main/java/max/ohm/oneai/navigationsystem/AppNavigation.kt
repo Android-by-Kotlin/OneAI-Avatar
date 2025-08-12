@@ -22,8 +22,6 @@ import max.ohm.oneai.aitalk.AiTalkViewModel
 import max.ohm.oneai.chatbot.ChatBotScreen
 import max.ohm.oneai.chatbot.ResponsiveTestScreen
 import max.ohm.oneai.chatbot.UnifiedChatBotViewModel
-import max.ohm.oneai.homescreen.SimpleHomeScreen
-import max.ohm.oneai.homescreen.EnhancedHomeScreen
 import max.ohm.oneai.homescreen.ModernGlassmorphismHomeScreen
 import max.ohm.oneai.imagegeneration.ImageGeneratorScreen
 import max.ohm.oneai.imagegeneration.EnhancedImageGeneratorScreen
@@ -36,12 +34,9 @@ import max.ohm.oneai.splash.SplashScreen
 import max.ohm.oneai.videogeneration.VideoGenerationScreen
 import max.ohm.oneai.videogeneration.NewVideoGenerationScreen
 import max.ohm.oneai.videogeneration.EnhancedVideoGenerationScreen
-import max.ohm.oneai.videogeneration.NewVideoGenerationViewModel
 import max.ohm.oneai.videogeneration.VideoPlayerScreen
 import max.ohm.oneai.liveavatar.ui.StreamingScreen
 import max.ohm.oneai.liveavatar.ui.StreamingViewModel
-import max.ohm.oneai.imageediting.FaceGenScreen
-import max.ohm.oneai.imageediting.FaceGenViewModel
 import max.ohm.oneai.imagetoimage.ImageToImageScreen
 import max.ohm.oneai.imagetoimage.UnifiedImageToImageViewModel
 import max.ohm.oneai.imagetoimage.GalleryScreen
@@ -49,7 +44,6 @@ import max.ohm.oneai.stabilityai.ui.StabilityImageToImageScreen
 import max.ohm.oneai.stabilityai.viewmodel.StabilityImageToImageViewModel
 import max.ohm.oneai.stabilityai.ui.SketchToImageScreen
 import max.ohm.oneai.stabilityai.viewmodel.SketchToImageViewModel
-import androidx.navigation.NavBackStackEntry
 import max.ohm.oneai.navigation.MainScaffold
 import max.ohm.oneai.debug.AuthDebugScreen
 
@@ -255,20 +249,7 @@ fun AppNavigation() {
             val streamingViewModel: StreamingViewModel = viewModel()
             StreamingScreen(viewModel = streamingViewModel)
         }
-        
-        composable("faceGen") { // Add Face Gen destination
-            // Check if user is logged in
-            LaunchedEffect(loginState) {
-                if (loginState !is LoginState.Success) {
-                    navController.navigate("login") {
-                        popUpTo("splash") { inclusive = true }
-                    }
-                }
-            }
-            val faceGenViewModel: FaceGenViewModel = viewModel()
-            FaceGenScreen(faceGenViewModel = faceGenViewModel)
-        }
-        
+
         composable("imageToImage") { backStackEntry ->
             // Check if user is logged in
             LaunchedEffect(loginState) {
