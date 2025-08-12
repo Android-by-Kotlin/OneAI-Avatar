@@ -53,15 +53,11 @@
 
 <div align="center">
 
-<!-- IMPORTANT: Replace the image URLs below with your actual screenshot URLs -->
-<!-- Method 1: Upload images to a 'screenshots' folder in your repo and use: ./screenshots/filename.jpg -->
-<!-- Method 2: Use GitHub Issues to generate URLs (see HOW_TO_ADD_SCREENSHOTS.md) -->
-
 <table>
   <tr>
-    <td><img src="./screenshots/home_screen.jpg" width="250" alt="OneAI Home Screen"></td>
-    <td><img src="./screenshots/text_to_image.jpg" width="250" alt="Text to Image Generation"></td>
-    <td><img src="./screenshots/image_transform.jpg" width="250" alt="Image Transformation"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/home_screen.jpg" width="250" alt="OneAI Home Screen"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/text_to_image.jpg" width="250" alt="Text to Image Generation"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/image_transform.jpg" width="250" alt="Image Transformation"></td>
   </tr>
   <tr>
     <td align="center"><b>Home Screen</b><br><sub>Browse your AI creations</sub></td>
@@ -69,9 +65,9 @@
     <td align="center"><b>Image Transform</b><br><sub>AI-powered editing</sub></td>
   </tr>
   <tr>
-    <td><img src="./screenshots/main_interface.jpg" width="250" alt="Main Interface"></td>
-    <td><img src="./screenshots/ai_chat.jpg" width="250" alt="AI Chat Interface"></td>
-    <td><img src="./screenshots/home_screen.jpg" width="250" alt="Gallery View"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/main_interface.jpg" width="250" alt="Main Interface"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/ai_chat.jpg" width="250" alt="AI Chat Interface"></td>
+    <td><img src="https://raw.githubusercontent.com/maxohm1/OneAI-ScreenShot/main/home_screen.jpg" width="250" alt="Gallery View"></td>
   </tr>
   <tr>
     <td align="center"><b>Main Interface</b><br><sub>Your creative AI companion</sub></td>
@@ -80,12 +76,6 @@
   </tr>
 </table>
 
-<!-- 
-To add your actual screenshots:
-1. Replace the placeholder URLs above with your real screenshot URLs
-2. Example: Change "https://via.placeholder.com/..." to "./screenshots/home.jpg" 
-   or to the URL generated from GitHub Issues
--->
 
 </div>
 
