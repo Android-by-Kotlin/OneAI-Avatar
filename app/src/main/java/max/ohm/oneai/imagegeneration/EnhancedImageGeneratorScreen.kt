@@ -757,13 +757,13 @@ fun EnhancedImageGeneratorScreen(
                         fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Center
                     )
-                    Text(
-                        text = "🛡️ This app enforces family-friendly content policies",
-                        color = Color(0xFF10B981),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal,
-                        textAlign = TextAlign.Center
-                    )
+                    // Text(
+                    //     text = "🛡️ This app enforces family-friendly content policies",
+                    //     color = Color(0xFF10B981),
+                    //     fontSize = 11.sp,
+                    //     fontWeight = FontWeight.Normal,
+                    //     textAlign = TextAlign.Center
+                    // )
                 }
             }
         }
