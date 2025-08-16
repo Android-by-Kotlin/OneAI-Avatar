@@ -131,7 +131,8 @@ fun EnhancedImageGeneratorScreen(
         // ModelChoice("Image-1", "provider-5/gpt-image-1")
        // ModelChoice("ImageGen-4", "provider-4/imagen-4"),
        // ModelChoice("ImageGen-3", "provider-4/imagen-3"),
-         ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
+        ModelChoice("DSLR Photograph", "modelslab/epic-realism"),
+        ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
         ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
         //ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
         ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
@@ -1488,7 +1489,7 @@ private fun ModelSelectionCard(
                                             model.displayName.contains("DALL") -> "Creative" to Color(0xFF06B6D4)
                                             model.displayName.contains("Shuttle") -> "Artistic" to Color(0xFFEC4899)
                                             model.displayName.contains("Dev") -> "Fast" to GradientGreen
-                                            else -> "Standard" to TextSecondary
+                                            else -> "Realism" to GradientGreen
                                         }
                                         
                                         Surface(

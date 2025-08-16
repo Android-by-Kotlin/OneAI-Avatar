@@ -10,7 +10,7 @@ object ModelsLabApiClient {
     private const val BASE_URL = "https://modelslab.com/"
     
     // API Key - You can store this securely or retrieve from a secure source
-    const val API_KEY = "0ihyp1prSphXcexPXOwm1DMvpsvLOq995x7gXRAkNmccQ7HRFGcb9stRuDvm"
+    const val API_KEY = "0TZLnFEqdrVZ3QlDT7KwcAaJv99OFGrmVBphSNTz5qUcWXWcUJQ58kQbxhxx"
     
     private val loggingInterceptor = HttpLoggingInterceptor { message ->
         // Custom logging to better track API calls

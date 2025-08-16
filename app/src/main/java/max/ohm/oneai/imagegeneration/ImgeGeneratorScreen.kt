@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.*
@@ -206,6 +207,7 @@ fun ImageGeneratorScreen(
     val imageUrl = unifiedImageViewModel.imageUrl
     val isLoading = unifiedImageViewModel.isLoading
     val errorMessage = unifiedImageViewModel.errorMessage
+    val nsfwContentDetected = unifiedImageViewModel.nsfwContentDetected
     val selectedModelInternalName = unifiedImageViewModel.selectedModel
 
     val elapsedTimeInSeconds by unifiedImageViewModel.elapsedTimeInSeconds.collectAsState()
@@ -235,6 +237,7 @@ fun ImageGeneratorScreen(
 
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
+        ModelChoice("ModelsLab Epic Realism", "modelslab/epic-realism"),  // Added ModelsLab model
         ModelChoice("ImageGen-4", "provider-4/imagen-4"),
         ModelChoice("Flux Schnell", "flux.1-schnell"),
         // ModelChoice("Image-1", "provider-5/gpt-image-1"),
@@ -381,7 +384,72 @@ fun ImageGeneratorScreen(
                                 fontSize = 14.sp
                             )
                         }
+                    } else if (nsfwContentDetected) {
+                        // Show blank screen with NSFW warning when NSFW is detected
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(32.dp)
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFFFF6B6B)
+                                ),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 8.dp
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Warning,
+                                        contentDescription = "Warning",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    Text(
+                                        text = "NSFW Content Blocked",
+                                        color = Color.White,
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    
+                                    Text(
+                                        text = "The generated image was blocked due to inappropriate content detection.",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 14.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
+                                    Text(
+                                        text = "Please try generating a different image.",
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        fontSize = 13.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
                     } else if (generatedImageData != null || imageUrl != null) {
+                        // Only show image if no NSFW content was detected
                         val imageToDisplay = generatedImageData ?: imageUrl
                         Box(modifier = Modifier.fillMaxSize()) {
                             AsyncImage(
