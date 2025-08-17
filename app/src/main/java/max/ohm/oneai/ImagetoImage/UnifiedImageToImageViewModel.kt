@@ -186,7 +186,7 @@ class UnifiedImageToImageViewModel : ViewModel() {
         
         // Inpainting Models
         "v51-inpainting" to "Inpainting",
-        "object-removal" to "Object Removal",
+     //   "object-removal" to "Object Removal",
        // "bg-remove-mask" to "Background Removal (Mask)",
 
         // Style Transfer Models

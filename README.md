@@ -50,30 +50,30 @@
 
 ## ✨ Features
 
-### 🎨 **Text to Image Generation**
+###  **Text to Image Generation**
 - Generate stunning images from text prompts
 - Access to multiple AI models including ImageGen-4
 - Quick generation times (under 6 seconds)
 - Save and share your creations instantly
 
-### 🔄 **Image to Image Transformation**
+###  **Image to Image Transformation**
 - Transform existing images with AI-powered enhancements
 - Apply artistic styles and effects
 - Flux Kontext Pro Image-to-Image model integration
 - Before/after comparison view
 
-### 🎬 **AI Video Generation**
+###  **AI Video Generation**
 - Create stunning videos from text prompts
 - Multiple video styles and effects
 - High-quality video output with smooth animations
 
-### 💬 **AI Chat Assistant**
+###  **AI Chat Assistant**
 - Chat with your favorite AI models
 - Futuristic interface with sound effects
 - Multiple AI personalities including Gemini Flash
 - Real-time responses with engaging visual effects
 
-### 🎯 **Key Highlights**
+###  **Key Highlights**
 -  **Multiple AI Models** - Choose from various cutting-edge AI models
 -  **Fast Generation** - Create images in seconds, not minutes
 -  **User-Friendly Interface** - Intuitive design for seamless navigation
@@ -82,13 +82,13 @@
 -  **Video Generation** - Create dynamic videos from text and images
 -  **Regular Updates** - New models and features added frequently
 
-## 🚀 Installation
+##  Installation
 
 ### From Google Play Store (Recommended)
 1. [OneAI on Google Play](https://play.google.com/store/apps/details?id=max.ohm.oneai)
 
 
-## 🔧 Technologies
+##  Technologies
 
 - **AI Models:** State-of-the-art image and video generation models
 - **Platform:** Native Android application
@@ -96,7 +96,7 @@
 - **UI/UX:** Material Design principles
 
 
-## 🔄 Updates
+##  Updates
 
 We regularly update OneAI with:
 - New AI models and capabilities
