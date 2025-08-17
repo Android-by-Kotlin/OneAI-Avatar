@@ -1292,8 +1292,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Brush tool button - only show for mask erase and inpaint models
-                                    if (viewModel.selectedModel == "stability-ai-mask-erase" || viewModel.selectedModel == "stability-ai-inpaint") {
+                                    // Brush tool button - show for mask erase, inpaint, and V51 inpainting models
+                                    if (viewModel.selectedModel == "stability-ai-mask-erase" || 
+                                        viewModel.selectedModel == "stability-ai-inpaint" ||
+                                        viewModel.selectedModel == "v51-inpainting") {
                                         IconButton(
                                             onClick = { viewModel.toggleMaskingInterface() },
                                             modifier = Modifier
@@ -1578,8 +1580,10 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                         )
                     }
                     
-                    // Mask status indicator for mask erase and inpaint models
-                    if (viewModel.selectedModel == "stability-ai-mask-erase" || viewModel.selectedModel == "stability-ai-inpaint") {
+                    // Mask status indicator for mask erase, inpaint, and V51 inpainting models
+                    if (viewModel.selectedModel == "stability-ai-mask-erase" || 
+                        viewModel.selectedModel == "stability-ai-inpaint" ||
+                        viewModel.selectedModel == "v51-inpainting") {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1616,6 +1620,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                         when (viewModel.selectedModel) {
                                             "stability-ai-mask-erase" -> "Mask created - Ready to erase"
                                             "stability-ai-inpaint" -> "Mask created - Ready to inpaint"
+                                            "v51-inpainting" -> "Mask created - Ready for V51 inpainting"
                                             else -> "Mask created - Ready to process"
                                         }
                                     } else {

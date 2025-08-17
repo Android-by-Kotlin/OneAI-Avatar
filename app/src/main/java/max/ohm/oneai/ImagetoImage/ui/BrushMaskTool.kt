@@ -310,11 +310,13 @@ private fun createMaskBitmap(
     
     val canvas = Canvas(maskBitmap)
     
-    // Fill with transparent background
-    canvas.drawColor(android.graphics.Color.TRANSPARENT)
+    // Fill with black background (no mask area)
+    // For V51 Inpainting: black = keep original, white = inpaint area
+    canvas.drawColor(android.graphics.Color.BLACK)
     
-    // Early return if no paths to draw
+    // Early return if no paths to draw - return fully black mask (no inpainting)
     if (paths.isEmpty()) {
+        android.util.Log.w("BrushMaskTool", "No paths drawn, returning black mask")
         return maskBitmap
     }
     
@@ -325,10 +327,13 @@ private fun createMaskBitmap(
     // Set up paint for drawing mask
     val paint = Paint().apply {
         color = android.graphics.Color.WHITE
-        style = Paint.Style.STROKE
+        // Use FILL_AND_STROKE to ensure mask areas are fully filled
+        style = Paint.Style.FILL_AND_STROKE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
         isAntiAlias = true
+        // Set alpha to full opacity for proper mask
+        alpha = 255
     }
     
     // Calculate the actual scale factor based on the image display dimensions

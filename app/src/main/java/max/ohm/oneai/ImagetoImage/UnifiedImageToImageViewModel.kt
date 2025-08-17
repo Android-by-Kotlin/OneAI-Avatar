@@ -183,6 +183,9 @@ class UnifiedImageToImageViewModel : ViewModel() {
         "fashion-try-on" to "Fashion Try-On",
        // "stable-diffusion-img2img" to "Stable Diffusion Img2Img",
       //  "sdxl-img2img" to "SDXL Image-to-Image",
+        
+        // Inpainting Models
+        "v51-inpainting" to "Inpainting",
 
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
@@ -725,6 +728,34 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             return@launch
                     }
                         performRemoveImg2Img(base64Image)
+                    }
+                    
+                    "v51-inpainting" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        if (maskBitmap == null) {
+                            errorMessage = "Please create a mask first by using the brush tool"
+                            isLoading = false
+                            return@launch
+                        }
+                        if (prompt.isBlank()) {
+                            errorMessage = "Please enter a prompt for inpainting"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert mask to base64 with proper binary formatting
+                        val base64MaskImage = withContext(Dispatchers.IO) {
+                            // Ensure mask is properly formatted as binary black and white
+                            val binaryMask = ensureBinaryMask(maskBitmap!!)
+                            // Resize if needed to match API requirements
+                            val resizedMask = resizeBitmapIfNeeded(binaryMask)
+                            // Convert to PNG base64 for better mask compatibility
+                            maskBitmapToPngBase64(resizedMask)
+                        }
+                        performInpaintingV51(base64Image, base64MaskImage)
                     }
 
 
@@ -1473,6 +1504,110 @@ class UnifiedImageToImageViewModel : ViewModel() {
         )
 
         processApiResult(result)
+    }
+    
+    private suspend fun performInpaintingV51(base64Image: String, base64MaskImage: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with V51 Inpainting..."
+        
+        try {
+            Log.d("UnifiedImg2Img", "Starting V51 Inpainting with enhanced debugging")
+            Log.d("UnifiedImg2Img", "Prompt: '$prompt'")
+            Log.d("UnifiedImg2Img", "Image data length: ${base64Image.length}")
+            Log.d("UnifiedImg2Img", "Mask data length: ${base64MaskImage.length}")
+            
+            // Validate API key first
+            if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE") {
+                val error = "V51 Inpainting Error: ModelsLab API key not configured properly. Please check your API key in modelslabapikey.kt"
+                Log.e("UnifiedImg2Img", error)
+                errorMessage = error
+                return@withContext
+            }
+            
+            Log.d("UnifiedImg2Img", "API Key validation passed (length: ${MODELSLAB_API_KEY.length})")
+            
+            // Validate mask dimensions match original image
+            if (maskBitmap != null && selectedImage != null) {
+                Log.d("UnifiedImg2Img", "Mask dimensions: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                Log.d("UnifiedImg2Img", "Original image dimensions: ${selectedImage!!.width}x${selectedImage!!.height}")
+                
+                // Ensure mask has proper format
+                if (maskBitmap!!.width != selectedImage!!.width || maskBitmap!!.height != selectedImage!!.height) {
+                    Log.w("UnifiedImg2Img", "Mask dimensions don't match original image, resizing mask...")
+                    // Resize mask to match original image dimensions
+                    maskBitmap = Bitmap.createScaledBitmap(maskBitmap!!, selectedImage!!.width, selectedImage!!.height, true)
+                    Log.d("UnifiedImg2Img", "Mask resized to: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                }
+            }
+            
+            // Create the request JSON with proper V51 inpainting parameters
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("model_id", "v51_inpainting")
+                put("prompt", prompt)
+                put("negative_prompt", negativePrompt.ifBlank { 
+                    "ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, low contrast, underexposed, overexposed, bad art, beginner, amateur, distorted face, blurry, draft, grainy" 
+                })
+                put("init_image", base64Image)
+                put("mask_image", base64MaskImage)
+                put("samples", 1)
+                put("steps", 21)
+                put("safety_checker", "no")
+                put("guidance_scale", guidanceScale.toDouble())
+                put("strength", strength.toDouble())
+                put("scheduler", "DPMSolverMultistepScheduler")
+                put("tomesd", "yes")
+                put("use_karras_sigmas", "yes")
+                put("base64", true)
+                put("webhook", JSONObject.NULL)
+                put("track_id", JSONObject.NULL)
+            }
+            
+            Log.d("UnifiedImg2Img", "Request JSON prepared for V51 Inpainting")
+            Log.d("UnifiedImg2Img", "Request parameters: model=v51_inpainting, samples=1, steps=21, guidance=${guidanceScale}, strength=${strength}")
+            
+            // Try the most reliable endpoint for V51 inpainting
+            val endpoints = listOf(
+                "https://modelslab.com/api/v6/images/inpaint" to "V51 Inpainting (v6/inpaint)",
+                "https://modelslab.com/api/v6/realtime/img2img" to "V51 Inpainting (v6/realtime)",
+                "https://modelslab.com/api/v5/controlnet" to "V51 Inpainting (v5/controlnet)"
+            )
+            
+            var lastError: String? = null
+            
+            for ((url, name) in endpoints) {
+                Log.d("UnifiedImg2Img", "Trying endpoint: $url ($name)")
+                
+                try {
+                    val result = makeApiCallWithPolling(
+                        url = url,
+                        jsonBody = jsonBody,
+                        modelName = name
+                    )
+                    
+                    if (result != null) {
+                        Log.d("UnifiedImg2Img", "Success with endpoint: $url")
+                        processApiResult(result)
+                        return@withContext
+                    } else {
+                        Log.w("UnifiedImg2Img", "Endpoint $url returned null, trying next...")
+                        lastError = errorMessage ?: "Unknown error from $name"
+                    }
+                } catch (e: Exception) {
+                    Log.e("UnifiedImg2Img", "Exception with endpoint $url: ${e.message}", e)
+                    lastError = e.message ?: "Exception occurred with $name"
+                }
+            }
+            
+            // All endpoints failed
+            val finalError = "V51 Inpainting Error: All API endpoints failed. Last error: $lastError. Please check your API key, internet connection, and try again. Ensure the mask is a black and white image where white areas represent regions to be inpainted."
+            Log.e("UnifiedImg2Img", finalError)
+            errorMessage = finalError
+            
+        } catch (e: Exception) {
+            val error = "V51 Inpainting Error: Unexpected error occurred - ${e.message}. Please check your inputs and try again."
+            Log.e("UnifiedImg2Img", "Critical error in V51 Inpainting", e)
+            errorMessage = error
+        }
     }
     
     private suspend fun performFashionTryOn(base64PersonImage: String, base64ClothingImage: String) = withContext(Dispatchers.IO) {
@@ -2467,6 +2602,71 @@ class UnifiedImageToImageViewModel : ViewModel() {
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
         val imageBytes = outputStream.toByteArray()
         return Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+    }
+    
+    // Helper function to convert mask bitmap to PNG base64 (better for inpainting)
+    private fun maskBitmapToPngBase64(bitmap: Bitmap): String {
+        val outputStream = ByteArrayOutputStream()
+        // Use PNG format for masks to preserve alpha channel properly
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        val imageBytes = outputStream.toByteArray()
+        val base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+        Log.d("UnifiedImg2Img", "Converted mask to PNG base64, size: ${imageBytes.size} bytes")
+        return base64String
+    }
+    
+    // Helper function to ensure mask is properly formatted as binary black and white
+    private fun ensureBinaryMask(mask: Bitmap): Bitmap {
+        val width = mask.width
+        val height = mask.height
+        
+        Log.d("UnifiedImg2Img", "Processing mask: ${width}x${height}, Config: ${mask.config}")
+        
+        // Create a new bitmap with RGB_565 config for better compatibility
+        val binaryMask = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        
+        var whitePixels = 0
+        var blackPixels = 0
+        
+        // Process each pixel to ensure it's either pure black or pure white
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val pixel = mask.getPixel(x, y)
+                
+                // Extract ARGB components
+                val alpha = (pixel shr 24) and 0xff
+                val red = (pixel shr 16) and 0xff
+                val green = (pixel shr 8) and 0xff
+                val blue = pixel and 0xff
+                
+                // Calculate brightness using standard luminance formula
+                val brightness = (0.299 * red + 0.587 * green + 0.114 * blue).toInt()
+                
+                // For V51 Inpainting: White pixels = areas to inpaint, Black pixels = areas to keep
+                // If pixel has sufficient opacity and brightness, make it white (inpaint area)
+                // Use a lower threshold for better mask detection
+                val newPixel = if (alpha > 100 && brightness > 5) {
+                    whitePixels++
+                    0xFFFFFFFF.toInt() // Pure white with full opacity (inpaint this area)
+                } else {
+                    blackPixels++
+                    0xFF000000.toInt() // Pure black with full opacity (keep this area)
+                }
+                binaryMask.setPixel(x, y, newPixel)
+            }
+        }
+        
+        Log.d("UnifiedImg2Img", "Created binary mask: ${width}x${height}")
+        Log.d("UnifiedImg2Img", "White pixels (inpaint areas): $whitePixels")
+        Log.d("UnifiedImg2Img", "Black pixels (keep areas): $blackPixels")
+        Log.d("UnifiedImg2Img", "Mask coverage: ${(whitePixels * 100.0 / (width * height)).toInt()}%")
+        
+        // Validate that there are actually mask areas to inpaint
+        if (whitePixels == 0) {
+            Log.w("UnifiedImg2Img", "Warning: No white pixels found in mask. The mask may be invalid.")
+        }
+        
+        return binaryMask
     }
 
     private fun calculateDimensions(bitmap: Bitmap): Pair<Int, Int> {
