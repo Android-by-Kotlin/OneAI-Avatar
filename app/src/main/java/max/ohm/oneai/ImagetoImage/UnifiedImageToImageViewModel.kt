@@ -186,6 +186,8 @@ class UnifiedImageToImageViewModel : ViewModel() {
         
         // Inpainting Models
         "v51-inpainting" to "Inpainting",
+        "object-removal" to "Object Removal",
+       // "bg-remove-mask" to "Background Removal (Mask)",
 
         // Style Transfer Models
         "ghibli-style" to "Ghibli Studio Style",
@@ -756,6 +758,52 @@ class UnifiedImageToImageViewModel : ViewModel() {
                             maskBitmapToPngBase64(resizedMask)
                         }
                         performInpaintingV51(base64Image, base64MaskImage)
+                    }
+                    
+                    "object-removal" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        if (maskBitmap == null) {
+                            errorMessage = "Please create a mask to define the objects to remove using the brush tool"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert mask to base64 with proper binary formatting
+                        val base64MaskImage = withContext(Dispatchers.IO) {
+                            // Ensure mask is properly formatted as binary black and white
+                            val binaryMask = ensureBinaryMask(maskBitmap!!)
+                            // Resize if needed to match API requirements
+                            val resizedMask = resizeBitmapIfNeeded(binaryMask)
+                            // Convert to PNG base64 for better mask compatibility
+                            maskBitmapToPngBase64(resizedMask)
+                        }
+                        performObjectRemoval(base64Image, base64MaskImage)
+                    }
+                    
+                    "bg-remove-mask" -> {
+                        if (MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE" || MODELSLAB_API_KEY.isBlank()) {
+                            errorMessage = "Please set your ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        if (maskBitmap == null) {
+                            errorMessage = "Please create a mask to define the background areas using the brush tool"
+                            isLoading = false
+                            return@launch
+                        }
+                        // Convert mask to base64 with proper binary formatting
+                        val base64MaskImage = withContext(Dispatchers.IO) {
+                            // Ensure mask is properly formatted as binary black and white
+                            val binaryMask = ensureBinaryMask(maskBitmap!!)
+                            // Resize if needed to match API requirements
+                            val resizedMask = resizeBitmapIfNeeded(binaryMask)
+                            // Convert to PNG base64 for better mask compatibility
+                            maskBitmapToPngBase64(resizedMask)
+                        }
+                        performBackgroundRemovalMask(base64Image, base64MaskImage)
                     }
 
 
@@ -1504,6 +1552,152 @@ class UnifiedImageToImageViewModel : ViewModel() {
         )
 
         processApiResult(result)
+    }
+    
+    private suspend fun performObjectRemoval(base64Image: String, base64MaskImage: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing object removal..."
+        
+        try {
+            Log.d("UnifiedImg2Img", "Starting object removal with enhanced debugging")
+            Log.d("UnifiedImg2Img", "Image data length: ${base64Image.length}")
+            Log.d("UnifiedImg2Img", "Mask data length: ${base64MaskImage.length}")
+            
+            // Validate API key first
+            if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE") {
+                val error = "Object Removal Error: ModelsLab API key not configured properly. Please check your API key in modelslabapikey.kt"
+                Log.e("UnifiedImg2Img", error)
+                errorMessage = error
+                return@withContext
+            }
+            
+            Log.d("UnifiedImg2Img", "API Key validation passed (length: ${MODELSLAB_API_KEY.length})")
+            
+            // Validate mask dimensions match original image
+            if (maskBitmap != null && selectedImage != null) {
+                Log.d("UnifiedImg2Img", "Mask dimensions: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                Log.d("UnifiedImg2Img", "Original image dimensions: ${selectedImage!!.width}x${selectedImage!!.height}")
+                
+                // Ensure mask has proper format
+                if (maskBitmap!!.width != selectedImage!!.width || maskBitmap!!.height != selectedImage!!.height) {
+                    Log.w("UnifiedImg2Img", "Mask dimensions don't match original image, resizing mask...")
+                    // Resize mask to match original image dimensions
+                    maskBitmap = Bitmap.createScaledBitmap(maskBitmap!!, selectedImage!!.width, selectedImage!!.height, true)
+                    Log.d("UnifiedImg2Img", "Mask resized to: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                }
+            }
+            
+            // Create the request JSON with proper object removal parameters
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("init_image", base64Image)
+                put("mask_image", base64MaskImage)
+                put("base64", true)
+                put("webhook", JSONObject.NULL)
+                put("track_id", JSONObject.NULL)
+            }
+            
+            Log.d("UnifiedImg2Img", "Request JSON prepared for Object Removal")
+            
+            // Use the ModelsLab v6 object removal endpoint
+            val result = makeApiCallWithPolling(
+                url = "https://modelslab.com/api/v6/image_editing/object_removal",
+                jsonBody = jsonBody,
+                modelName = "Object Removal"
+            )
+            
+            if (result != null) {
+                Log.d("UnifiedImg2Img", "Success with object removal endpoint")
+                processApiResult(result)
+            } else {
+                val finalError = "Object Removal Error: Failed to remove objects from image. Please ensure the mask clearly defines the objects to remove (white areas = objects to remove, black areas = areas to keep). Check your API key and internet connection."
+                Log.e("UnifiedImg2Img", finalError)
+                errorMessage = finalError
+            }
+            
+        } catch (e: Exception) {
+            val error = "Object Removal Error: Unexpected error occurred - ${e.message}. Please check your inputs and try again."
+            Log.e("UnifiedImg2Img", "Critical error in Object Removal", e)
+            errorMessage = error
+        }
+    }
+    
+    private suspend fun performBackgroundRemovalMask(base64Image: String, base64MaskImage: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing background removal with mask..."
+        
+        try {
+            Log.d("UnifiedImg2Img", "Starting background removal with mask")
+            Log.d("UnifiedImg2Img", "Prompt: '$prompt'")
+            Log.d("UnifiedImg2Img", "Image data length: ${base64Image.length}")
+            Log.d("UnifiedImg2Img", "Mask data length: ${base64MaskImage.length}")
+            
+            // Validate API key first
+            if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY_HERE") {
+                val error = "Background Removal Error: ModelsLab API key not configured properly. Please check your API key in modelslabapikey.kt"
+                Log.e("UnifiedImg2Img", error)
+                errorMessage = error
+                return@withContext
+            }
+            
+            Log.d("UnifiedImg2Img", "API Key validation passed (length: ${MODELSLAB_API_KEY.length})")
+            
+            // Validate mask dimensions match original image
+            if (maskBitmap != null && selectedImage != null) {
+                Log.d("UnifiedImg2Img", "Mask dimensions: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                Log.d("UnifiedImg2Img", "Original image dimensions: ${selectedImage!!.width}x${selectedImage!!.height}")
+                
+                // Ensure mask has proper format
+                if (maskBitmap!!.width != selectedImage!!.width || maskBitmap!!.height != selectedImage!!.height) {
+                    Log.w("UnifiedImg2Img", "Mask dimensions don't match original image, resizing mask...")
+                    // Resize mask to match original image dimensions
+                    maskBitmap = Bitmap.createScaledBitmap(maskBitmap!!, selectedImage!!.width, selectedImage!!.height, true)
+                    Log.d("UnifiedImg2Img", "Mask resized to: ${maskBitmap!!.width}x${maskBitmap!!.height}")
+                }
+            }
+            
+            // Create the request JSON with proper background removal parameters according to the API spec
+            val jsonBody = JSONObject().apply {
+                put("key", MODELSLAB_API_KEY)
+                put("prompt", prompt.ifBlank { "change the background with black gray and white shade" })
+                put("negative_prompt", negativePrompt)
+                put("init_image", base64Image)
+                put("mask_image", base64MaskImage)
+                put("width", 512)
+                put("height", 512)
+                put("samples", 1)
+                put("num_inference_steps", 30)
+                put("safety_checker", "no")
+                put("enhance_prompt", "yes")
+                put("guidance_scale", 5)
+                put("strength", 0.7)
+                put("base64", true)
+                put("seed", JSONObject.NULL)
+                put("webhook", JSONObject.NULL)
+                put("track_id", JSONObject.NULL)
+            }
+            
+            Log.d("UnifiedImg2Img", "Request JSON prepared for Background Removal with Mask")
+            
+            // Use the ModelsLab v6 background removal with mask endpoint
+            val result = makeApiCallWithPolling(
+                url = "https://modelslab.com/api/v6/image_editing/removebg_mask",
+                jsonBody = jsonBody,
+                modelName = "Background Removal (Mask)"
+            )
+            
+            if (result != null) {
+                Log.d("UnifiedImg2Img", "Success with background removal mask endpoint")
+                processApiResult(result)
+            } else {
+                val finalError = "Background Removal Error: Failed to remove background from image. Please ensure the mask clearly defines the background areas to remove (white areas = background to change, black areas = areas to keep). Check your API key and internet connection."
+                Log.e("UnifiedImg2Img", finalError)
+                errorMessage = finalError
+            }
+            
+        } catch (e: Exception) {
+            val error = "Background Removal Error: Unexpected error occurred - ${e.message}. Please check your inputs and try again."
+            Log.e("UnifiedImg2Img", "Critical error in Background Removal with Mask", e)
+            errorMessage = error
+        }
     }
     
     private suspend fun performInpaintingV51(base64Image: String, base64MaskImage: String) = withContext(Dispatchers.IO) {
