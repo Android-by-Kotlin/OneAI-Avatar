@@ -1292,10 +1292,11 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // Brush tool button - show for mask erase, inpaint, and V51 inpainting models
+                                    // Brush tool button - show for mask erase, inpaint, V51 inpainting, and object removal models
                                     if (viewModel.selectedModel == "stability-ai-mask-erase" || 
                                         viewModel.selectedModel == "stability-ai-inpaint" ||
-                                        viewModel.selectedModel == "v51-inpainting") {
+                                        viewModel.selectedModel == "v51-inpainting" ||
+                                        viewModel.selectedModel == "object-removal") {
                                         IconButton(
                                             onClick = { viewModel.toggleMaskingInterface() },
                                             modifier = Modifier
@@ -1580,10 +1581,11 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                         )
                     }
                     
-                    // Mask status indicator for mask erase, inpaint, and V51 inpainting models
+                    // Mask status indicator for mask erase, inpaint, V51 inpainting, and object removal models
                     if (viewModel.selectedModel == "stability-ai-mask-erase" || 
                         viewModel.selectedModel == "stability-ai-inpaint" ||
-                        viewModel.selectedModel == "v51-inpainting") {
+                        viewModel.selectedModel == "v51-inpainting" ||
+                        viewModel.selectedModel == "object-removal") {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
