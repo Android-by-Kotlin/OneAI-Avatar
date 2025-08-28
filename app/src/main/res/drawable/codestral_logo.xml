@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- Codestral hexagonal logo -->
+    <path
+        android:fillColor="#FF4444"
+        android:pathData="M12,2 L20,6 L20,18 L12,22 L4,18 L4,6 Z" />
+    
+    <!-- Inner code brackets -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,8 L6,10 L8,12 L8,14 L4,12 L4,10 L8,8 Z" />
+        
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,8 L20,10 L20,12 L16,14 L16,12 L18,10 L16,8 Z" />
+        
+    <!-- Center dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M11,11 L13,11 L13,13 L11,13 Z" />
+</vector>

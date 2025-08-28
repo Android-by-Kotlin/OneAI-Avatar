@@ -45,7 +45,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
         internal set
 
-    var selectedModel by mutableStateOf("gemini-2.0-flash") // Default model
+    var selectedModel by mutableStateOf("provider-3/gpt-4.1-nano") // Default model
     
     // Track if we're in auto-retry mode with a different model
     var isAutoRetrying by mutableStateOf(false)
@@ -98,6 +98,10 @@ class UnifiedChatBotViewModel : ViewModel() {
     }
 
     init {
+        // Ensure GPT-4.1 Nano is set as default model
+        selectedModel = "provider-3/gpt-4.1-nano"
+        Log.d(TAG, "Initialized ViewModel with default model: $selectedModel")
+        
         initializeGeminiProModel()
         createInitialChatIfNeeded()
     }
@@ -544,7 +548,9 @@ class UnifiedChatBotViewModel : ViewModel() {
                 "provider-6/horizon-beta",
                 "provider-3/gpt-5-nano",
                 "provider-6/gpt-4o",
-                "provider-6/gemini-2.5-flash" -> {
+                "provider-6/gemini-2.5-flash",
+                "provider-2/gemini-2.5-flash-lite",
+                "provider-2/codestral-latest" -> {
                     Log.d(TAG, "Generating response with A4F model: $selectedModel")
                     val userPrompt = messages.lastOrNull { it.isUser }?.text ?: ""
                     try {

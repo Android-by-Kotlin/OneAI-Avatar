@@ -89,8 +89,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import max.ohm.oneai.R
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -106,6 +109,87 @@ private val AccentGreen = Color(0xFF019863)
 private val Black= Color(0xFF000000)
 private val AccentRed = Color(0xFF023788)
 private val ErrorRed = Color(0xFFFF5252)
+
+@Composable
+private fun ModelIcon(
+    modelName: String,
+    size: Int,
+    tint: Color
+) {
+    when {
+        modelName.contains("GPT") -> {
+            // Use ChatGPT logo image for all GPT models
+            Image(
+                painter = painterResource(id = R.drawable.chatgpt_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("Gemini") -> {
+            // Use Gemini logo image
+            Image(
+                painter = painterResource(id = R.drawable.gemini_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("DeepSeek") -> {
+            // Use DeepSeek logo image
+            Image(
+                painter = painterResource(id = R.drawable.deepseek_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("Perplexity") -> {
+            // Use Perplexity logo image
+            Image(
+                painter = painterResource(id = R.drawable.perplexity_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("Kimi") -> {
+            // Use Moonshot logo image for Kimi K2 models
+            Image(
+                painter = painterResource(id = R.drawable.moonshot_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("Qwen") -> {
+            // Use Qwen logo image
+            Image(
+                painter = painterResource(id = R.drawable.qwen_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+        modelName.contains("Codestral") -> {
+            // Use Codestral custom logo
+            Icon(
+                painter = painterResource(id = R.drawable.codestral_logo),
+                contentDescription = null,
+                modifier = Modifier.size(size.dp)
+            )
+        }
+        else -> {
+            // Use default Material Design icon for unknown models
+            Icon(
+                imageVector = Icons.Outlined.Stars,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(size.dp)
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,22 +219,21 @@ fun ChatBotScreen(
     // Check if user is authenticated
     val isAuthenticated = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
     
-    // Available model options
+    // Available model options - GPT-4.1 Nano is first (default)
     val modelOptions = listOf(
-        "gemini-2.0-flash" to "Gemini Flash",
-//        "gemini-2.0-pro" to "Gemini Pro",
-//        "gpt-4" to "GPT-4",
-        "provider-3/gpt-4.1-nano" to "GPT-4.1-Nano",
+        "provider-3/gpt-4.1-nano" to "GPT-4.1 Nano",
+        "provider-6/gemini-2.5-flash" to "Gemini 2.5 Flash",
         "provider-3/kimi-k2" to "Kimi K2",
         "provider-1/deepseek-r1-0528" to "DeepSeek R1",
-        "provider-6/r1-1776" to "Perplexity-R1",
-        "provider-2/qwen-3-235b" to "Qwen 3",
-        "provider-6/horizon-beta" to "GPT-Horizon Beta",
+      //  "provider-6/r1-1776" to "Perplexity-R1",
+      //  "provider-2/qwen-3-235b" to "Qwen 3b",
+      //  "provider-6/horizon-beta" to "GPT-Horizon Beta",
         "provider-3/gpt-5-nano" to "GPT-5 Nano",
-        "provider-6/gpt-4o" to "GPT-4o",
-        "provider-6/gemini-2.5-flash" to "Gemini 2.5 Flash"
+        "provider-6/gpt-4o" to "GPT-4o"
+        //"provider-2/codestral-latest" to "Codestral Latest"
     )
 
+    // Set model from initialModelType if provided, otherwise ViewModel default is used
     LaunchedEffect(initialModelType) {
         initialModelType?.let {
             unifiedChatBotViewModel.updateSelectedModel(it)
@@ -851,6 +934,10 @@ private fun EnhancedChatModelSelector(
                                             Color(0xFF8B5CF6).copy(alpha = 0.2f),
                                             Color(0xFFEC4899).copy(alpha = 0.2f)
                                         )
+                                        currentModelName.contains("Codestral") -> listOf(
+                                            Color(0xFFEF4444).copy(alpha = 0.2f),
+                                            Color(0xFFF97316).copy(alpha = 0.2f)
+                                        )
                                         else -> listOf(
                                             Color(0xFF10B981).copy(alpha = 0.2f),
                                             Color(0xFF06B6D4).copy(alpha = 0.2f)
@@ -860,23 +947,16 @@ private fun EnhancedChatModelSelector(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = when {
-                                currentModelName.contains("GPT-5") || currentModelName.contains("GPT-4.1") -> Icons.Outlined.Stars
-                                currentModelName.contains("GPT") -> Icons.Outlined.AutoAwesome
-                                currentModelName.contains("Gemini") -> Icons.Outlined.Psychology
-                                currentModelName.contains("DeepSeek") -> Icons.Outlined.TipsAndUpdates
-                                currentModelName.contains("Perplexity") -> Icons.Outlined.RocketLaunch
-                                else -> Icons.Outlined.Psychology
-                            },
-                            contentDescription = null,
+                        ModelIcon(
+                            modelName = currentModelName,
+                            size = 16,
                             tint = when {
                                 currentModelName.contains("GPT") -> Color(0xFF00FF88)
                                 currentModelName.contains("Gemini") -> Color(0xFF06B6D4)
                                 currentModelName.contains("DeepSeek") -> Color(0xFF8B5CF6)
+                                currentModelName.contains("Codestral") -> Color(0xFFEF4444)
                                 else -> Color(0xFF10B981)
-                            },
-                            modifier = Modifier.size(16.dp)
+                            }
                         )
                     }
                     
@@ -1031,26 +1111,14 @@ private fun EnhancedChatModelSelector(
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = when {
-                                            modelName.contains("GPT-5") || modelName.contains("GPT-4.1") -> Icons.Outlined.Stars
-                                            modelName.contains("GPT-4o") -> Icons.Outlined.WorkspacePremium
-                                            modelName.contains("GPT") -> Icons.Outlined.AutoAwesome
-                                            modelName.contains("Gemini 2.5") -> Icons.Outlined.Stars
-                                            modelName.contains("Gemini") -> Icons.Outlined.Psychology
-                                            modelName.contains("DeepSeek") -> Icons.Outlined.TipsAndUpdates
-                                            modelName.contains("Perplexity") -> Icons.Outlined.RocketLaunch
-                                            modelName.contains("Kimi") -> Icons.Outlined.Palette
-                                            modelName.contains("Qwen") -> Icons.Outlined.Bolt
-                                            else -> Icons.Outlined.Psychology
-                                        },
-                                        contentDescription = null,
+                                    ModelIcon(
+                                        modelName = modelName,
+                                        size = 20,
                                         tint = if (isSelected) {
                                             Color(0xFF00FF88)
                                         } else {
                                             Color.White.copy(alpha = 0.7f)
-                                        },
-                                        modifier = Modifier.size(20.dp)
+                                        }
                                     )
                                 }
                                 

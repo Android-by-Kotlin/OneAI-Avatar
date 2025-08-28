@@ -137,7 +137,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "gemini-2.0-flash" // Default to Gemini Flash
+                defaultValue = "provider-3/gpt-4.1-nano" // Default to GPT-4.1 Nano
             })
         ) { backStackEntry ->
             // Check if user is logged in
@@ -150,13 +150,10 @@ fun AppNavigation() {
             }
             val modelType = backStackEntry.arguments?.getString("modelType")
             val unifiedChatBotViewModel: UnifiedChatBotViewModel = viewModel() // Use UnifiedChatBotViewModel
-            // Set the initial model type in the view model
-            LaunchedEffect(modelType) {
-                modelType?.let {
-                    unifiedChatBotViewModel.updateSelectedModel(it)
-                }
-            }
-            ChatBotScreen(unifiedChatBotViewModel = unifiedChatBotViewModel)
+            ChatBotScreen(
+                unifiedChatBotViewModel = unifiedChatBotViewModel,
+                initialModelType = modelType
+            )
         }
         composable(
             "openRouter?model={modelType}", // Route for OpenRouter screen
