@@ -256,15 +256,15 @@ fun ImageGeneratorScreen(
         // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar"),
         ModelChoice("Flux Dev", "provider-3/FLUX.1-dev")
     )
-    // Always ensure we have a valid model choice, defaulting to Flux Schnell if not found
+    // Always ensure we have a valid model choice, defaulting to Flux Dev if not found
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName } 
-        ?: modelChoices.find { it.internalName == "flux.1-schnell" } 
+        ?: modelChoices.find { it.internalName == "provider-3/FLUX.1-dev" } 
         ?: modelChoices.first()
 
     // Ensure the model is properly initialized when the screen is first displayed
     LaunchedEffect(Unit) {
         // Force initialize with the default model to ensure proper setup
-        val defaultModel = "flux.1-schnell"
+        val defaultModel = "provider-3/FLUX.1-dev"
         Log.d("ImageGeneratorScreen", "Initializing with default model: $defaultModel, current model: ${unifiedImageViewModel.selectedModel}")
         
         // Always force the model to be set to the default on screen initialization
@@ -609,7 +609,7 @@ fun ImageGeneratorScreen(
                 onClick = { 
                     if (unifiedImageViewModel.selectedModel.isBlank()) {
                         Log.d("ImageGeneratorScreen", "Setting model before generating")
-                        unifiedImageViewModel.updateSelectedModel("flux.1-schnell")
+                        unifiedImageViewModel.updateSelectedModel("provider-3/FLUX.1-dev")
                     }
                     unifiedImageViewModel.generateImage() 
                 },
