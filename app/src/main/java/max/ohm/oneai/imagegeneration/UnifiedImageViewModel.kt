@@ -313,7 +313,10 @@ class UnifiedImageViewModel : ViewModel() {
                             modelId = ModelsLabTextToImageService.MODEL_NANO_BANANA,
                             scheduler = "DPMSolverSinglestepScheduler",
                             width = 768,
+                            //width = 704,
                             height = 1024,
+//                            height = 1408,
+                            //height = 1472,
                             guidanceScale = 7.5,
                             numInferenceSteps = 31,
                             steps = 21,
@@ -408,20 +411,20 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         isLoading = false
                     }
-                    "provider-5/gpt-image-1" -> {
+                    "provider-6/gpt-image-1" -> {
                         if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                             errorMessage = "Please set your A4F API Key in A4FClinet"
                             isLoading = false
                             return@launch
                         }
                         val request = FluxImageGenerationRequest(
-                            model = "provider-5/gpt-image-1", // Use the pro model
-                            prompt = "$safePrompt. ${negativePrompts}",
+                            model = "provider-6/gpt-image-1", // Use the pro model
+                            prompt = "$safePrompt",
                             n = 1,
-                            size = "1024x1536"  //chatgpt app size
+                            //size = "1024x1536"  //chatgpt app size
                             //size = "720x1280"
                            // size = "1080x2340"
-                            //size = "1024x1024"
+                            size = "1024x1024"
                         )
                         val response = FluxApiClient.apiService.generateImage(request)
 
@@ -447,6 +450,73 @@ class UnifiedImageViewModel : ViewModel() {
                         val request = FluxImageGenerationRequest(
                             model = "provider-4/imagen-4", // Use the pro model
                             prompt = "$safePrompt. Avoid: ${negativePrompts}",
+                            n = 1,
+                            //  size = "1024x1536"  //chatgpt app size
+                           // size = "1024x1792"
+                            //size = "720x1280"
+                            // size = "1080x2340"
+                            size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            val technicalError = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-4")
+                        }
+                        isLoading = false
+                    }
+
+
+
+
+
+                    "google/imagen-4" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/imagen-4", // Use the pro model
+                            prompt = "$safePrompt",
+                            n = 1,
+                            //  size = "1024x1536"  //chatgpt app size
+                             size = "1024x1792"
+                            //size = "720x1280"
+                            // size = "1080x2340"
+                            //size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            val technicalError = "ImageGen-4 API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-4")
+                        }
+                        isLoading = false
+                    }
+
+
+
+
+
+
+                    "google/imagen-3" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/imagen-3", // Use the pro model
+                            prompt = "$safePrompt",
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
@@ -551,6 +621,38 @@ class UnifiedImageViewModel : ViewModel() {
                             val errorBody = response.errorBody()?.string() ?: "Unknown API error"
                             val technicalError = "ImageGen-3 API Error: ${response.code()} - ${errorBody}"
                             errorMessage = getUserFriendlyErrorMessage(technicalError, "ImageGen-3")
+                        }
+                        isLoading = false
+                    }
+
+
+
+                    "provider-4/qwen-image" -> {
+                        if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
+                            errorMessage = "Please set your A4F API Key in A4FClinet"
+                            isLoading = false
+                            return@launch
+                        }
+                        val request = FluxImageGenerationRequest(
+                            model = "provider-4/qwen-image", // Use the pro model
+                            prompt = "$safePrompt",
+                            n = 1,
+                            //  size = "1024x1536"  //chatgpt app size
+                            size = "1024x1792"
+                           // size="1080x2340"
+                            //size = "720x1280"
+                            // size = "1080x2340"
+                           // size = "1024x1024"
+                        )
+                        val response = FluxApiClient.apiService.generateImage(request)
+
+                        if (response.isSuccessful) {
+                            val generatedFluxImage = response.body()?.data?.firstOrNull()
+                            imageUrl = generatedFluxImage?.url
+                        } else {
+                            val errorBody = response.errorBody()?.string() ?: "Unknown API error"
+                            val technicalError = "Qwen API Error: ${response.code()} - ${errorBody}"
+                            errorMessage = getUserFriendlyErrorMessage(technicalError, "Qwen")
                         }
                         isLoading = false
                     }
@@ -693,6 +795,7 @@ class UnifiedImageViewModel : ViewModel() {
                             prompt = "$safePrompt, safe for work, family-friendly",
                             n = 1,
                             size = "1024x1024"
+                            //size = "1024x1792"     //not work
                         )
                         val response = FluxApiClient.apiService.generateImage(request)
 
