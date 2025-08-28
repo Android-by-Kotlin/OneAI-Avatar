@@ -250,7 +250,16 @@ fun AppNavigation() {
             StreamingScreen(viewModel = streamingViewModel)
         }
 
-        composable("imageToImage") { backStackEntry ->
+        composable(
+            "imageToImage?modelType={modelType}",
+            arguments = listOf(
+                navArgument("modelType") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
             // Check if user is logged in
             LaunchedEffect(loginState) {
                 if (loginState !is LoginState.Success) {
@@ -261,9 +270,33 @@ fun AppNavigation() {
             }
             // Get parent entry to share ViewModel
             val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry("imageToImage")
+                navController.getBackStackEntry("imageToImage?modelType={modelType}")
             }
             val imageToImageViewModel: UnifiedImageToImageViewModel = viewModel(parentEntry)
+            val modelType = backStackEntry.arguments?.getString("modelType")
+            
+            // Set up dual image mode based on modelType
+            LaunchedEffect(modelType) {
+                when (modelType) {
+                    "dual-nano-banana" -> {
+                        imageToImageViewModel.enableDualImageMode(true)
+                        imageToImageViewModel.updateSelectedModel("nano-banana")
+                    }
+                    "ghibli" -> {
+                        imageToImageViewModel.enableGhibliMode(true)
+                    }
+                    "single" -> {
+                        imageToImageViewModel.enableDualImageMode(false)
+                        imageToImageViewModel.enableGhibliMode(false)
+                    }
+                    else -> {
+                        // Default to single image mode
+                        imageToImageViewModel.enableDualImageMode(false)
+                        imageToImageViewModel.enableGhibliMode(false)
+                    }
+                }
+            }
+            
             ImageToImageScreen(
                 viewModel = imageToImageViewModel,
                 onNavigateToGallery = {

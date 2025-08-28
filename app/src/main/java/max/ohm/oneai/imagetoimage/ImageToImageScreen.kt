@@ -2018,7 +2018,7 @@ viewModel.generatedImageBitmap?.let { bitmap ->
                                 }
                             }
                         }
-                        "flux-kontext-dev-dual" -> {
+                        "flux-kontext-dev-dual", "nano-banana" -> {
                             // Second image picker for dual image model
                             Card(
                                 modifier = Modifier

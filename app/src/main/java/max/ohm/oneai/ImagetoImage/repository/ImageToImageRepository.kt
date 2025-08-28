@@ -40,8 +40,8 @@ object ImageToImageRepository {
             apiService.generateImage(
 //                apiKey = "qVVcoYnOc0uGhiotcMmYzVBR6GhaJbRkqQOYko21dshwf6cMEGM97axKTIB8",
                 apiKey= MODELSLAB_API_KEY ,
-//
                 request = ImageToImageRequest(
+                    key = MODELSLAB_API_KEY,
                     initImage = initImageUrl,
                     prompt = prompt,
                     negativePrompt = "(worst quality:2), (low quality:2), (normal quality:2), (jpeg artifacts), (blurry), (duplicate), (morbid), (mutilated), (out of frame), (extra limbs), (bad anatomy), (disfigured), (deformed), (cross-eye), (glitch), (oversaturated), (overexposed), (underexposed), (bad proportions), (bad hands), (bad feet), (cloned face), (long neck), (missing arms), (missing legs), (extra fingers), (fused fingers), (poorly drawn hands), (poorly drawn face), (mutation), (deformed eyes), watermark, text, logo, signature, grainy, tiling, censored, nsfw, ugly, blurry eyes, noisy image, bad lighting, unnatural skin, asymmetry",
@@ -49,7 +49,7 @@ object ImageToImageRepository {
                     numInferenceSteps = "28",
                     strength = "0.5",
                     scheduler = "DPMSolverMultistepScheduler",
-                    guidance = "2.5"
+                    guidanceScale = "2.5"
                 )
             )
         }

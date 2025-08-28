@@ -7,8 +7,14 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface ImageToImageApiService {
-    @POST("api/v6/images/img2img")
+    @POST("api/v7/images/img2img")
     suspend fun generateImage(
+        @Header("key") apiKey: String,
+        @Body request: ImageToImageRequest
+    ): ImageToImageResponse
+    
+    @POST("api/v7/images/image-to-image")
+    suspend fun generateDualImage(
         @Header("key") apiKey: String,
         @Body request: ImageToImageRequest
     ): ImageToImageResponse

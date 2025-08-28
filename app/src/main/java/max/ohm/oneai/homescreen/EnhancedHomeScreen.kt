@@ -176,7 +176,28 @@ listOf(
                 icon = Icons.Outlined.Transform,
                 imageUrl = "https://cdn.pixabay.com/photo/2022/08/27/00/11/plant-7413415_1280.png",
                 gradientColors = listOf(Color(0xFFFA709A), Color(0xFFFEE140)),
-                route = "imageToImage"
+                route = "imageToImage",
+                hasDropdown = true,
+                dropdownOptions = listOf(
+                    DropdownOption(
+                        title = "Single Image Transform",
+                        subtitle = "Transform one image using AI",
+                        route = "imageToImage",
+                        modelType = "single"
+                    ),
+                    DropdownOption(
+                        title = "Dual Image Fusion",
+                        subtitle = "Combine two images with nano-banana AI",
+                        route = "imageToImage",
+                        modelType = "dual-nano-banana"
+                    ),
+                    DropdownOption(
+                        title = "Ghibli Style Transform",
+                        subtitle = "Apply Studio Ghibli animation style",
+                        route = "imageToImage",
+                        modelType = "ghibli"
+                    )
+                )
             ),
             BannerItem(
                 title = "Video Generation",

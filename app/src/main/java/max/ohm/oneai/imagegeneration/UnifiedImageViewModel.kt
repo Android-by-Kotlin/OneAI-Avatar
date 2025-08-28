@@ -21,6 +21,7 @@ import max.ohm.oneai.network.ImageGenerationRequest
 import max.ohm.oneai.utils.ContentFilter
 import max.ohm.oneai.imagegeneration.modelslab.ModelsLabTextToImageService
 import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
+import max.ohm.oneai.imagegeneration.NEBIUS_API_KEY
 
 class UnifiedImageViewModel : ViewModel() {
     
@@ -291,6 +292,95 @@ class UnifiedImageViewModel : ViewModel() {
                             val error = response.error ?: "Failed to generate image"
                             Log.e("ModelsLabResponse", "API Error: $error")
                             errorMessage = getUserFriendlyErrorMessage(error, "ModelsLab Epic Realism")
+                        }
+                        isLoading = false
+                    }
+                    "modelslab/nano-banana" -> {
+                        if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY") {
+                            errorMessage = "Please configure ModelsLab API Key"
+                            isLoading = false
+                            return@launch
+                        }
+                        
+                        Log.d("ModelsLabGeneration", "Using ModelsLab API Key: ${MODELSLAB_API_KEY.take(10)}...")
+                        
+                        // Comprehensive negative prompt for ModelsLab to prevent inappropriate content
+                        val modelsLabNegativePrompt = "(nsfw, naked, nude, show breast, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation, $negativePrompts"
+                        
+                        val request = ModelsLabTextToImageService.TextToImageRequest(
+                            prompt = safePrompt,
+                            negativePrompt = modelsLabNegativePrompt,
+                            modelId = ModelsLabTextToImageService.MODEL_NANO_BANANA,
+                            scheduler = "DPMSolverSinglestepScheduler",
+                            width = 768,
+                            height = 1024,
+                            guidanceScale = 7.5,
+                            numInferenceSteps = 31,
+                            steps = 21,
+                            samples = 1,
+                            seed = 0,
+                            safetyChecker = true,  // Enable safety checker to detect NSFW
+                            enhancePrompt = true,
+                            useKarrasSigmas = true,
+                            clipSkip = 1,
+                            tomesd = true,
+                            base64 = false  // Changed to false to get URL responses
+                        )
+                        
+                        val response = modelsLabService.generateImage(request)
+                        
+                        // Set NSFW detection flag first
+                        nsfwContentDetected = response.nsfwContentDetected
+                        
+                        if (response.status == "success") {
+                            if (nsfwContentDetected) {
+                                // NSFW content detected - no image data will be available
+                                Log.w("ModelsLabResponse", "NSFW content detected - no image will be displayed")
+                                // Clear any previous image data
+                                imageUrl = null
+                                generatedImageData = null
+                                // Set an error message to inform the user
+                                errorMessage = "Please provide safe prompt."
+                            } else if (!response.output.isNullOrEmpty()) {
+                                // Normal image processing when no NSFW content
+                                val imageOutput = response.output!![0]
+                                Log.d("ModelsLabResponse", "Image output: ${imageOutput.take(100)}...") // Log first 100 chars
+                                
+                                // Check if it's a URL or base64 data
+                                if (imageOutput.startsWith("http://") || imageOutput.startsWith("https://")) {
+                                    // It's a URL, use imageUrl instead of imageData
+                                    imageUrl = imageOutput
+                                    generatedImageData = null
+                                } else if (imageOutput.startsWith("data:image")) {
+                                    // Extract base64 data from data URL
+                                    val base64Data = imageOutput.substringAfter(",")
+                                    try {
+                                        generatedImageData = Base64.decode(base64Data, Base64.DEFAULT)
+                                        imageUrl = null
+                                    } catch (e: Exception) {
+                                        Log.e("ModelsLabResponse", "Failed to decode base64 data URL", e)
+                                        errorMessage = "Failed to decode image data"
+                                    }
+                                } else {
+                                    // Assume it's direct base64 string
+                                    try {
+                                        generatedImageData = Base64.decode(imageOutput, Base64.DEFAULT)
+                                        imageUrl = null
+                                    } catch (e: Exception) {
+                                        Log.e("ModelsLabResponse", "Failed to decode direct base64", e)
+                                        // If base64 decode fails, try treating it as URL
+                                        imageUrl = imageOutput
+                                        generatedImageData = null
+                                    }
+                                }
+                            } else {
+                                // Success but no output (should not happen normally)
+                                errorMessage = "Image generation completed but no image was returned"
+                            }
+                        } else {
+                            val error = response.error ?: "Failed to generate image"
+                            Log.e("ModelsLabResponse", "API Error: $error")
+                            errorMessage = getUserFriendlyErrorMessage(error, "ModelsLab Nano Banana")
                         }
                         isLoading = false
                     }

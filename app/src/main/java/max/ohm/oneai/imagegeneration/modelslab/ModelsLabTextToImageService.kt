@@ -91,7 +91,8 @@ class ModelsLabTextToImageService {
             Log.d("ModelsLabText2Img", "Request JSON: ${jsonBody.toString(2)}")
             
             val httpRequest = Request.Builder()
-                .url("https://modelslab.com/api/v6/images/text2img")
+                .url("https://modelslab.com/api/v7/images/text-to-image")
+                .addHeader("key", MODELSLAB_API_KEY)
                 .addHeader("Content-Type", "application/json")
                 .post(jsonBody.toString().toRequestBody("application/json".toMediaTypeOrNull()))
                 .build()
@@ -200,7 +201,9 @@ class ModelsLabTextToImageService {
             }
             
             val request = Request.Builder()
-                .url("https://modelslab.com/api/v6/images/fetch")
+                .url("https://modelslab.com/api/v7/images/fetch")
+                .addHeader("key", MODELSLAB_API_KEY)
+                .addHeader("Content-Type", "application/json")
                 .post(jsonBody.toString().toRequestBody("application/json".toMediaTypeOrNull()))
                 .build()
             
@@ -281,6 +284,7 @@ class ModelsLabTextToImageService {
         const val MODEL_REALISTIC_VISION = "realistic-vision-v5"
         const val MODEL_DREAMSHAPER = "dreamshaper-8"
         const val MODEL_ANYTHING_V5 = "anything-v5"
+        const val MODEL_NANO_BANANA = "nano-banana"
         
         // Common schedulers
         const val SCHEDULER_DPM_SOLVER = "DPMSolverSinglestepScheduler"

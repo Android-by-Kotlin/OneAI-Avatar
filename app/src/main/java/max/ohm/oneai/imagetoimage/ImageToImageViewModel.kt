@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
+import max.ohm.oneai.imagetoimage.modelslab.ModelsLabDualImageService
 
 class ImageToImageViewModel : ViewModel() {
     
@@ -46,6 +47,15 @@ class ImageToImageViewModel : ViewModel() {
     
     // UI States
     var selectedImage by mutableStateOf<Bitmap?>(null)
+        private set
+    
+    var selectedImage2 by mutableStateOf<Bitmap?>(null)
+        private set
+    
+    var isDualImageMode by mutableStateOf(false)
+        private set
+    
+    var selectedModel by mutableStateOf("epic-realism")
         private set
     
     var generatedImageUrl by mutableStateOf<String?>(null)
@@ -100,6 +110,9 @@ class ImageToImageViewModel : ViewModel() {
         .readTimeout(600, TimeUnit.SECONDS)     // 10 minutes
         .writeTimeout(600, TimeUnit.SECONDS)    // 10 minutes
         .build()
+    
+    // ModelsLab dual image service
+    private val dualImageService = ModelsLabDualImageService()
     
     fun updateSelectedImage(bitmap: Bitmap?) {
         Log.d("ImageToImage", "updateSelectedImage called with bitmap: ${bitmap?.let { "${it.width}x${it.height}" } ?: "null"}")
@@ -711,6 +724,7 @@ put("key", API_KEY)
     
     fun reset() {
         selectedImage = null
+        selectedImage2 = null
         generatedImageUrl = null
         generatedImageBitmap = null
         generatedImageBase64 = null
@@ -721,8 +735,157 @@ put("key", API_KEY)
         steps = 20
         errorMessage = null
         isGhibliStyle = false
+        isDualImageMode = false
         generationTime = 0L
         elapsedTime = 0L
         isTimerRunning = false
+    }
+    
+    // Dual image functionality
+    fun updateSelectedImage2(bitmap: Bitmap?) {
+        Log.d("ImageToImage", "updateSelectedImage2 called with bitmap: ${bitmap?.let { "${it.width}x${it.height}" } ?: "null"}")
+        selectedImage2 = bitmap
+        errorMessage = null
+    }
+    
+    fun toggleDualImageMode() {
+        isDualImageMode = !isDualImageMode
+        if (!isDualImageMode) {
+            selectedImage2 = null
+        }
+        errorMessage = null
+        Log.d("ImageToImage", "Dual image mode: $isDualImageMode")
+    }
+    
+    fun updateSelectedModel(model: String) {
+        selectedModel = model
+        Log.d("ImageToImage", "Model updated to: $model")
+    }
+    
+    fun generateDualImage() {
+        Log.d("ImageToImage", "generateDualImage called")
+        
+        if (selectedImage == null) {
+            errorMessage = "Please select the first image"
+            return
+        }
+        
+        if (selectedImage2 == null) {
+            errorMessage = "Please select the second image"
+            return
+        }
+        
+        if (prompt.isEmpty()) {
+            errorMessage = "Please enter a prompt describing how to combine the images"
+            return
+        }
+        
+        viewModelScope.launch {
+            isLoading = true
+            isTimerRunning = true
+            elapsedTime = 0L
+            generationTime = 0L
+            val startTime = System.currentTimeMillis()
+            errorMessage = null
+            loadingMessage = "Combining images with nano-banana model..."
+            
+            // Start timer coroutine
+            val timerJob = launch {
+                while (isTimerRunning) {
+                    elapsedTime = System.currentTimeMillis() - startTime
+                    delay(100)
+                }
+            }
+            
+            try {
+                // Convert both images to base64
+                val base64Image1 = withContext(Dispatchers.IO) {
+                    val resizedBitmap = resizeBitmapIfNeeded(selectedImage!!)
+                    bitmapToBase64(resizedBitmap)
+                }
+                
+                val base64Image2 = withContext(Dispatchers.IO) {
+                    val resizedBitmap = resizeBitmapIfNeeded(selectedImage2!!)
+                    bitmapToBase64(resizedBitmap)
+                }
+                
+                // Create request for dual image generation
+                val request = ModelsLabDualImageService.DualImageToImageRequest(
+                    prompt = prompt,
+                    initImage = base64Image1,
+                    initImage2 = base64Image2,
+                    modelId = ModelsLabDualImageService.MODEL_NANO_BANANA,
+                    negativePrompt = negativePrompt.ifEmpty { "low quality, blurry, distorted" },
+                    strength = strength.toDouble(),
+                    guidanceScale = guidanceScale.toDouble(),
+                    numInferenceSteps = steps.coerceIn(10, 50),
+                    width = 768,
+                    height = 1024,
+                    safetyChecker = true,
+                    enhancePrompt = false,
+                    base64 = false // Get URL response
+                )
+                
+                Log.d("ImageToImage", "Calling dual image service with prompt: $prompt")
+                val response = dualImageService.generateDualImage(request)
+                
+                if (response.status == "success") {
+                    if (response.nsfwContentDetected) {
+                        errorMessage = "Content detected as inappropriate. Please use family-friendly images and prompts."
+                        generatedImageUrl = null
+                        generatedImageBitmap = null
+                    } else if (!response.output.isNullOrEmpty()) {
+                        val imageOutput = response.output[0]
+                        Log.d("ImageToImage", "Received dual image output: ${imageOutput.take(100)}...")
+                        
+                        // Handle different output formats
+                        if (imageOutput.startsWith("http://") || imageOutput.startsWith("https://")) {
+                            generatedImageUrl = imageOutput
+                            generatedImageBitmap = null
+                        } else if (imageOutput.startsWith("data:image")) {
+                            // Extract base64 data from data URL
+                            val base64Data = imageOutput.substringAfter(",")
+                            try {
+                                val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                generatedImageBitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                generatedImageUrl = null
+                            } catch (e: Exception) {
+                                Log.e("ImageToImage", "Failed to decode base64 data URL", e)
+                                errorMessage = "Failed to decode generated image"
+                            }
+                        } else {
+                            // Try direct base64 decode
+                            try {
+                                val imageBytes = Base64.decode(imageOutput, Base64.DEFAULT)
+                                generatedImageBitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                generatedImageUrl = null
+                            } catch (e: Exception) {
+                                // If base64 fails, treat as URL
+                                generatedImageUrl = imageOutput
+                                generatedImageBitmap = null
+                            }
+                        }
+                    } else {
+                        errorMessage = "Image generation completed but no image was returned"
+                    }
+                } else {
+                    val error = response.error ?: "Failed to generate dual image"
+                    Log.e("ImageToImage", "Dual image API error: $error")
+                    errorMessage = error
+                }
+                
+            } catch (e: Exception) {
+                Log.e("ImageToImage", "Error in dual image generation", e)
+                errorMessage = "Error: ${e.message}"
+            } finally {
+                isLoading = false
+                isTimerRunning = false
+                timerJob.cancel()
+                generationTime = System.currentTimeMillis() - startTime
+                elapsedTime = generationTime
+                loadingMessage = ""
+                Log.d("ImageToImage", "Total dual image generation time: ${generationTime}ms")
+            }
+        }
     }
 }
