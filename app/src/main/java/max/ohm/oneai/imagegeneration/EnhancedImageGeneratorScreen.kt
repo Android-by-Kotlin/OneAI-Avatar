@@ -127,6 +127,7 @@ fun EnhancedImageGeneratorScreen(
     // Model selection
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
+        ModelChoice("Flux Dev", "provider-3/FLUX.1-dev"),
        // ModelChoice("Flux Schnell", "flux.1-schnell"),
         // ModelChoice("Image-1", "provider-6/gpt-image-1"),
         ModelChoice("ImageGen-4", "google/imagen-4"),
@@ -143,9 +144,8 @@ fun EnhancedImageGeneratorScreen(
        // ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
         ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
         ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
-        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
-        // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar"),
-        ModelChoice("Flux Dev", "provider-3/FLUX.1-dev")
+        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion")
+        // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar")
     )
     
     val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName } 
@@ -166,7 +166,16 @@ fun EnhancedImageGeneratorScreen(
     
     // Initialize model and music manager
     LaunchedEffect(Unit) {
-        unifiedImageViewModel.updateSelectedModel("provider-2/FLUX.1-kontext-max")
+        // Set default model to Flux Dev - this ensures Flux Dev is always the default
+        val defaultFluxDevModel = "provider-3/FLUX.1-dev"
+        unifiedImageViewModel.updateSelectedModel(defaultFluxDevModel)
+        
+        // Double-check after a short delay to ensure the model is properly set to Flux Dev
+        kotlinx.coroutines.delay(100)
+        if (unifiedImageViewModel.selectedModel.isEmpty() || unifiedImageViewModel.selectedModel != defaultFluxDevModel) {
+            unifiedImageViewModel.updateSelectedModel(defaultFluxDevModel)
+        }
+        
         BackgroundMusicManager.initialize(context)
     }
     
@@ -692,7 +701,14 @@ fun EnhancedImageGeneratorScreen(
                 
                 // Generate Button with Dark Background
                 Button(
-                    onClick = { unifiedImageViewModel.generateImage() },
+                    onClick = { 
+                        // Ensure we have a valid model selected, fallback to Flux Dev if needed
+                        val currentModel = unifiedImageViewModel.selectedModel
+                        if (currentModel.isBlank()) {
+                            unifiedImageViewModel.updateSelectedModel("provider-3/FLUX.1-dev")
+                        }
+                        unifiedImageViewModel.generateImage()
+                    },
                     enabled = !isLoading && prompt.text.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
