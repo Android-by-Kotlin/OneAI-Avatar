@@ -81,6 +81,9 @@ import max.ohm.oneai.imagegeneration.rememberStoragePermissionState
 import max.ohm.oneai.audio.BackgroundMusicManager
 import androidx.compose.runtime.DisposableEffect
 import max.ohm.oneai.utils.ContentFilter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
+import max.ohm.oneai.R
 
 // Data class for generated images history
 data class GeneratedImage(
@@ -90,6 +93,24 @@ data class GeneratedImage(
     val timestamp: Long = System.currentTimeMillis(),
     val model: String
 )
+
+// Helper function to get model logo resource
+fun getModelLogoResource(modelName: String): Int? {
+    return when {
+        modelName.contains("FLUX", ignoreCase = true) || modelName.contains("Flux", ignoreCase = true) -> R.drawable.flux_logo
+        modelName.contains("Qwen", ignoreCase = true) -> R.drawable.qwen_logo
+        modelName.contains("ImageGen", ignoreCase = true) || modelName.contains("Imagen", ignoreCase = true) -> R.drawable.whgoog
+        modelName.contains("DALL", ignoreCase = true) -> R.drawable.chatgpt_logo
+        modelName.contains("Google", ignoreCase = true) -> R.drawable.brain_logo
+        modelName.contains("ChatGPT", ignoreCase = true) -> R.drawable.chatgpt_logo
+        modelName.contains("Gemini", ignoreCase = true) -> R.drawable.brain_logo
+        modelName.contains("DeepSeek", ignoreCase = true) -> R.drawable.deepseek_logo
+        modelName.contains("Perplexity", ignoreCase = true) -> R.drawable.perplexity_logo
+        modelName.contains("Moonshot", ignoreCase = true) -> R.drawable.moonshot_logo
+        modelName.contains("Nano Banana", ignoreCase = true) -> R.drawable.whgoog
+        else -> null // Use fallback icon
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -1291,22 +1312,35 @@ private fun ModelSelectionCard(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = when {
-                                    currentModel.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
-                                    currentModel.displayName.contains("Ultra") -> Icons.Outlined.Stars
-                                    currentModel.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
-                                    else -> Icons.Outlined.AutoAwesome
-                                },
-                                contentDescription = null,
-                                tint = when {
-                                    currentModel.displayName.contains("FLUX") -> Color(0xFF6366F1)
-                                    currentModel.displayName.contains("DALL") -> Color(0xFF06B6D4)
-                                    currentModel.displayName.contains("Shuttle") -> Color(0xFFEC4899)
-                                    else -> GradientPurple
-                                },
-                                modifier = Modifier.size(20.dp)
-                            )
+                            // Try to use model logo, fallback to icon if not available
+                            val logoResource = getModelLogoResource(currentModel.displayName)
+                            if (logoResource != null) {
+                                Image(
+                                    painter = painterResource(id = logoResource),
+                                    contentDescription = currentModel.displayName,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Fit
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = when {
+                                        currentModel.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
+                                        currentModel.displayName.contains("Ultra") -> Icons.Outlined.Stars
+                                        currentModel.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
+                                        else -> Icons.Outlined.AutoAwesome
+                                    },
+                                    contentDescription = null,
+                                    tint = when {
+                                        currentModel.displayName.contains("FLUX") -> Color(0xFF6366F1)
+                                        currentModel.displayName.contains("DALL") -> Color(0xFF06B6D4)
+                                        currentModel.displayName.contains("Shuttle") -> Color(0xFFEC4899)
+                                        else -> GradientPurple
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                         
                         Column(
@@ -1465,23 +1499,44 @@ private fun ModelSelectionCard(
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = when {
-                                            model.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
-                                            model.displayName.contains("Ultra") -> Icons.Outlined.Stars
-                                            model.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
-                                            model.displayName.contains("DALL") -> Icons.Outlined.Palette
-                                            model.displayName.contains("Shuttle") -> Icons.Outlined.RocketLaunch
-                                            else -> Icons.Outlined.AutoAwesome
-                                        },
-                                        contentDescription = null,
-                                        tint = if (isSelected) {
-                                            GradientPurple
-                                        } else {
-                                            TextSecondary.copy(alpha = 0.7f)
-                                        },
-                                        modifier = Modifier.size(22.dp)
-                                    )
+                                    // Try to use model logo, fallback to icon if not available
+                                    val logoResource = getModelLogoResource(model.displayName)
+                                    if (logoResource != null) {
+                                        Image(
+                                            painter = painterResource(id = logoResource),
+                                            contentDescription = model.displayName,
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .let { modifier ->
+                                                    if (!isSelected) {
+                                                        modifier.alpha(0.7f)
+                                                    } else modifier
+                                                },
+                                            contentScale = ContentScale.Fit,
+                                            colorFilter = if (model.displayName.contains("Qwen") && !isSelected) {
+                                                ColorFilter.tint(TextSecondary.copy(alpha = 0.7f), BlendMode.Modulate)
+                                            } else null
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = when {
+                                                model.displayName.contains("Pro") -> Icons.Outlined.WorkspacePremium
+                                                model.displayName.contains("Ultra") -> Icons.Outlined.Stars
+                                                model.displayName.contains("Max") -> Icons.Outlined.TipsAndUpdates
+                                                model.displayName.contains("DALL") -> Icons.Outlined.Palette
+                                                model.displayName.contains("Shuttle") -> Icons.Outlined.RocketLaunch
+                                                else -> Icons.Outlined.AutoAwesome
+                                            },
+                                            contentDescription = null,
+                                            tint = if (isSelected) {
+                                                GradientPurple
+                                            } else {
+                                                TextSecondary.copy(alpha = 0.7f)
+                                            },
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
                                 }
                                 
                                 // Model Info
