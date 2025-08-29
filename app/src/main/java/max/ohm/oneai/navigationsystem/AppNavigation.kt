@@ -137,7 +137,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("modelType") {
                 type = NavType.StringType
                 nullable = true
-                defaultValue = "provider-3/gpt-4.1-nano" // Default to GPT-4.1 Nano
+                defaultValue = "models/gemini-2.0-flash" // Default to Gemini 2.0 Flash
             })
         ) { backStackEntry ->
             // Check if user is logged in
