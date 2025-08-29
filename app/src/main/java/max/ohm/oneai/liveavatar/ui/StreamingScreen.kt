@@ -398,7 +398,7 @@ fun AvatarPreviewCarousel(
             category = "ASSISTANT",
             backgroundColor = Color(0xFF88B0D3),
             avatarId = "josh_lite3_20230714",
-            voiceId = "077ab11b14f04ce0b49b5f6e5cc20979"
+            voiceId = "8661cd40d6c44c709e2d0031c0186ada"
         ),
         AvatarModel(
             name = "Anna",
@@ -416,7 +416,7 @@ fun AvatarPreviewCarousel(
             category = "TECHNOLOGY",
             backgroundColor = Color(0xFFD6A4A4),
             avatarId = "Wayne_20240711",
-            voiceId = "2d5b0e6cf36f460aa7fc47e3eee4ba54"
+            voiceId = "98ec920efd144d81b3939296d933fec3"
         ),
         AvatarModel(
             name = "Tyler",
@@ -461,7 +461,7 @@ fun AvatarPreviewCarousel(
             category = "Medical",
             backgroundColor = Color(0xFF0E43CE),
             avatarId = "Ann_Doctor_Sitting_public",  //man
-            voiceId = "98ec920efd144d81b3939296d933fec3"
+            voiceId = "2d5b0e6cf36f460aa7fc47e3eee4ba54"
         )
     )
     
