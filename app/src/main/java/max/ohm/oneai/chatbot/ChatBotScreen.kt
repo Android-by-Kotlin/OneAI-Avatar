@@ -223,6 +223,7 @@ fun ChatBotScreen(
     val modelOptions = listOf(
         "provider-3/gpt-4.1-nano" to "GPT-4.1 Nano",
         "provider-6/gemini-2.5-flash" to "Gemini 2.5 Flash",
+        "models/gemini-2.0-flash" to "Gemini 2.0 Flash",
         "provider-3/kimi-k2" to "Kimi K2",
         "provider-1/deepseek-r1-0528" to "DeepSeek R1",
       //  "provider-6/r1-1776" to "Perplexity-R1",
@@ -978,6 +979,7 @@ private fun EnhancedChatModelSelector(
                                 currentModelName.contains("GPT-4.1") -> "Advanced • Nano"
                                 currentModelName.contains("GPT-4o") -> "Optimized • Fast"
                                 currentModelName.contains("Gemini 2.5") -> "Latest • Enhanced"
+                                currentModelName.contains("Gemini 2.0") -> "Enhanced • Vision"
                                 currentModelName.contains("Gemini") -> "Multimodal • Smart"
                                 currentModelName.contains("DeepSeek") -> "Reasoning • Deep"
                                 currentModelName.contains("Perplexity") -> "Research • R1"
@@ -1145,6 +1147,7 @@ private fun EnhancedChatModelSelector(
                                             modelName.contains("GPT-4.1") -> "Advanced" to Color(0xFF00FF88)
                                             modelName.contains("GPT-4o") -> "Optimized" to Color(0xFF10B981)
                                             modelName.contains("Gemini 2.5") -> "Latest" to Color(0xFF06B6D4)
+                                            modelName.contains("Gemini 2.0") -> "Enhanced" to Color(0xFF06B6D4)
                                             modelName.contains("Gemini") -> "Smart" to Color(0xFF06B6D4)
                                             modelName.contains("DeepSeek") -> "Reasoning" to Color(0xFF8B5CF6)
                                             modelName.contains("Perplexity") -> "Research" to Color(0xFFEC4899)

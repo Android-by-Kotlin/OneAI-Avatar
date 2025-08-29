@@ -468,7 +468,7 @@ class UnifiedChatBotViewModel : ViewModel() {
     private suspend fun generateAIResponse() {
         try {
             when (selectedModel) {
-                "gemini-2.0-flash" -> {
+                "gemini-2.0-flash", "models/gemini-2.0-flash" -> {
                     if (geminiProGenerativeModel == null) {
                         try {
                             // Try to reinitialize the model
