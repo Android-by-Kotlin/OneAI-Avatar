@@ -143,6 +143,14 @@ fun ModernGlassmorphismHomeScreen(
                         gradient = listOf(GradientOrange, GradientPink),
                         route = "enhancedVideoGeneration",
                         category = "Generator"
+                    ),
+                    AITool(
+                        title = "Live Avatar",
+                        subtitle = "Interactive AI avatar with voice",
+                        icon = Icons.Outlined.VideoCall,
+                        gradient = listOf(GradientGreen, GradientBlue),
+                        route = "liveAvatar",
+                        category = "Interactive"
                     )
                 )
             )

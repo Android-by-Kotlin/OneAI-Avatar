@@ -187,11 +187,14 @@ fun StartScreen(
                     .scale(pulseAnimation.value),
                 contentAlignment = Alignment.Center
             ) {
+                // Keep icon stable by applying inverse scaling
                 Icon(
                     imageVector = Icons.Filled.VideoCall,
                     contentDescription = "Avatar",
                     tint = Color.White,
-                    modifier = Modifier.size(60.dp)
+                    modifier = Modifier
+                        .size(60.dp)
+                        .scale(1f / pulseAnimation.value) // Inverse scale to keep icon stable
                 )
             }
             
@@ -242,8 +245,9 @@ fun StartScreen(
             // Avatar Preview Carousel
             AvatarPreviewCarousel(
                 onAvatarSelected = { avatarId, voiceId, avatarName ->
-                    // Just select the avatar, don't start session
+                    // Select the avatar and immediately start the session
                     viewModel.selectAvatar(avatarId, voiceId, avatarName)
+                    viewModel.createSession(API_KEYS)
                 },
                 isLoading = loading,
                 selectedAvatarId = viewModel.selectedAvatarId
@@ -463,7 +467,7 @@ fun AvatarPreviewCarousel(
     
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(horizontal = 20.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         items(avatarModels) { avatar ->
@@ -488,7 +492,7 @@ fun AvatarPreviewCard(
     Card(
         modifier = Modifier
             .width(280.dp)
-            .height(400.dp),
+            .height(420.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
@@ -539,7 +543,7 @@ fun AvatarPreviewCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .height(180.dp)
                     .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
@@ -577,9 +581,9 @@ fun AvatarPreviewCard(
                 Text(
                     text = avatar.role,
                     color = Color.White,
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
+                    lineHeight = 26.sp
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -587,16 +591,20 @@ fun AvatarPreviewCard(
                 Text(
                     text = avatar.description,
                     color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 Button(
                     onClick = onChatClick,
                     enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     shape = RoundedCornerShape(25.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isSelected) Color(0xFF2196F3) else Color.White,
@@ -621,14 +629,14 @@ fun AvatarPreviewCard(
                             Spacer(modifier = Modifier.width(4.dp))
                         }
                         Text(
-                            text = if (isSelected) "Selected" else "Select",
+                            text = if (isSelected) "Starting..." else "Start Chat",
                             fontWeight = FontWeight.SemiBold
                         )
                         if (!isSelected) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
-                                imageVector = Icons.Filled.Chat,
-                                contentDescription = "Chat",
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "Start",
                                 modifier = Modifier.size(16.dp)
                             )
                         }

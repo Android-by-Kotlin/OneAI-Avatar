@@ -165,25 +165,36 @@ fun SimpleHomeScreen(
                 }
             }
             
-            // "Upcoming" Banner for Live Avatar
+            // Live Avatar Feature - Now Available!
             Card(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE082))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50))
             ) {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Live Avatar Feature Coming Soon!",
-                        color = Color(0xFF37474F),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(16.dp)
-                    )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Available",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Live Avatar Feature Now Available!",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
@@ -305,12 +316,12 @@ fun SimpleHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                ComingSoonFeatureButton(
+                FeatureButton(
                     icon = Icons.Default.VideoCall,
                     title = "Live Avatar",
-                    description = "Coming Soon",
+                    description = "Talk with AI Avatar",
                     modifier = Modifier.weight(1f),
-                    onClick = { /* No action for now */ }
+                    onClick = { navController.navigate("liveAvatar") }
                 )
                 
                 Spacer(modifier = Modifier.width(12.dp))
