@@ -460,14 +460,22 @@ class UnifiedImageToImageViewModel : ViewModel() {
             }
         }
         
-        // Validate dual image models
-        if (selectedModel == "flux-kontext-dev-dual" || selectedModel == "nano-banana") {
+        // Validate dual image models (only flux-kontext-dev-dual requires both images)
+        if (selectedModel == "flux-kontext-dev-dual") {
             if (secondImage == null) {
                 errorMessage = "Please select a second image for dual image processing"
                 return
             }
             if (prompt.isBlank()) {
                 errorMessage = "Please enter a prompt describing how to combine the images"
+                return
+            }
+        }
+        
+        // Validate nano-banana model (supports both single and dual image modes)
+        if (selectedModel == "nano-banana") {
+            if (prompt.isBlank()) {
+                errorMessage = "Please enter a prompt for image transformation"
                 return
             }
         }
@@ -657,12 +665,17 @@ class UnifiedImageToImageViewModel : ViewModel() {
                         isLoading = false
                         return@launch
                     }
-                    // Convert second image to base64
-                    val base64SecondImage = withContext(Dispatchers.IO) {
-                        val resizedBitmap = resizeBitmapIfNeeded(secondImage!!)
-                        bitmapToBase64(resizedBitmap)
+                    if (secondImage == null) {
+                        // Single image mode
+                        performNanoBananaSingleImage(base64Image)
+                    } else {
+                        // Dual image mode
+                        val base64SecondImage = withContext(Dispatchers.IO) {
+                            val resizedBitmap = resizeBitmapIfNeeded(secondImage!!)
+                            bitmapToBase64(resizedBitmap)
+                        }
+                        performNanoBananaDualImage(base64Image, base64SecondImage)
                     }
-                    performNanoBananaDualImage(base64Image, base64SecondImage)
                 }
                 
                 "stable-diffusion-img2img" -> {
@@ -3553,6 +3566,79 @@ class UnifiedImageToImageViewModel : ViewModel() {
             updateSelectedModel("ghibli-style")
         }
         Log.d("UnifiedImg2Img", "Ghibli mode set to: $enabled")
+    }
+    
+    // Generate single image using nano-banana model
+    private suspend fun performNanoBananaSingleImage(base64Image: String) = withContext(Dispatchers.IO) {
+        loadingMessage = "Processing with nano-banana single image model..."
+        
+        Log.d("UnifiedImg2Img", "Starting nano-banana single image generation")
+        Log.d("UnifiedImg2Img", "Image size: ${base64Image.length} chars")
+        Log.d("UnifiedImg2Img", "Prompt: $prompt")
+        
+        try {
+            // First try uploading image to get URL instead of using base64
+            val imageUrl = uploadImageToModelsLab(base64Image, "Single Image")
+            
+            if (imageUrl == null) {
+                Log.e("UnifiedImg2Img", "Failed to upload image, trying with base64...")
+                
+                // Fallback to base64 with proper format
+                val jsonBody = JSONObject().apply {
+                    put("key", MODELSLAB_API_KEY)
+                    put("prompt", prompt)
+                    put("model_id", "nano-banana")
+                    put("init_image", "data:image/jpeg;base64,$base64Image")
+                    put("width", "768")
+                    put("height", "1024")
+                    put("samples", "1")
+                    put("num_inference_steps", "25")
+                    put("guidance_scale", "7.5")
+                    put("strength", strength.toDouble())
+                    put("seed", null)
+                    put("webhook", null)
+                    put("track_id", null)
+                }
+                
+                Log.d("UnifiedImg2Img", "Using base64 format for nano-banana single image")
+                
+                val result = makeApiCallWithPolling(
+                    url = "https://modelslab.com/api/v7/images/image-to-image",
+                    jsonBody = jsonBody,
+                    modelName = "Nano-Banana Single Image (Base64)"
+                )
+                processApiResult(result)
+            } else {
+                Log.d("UnifiedImg2Img", "Using uploaded image URL for nano-banana single image")
+                
+                // Use uploaded image URL
+                val jsonBody = JSONObject().apply {
+                    put("key", MODELSLAB_API_KEY)
+                    put("prompt", prompt)
+                    put("model_id", "nano-banana")
+                    put("init_image", imageUrl)
+                    put("width", "768")
+                    put("height", "1024")
+                    put("samples", "1")
+                    put("num_inference_steps", "25")
+                    put("guidance_scale", "7.5")
+                    put("strength", strength.toDouble())
+                    put("seed", null)
+                    put("webhook", null)
+                    put("track_id", null)
+                }
+                
+                val result = makeApiCallWithPolling(
+                    url = "https://modelslab.com/api/v7/images/image-to-image",
+                    jsonBody = jsonBody,
+                    modelName = "Nano-Banana Single Image (URL)"
+                )
+                processApiResult(result)
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedImg2Img", "Error in nano-banana single image generation", e)
+            errorMessage = "Nano-Banana Single Image Error: ${e.message}"
+        }
     }
     
     // Generate dual image using nano-banana model
