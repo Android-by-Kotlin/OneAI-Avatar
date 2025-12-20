@@ -126,10 +126,10 @@ fun EnhancedImageGeneratorScreen(
     val isLoading = unifiedImageViewModel.isLoading
     val errorMessage = unifiedImageViewModel.errorMessage
     val selectedModelInternalName = unifiedImageViewModel.selectedModel
-    
+
     // Initialize persistent storage
     val imageHistoryStore = remember { ImageHistoryDataStore(context) }
-    
+
     // History of generated images from persistent storage
     val persistedHistory by imageHistoryStore.imageHistory.collectAsState(initial = emptyList())
     var imageHistory by remember { mutableStateOf(listOf<GeneratedImage>()) }
@@ -139,42 +139,42 @@ fun EnhancedImageGeneratorScreen(
     var showReportDialog by remember { mutableStateOf(false) }
     var reportButtonClickTime by remember { mutableStateOf(0L) }
     var reportReason by remember { mutableStateOf("") }
-    
+
     val elapsedTimeInSeconds by unifiedImageViewModel.elapsedTimeInSeconds.collectAsState()
     val totalGenerationTimeInSeconds by unifiedImageViewModel.totalGenerationTimeInSeconds.collectAsState()
-    
+
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Model selection
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val modelChoices = listOf(
-        ModelChoice("Flux Dev", "provider-3/FLUX.1-dev"),
-       // ModelChoice("Flux Schnell", "flux.1-schnell"),
-        // ModelChoice("Image-1", "provider-6/gpt-image-1"),
-        ModelChoice("ImageGen-4", "google/imagen-4"),
-        ModelChoice("ImageGen-3", "google/imagen-3"),
-        ModelChoice("Qwen", "provider-4/qwen-image"),
-//        ModelChoice("ImageGen-4", "provider-4/imagen-4"),
+        ModelChoice("\uD83C\uDF4C Nano Banana", "modelslab/nano-banana"), // Default first choice
+        //   ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
+        //  ModelChoice("Flux Dev", "provider-3/FLUX.1-dev"),
+        //  ModelChoice("Flux Schnell", "flux.1-schnell"),
+//         ModelChoice("Image-1", "provider-6/gpt-image-1"),
+        ModelChoice("ImageGen-4 Premium", "google/imagen-4"),
+//        ModelChoice("ImageGen-3", "google/imagen-3"),
+//        ModelChoice("Qwen", "provider-4/qwen-image"),
+        //   ModelChoice("ImageGen-4", "provider-4/imagen-4"),
 //        ModelChoice("ImageGen-3", "provider-4/imagen-3"),
-        ModelChoice("DSLR Photograph", "modelslab/epic-realism"),
-        ModelChoice("Nano Banana", "modelslab/nano-banana"),
-      //  ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
-       // ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
-        //ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
-      //  ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
-       // ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
-        ModelChoice("DALL-E 3", "provider-3/dall-e-3"),
-        ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
-        ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion")
+//       ModelChoice("DSLR Photograph", "modelslab/epic-realism"),
+//        ModelChoice("FLUX Kontext Max", "provider-2/FLUX.1-kontext-max"),
+//        ModelChoice("FLUX Kontext Pro", "provider-1/FLUX.1-kontext-pro"),
+//        ModelChoice("Flux Pro Raw", "provider-3/FLUX.1.1-pro-ultra-raw"),
+//        ModelChoice("Flux Pro", "provider-1/FLUX.1.1-pro"),
+//        ModelChoice("Flux Ultra Pro", "provider-3/FLUX.1.1-pro-ultra"),
+        // ModelChoice("Shuttle 3.1 Aesthetic", "provider-3/shuttle-3.1-aesthetic"),
+        // ModelChoice("Shuttle 3 Diffusion", "provider-3/shuttle-3-diffusion"),
         // ModelChoice("Shuttle Jaguar", "provider-3/shuttle-jaguar")
     )
-    
-    val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName } 
+
+    val currentSelectedModelChoice = modelChoices.find { it.internalName == selectedModelInternalName }
         ?: modelChoices.first()
-    
+
     // Animations
     val infiniteTransition = rememberInfiniteTransition(label = "loading_animation")
-    
+
     val gradientRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -184,28 +184,28 @@ fun EnhancedImageGeneratorScreen(
         ),
         label = "gradient_rotation"
     )
-    
+
     // Initialize model and music manager
     LaunchedEffect(Unit) {
-        // Set default model to Flux Dev - this ensures Flux Dev is always the default
-        val defaultFluxDevModel = "provider-3/FLUX.1-dev"
-        unifiedImageViewModel.updateSelectedModel(defaultFluxDevModel)
-        
-        // Double-check after a short delay to ensure the model is properly set to Flux Dev
+        // Set default model to Nano Banana - this ensures Nano Banana is always the default
+        val defaultImageGenModel = "modelslab/nano-banana"
+        unifiedImageViewModel.updateSelectedModel(defaultImageGenModel)
+
+        // Double-check after a short delay to ensure the model is properly set to Nano Banana
         kotlinx.coroutines.delay(100)
-        if (unifiedImageViewModel.selectedModel.isEmpty() || unifiedImageViewModel.selectedModel != defaultFluxDevModel) {
-            unifiedImageViewModel.updateSelectedModel(defaultFluxDevModel)
+        if (unifiedImageViewModel.selectedModel.isEmpty() || unifiedImageViewModel.selectedModel != defaultImageGenModel) {
+            unifiedImageViewModel.updateSelectedModel(defaultImageGenModel)
         }
-        
+
         BackgroundMusicManager.initialize(context)
     }
-    
+
     LaunchedEffect(initialModelType) {
         initialModelType?.let {
             unifiedImageViewModel.updateSelectedModel(it)
         }
     }
-    
+
     // Load persisted history
     LaunchedEffect(persistedHistory) {
         Log.d("EnhancedImageGenerator", "Loading ${persistedHistory.size} images from history")
@@ -226,7 +226,7 @@ fun EnhancedImageGeneratorScreen(
         }
         Log.d("EnhancedImageGenerator", "Successfully loaded ${imageHistory.size} images")
     }
-    
+
     // Add generated image to history and persist it
     LaunchedEffect(generatedImageData, imageUrl) {
         if (generatedImageData != null || imageUrl != null) {
@@ -245,7 +245,7 @@ fun EnhancedImageGeneratorScreen(
             }
         }
     }
-    
+
     // Show error messages
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
@@ -254,7 +254,7 @@ fun EnhancedImageGeneratorScreen(
             // unifiedImageViewModel.clearErrorMessage()
         }
     }
-    
+
     // Handle music playback based on loading state
     LaunchedEffect(isLoading) {
         if (isLoading) {
@@ -265,17 +265,17 @@ fun EnhancedImageGeneratorScreen(
             BackgroundMusicManager.fadeOut(duration = 2000L)
         }
     }
-    
+
     // Clean up music when screen is disposed
     DisposableEffect(Unit) {
         onDispose {
             BackgroundMusicManager.stopMusic()
         }
     }
-    
+
     // Set status bar color for image generation screen
     SetStatusBarColor(StatusBarUtils.ImageGenerationStatusBarColor)
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -316,7 +316,7 @@ fun EnhancedImageGeneratorScreen(
                 ),
                 label = "orb_offset_y_$index"
             )
-            
+
             Box(
                 modifier = Modifier
                     .offset(x = offsetX.dp, y = offsetY.dp)
@@ -368,7 +368,7 @@ fun EnhancedImageGeneratorScreen(
                             tint = TextPrimary
                         )
                     }
-                    
+
                     // App Title with emotion indicator in the center
                     Column(
                         modifier = Modifier.align(Alignment.Center),
@@ -407,7 +407,7 @@ fun EnhancedImageGeneratorScreen(
                             }
                         }
                     }
-                    
+
                     // Gallery button on the right
                     Box(
                         modifier = Modifier.align(Alignment.CenterEnd)
@@ -432,7 +432,7 @@ fun EnhancedImageGeneratorScreen(
                     }
                 }
             }
-            
+
             // Main Content
             Column(
                 modifier = Modifier
@@ -506,7 +506,7 @@ fun EnhancedImageGeneratorScreen(
                         }
                     }
                 }
-                
+
                 // Error message display with enhanced warning for inappropriate content
                 AnimatedVisibility(
                     visible = !isLoading && errorMessage != null,
@@ -625,7 +625,7 @@ fun EnhancedImageGeneratorScreen(
                         }
                     }
                 }
-                
+
                 // Recent generations preview
                 if (imageHistory.isNotEmpty() && !showGallery) {
                     RecentGenerationsPreview(
@@ -637,7 +637,7 @@ fun EnhancedImageGeneratorScreen(
                         onViewAll = { showGallery = true }
                     )
                 }
-                
+
                 // Model Selection
                 ModelSelectionCard(
                     currentModel = currentSelectedModelChoice,
@@ -649,7 +649,7 @@ fun EnhancedImageGeneratorScreen(
                         modelMenuExpanded = false
                     }
                 )
-                
+
                 // Enhanced Prompt Input with Emotion Intelligence
                 Box(
                     modifier = Modifier
@@ -678,10 +678,10 @@ fun EnhancedImageGeneratorScreen(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        
+
                         EmotionIntelligentTextField(
                             value = prompt.text,
-                            onValueChange = { newText -> 
+                            onValueChange = { newText ->
                                 unifiedImageViewModel.updatePrompt(TextFieldValue(newText))
                                 // Show real-time warning for inappropriate content
                                 if (ContentFilter.containsAdultContent(newText)) {
@@ -719,14 +719,14 @@ fun EnhancedImageGeneratorScreen(
                         )
                     }
                 }
-                
+
                 // Generate Button with Dark Background
                 Button(
-                    onClick = { 
-                        // Ensure we have a valid model selected, fallback to Flux Dev if needed
+                    onClick = {
+                        // Ensure we have a valid model selected, fallback to DALL-E 3 if needed
                         val currentModel = unifiedImageViewModel.selectedModel
                         if (currentModel.isBlank()) {
-                            unifiedImageViewModel.updateSelectedModel("provider-3/FLUX.1-dev")
+                            unifiedImageViewModel.updateSelectedModel("provider-3/dall-e-3")
                         }
                         unifiedImageViewModel.generateImage()
                     },
@@ -783,7 +783,7 @@ fun EnhancedImageGeneratorScreen(
                         )
                     }
                 }
-                
+
                 // Traffic notice and content policy reminder
                 Column(
                     modifier = Modifier
@@ -809,7 +809,7 @@ fun EnhancedImageGeneratorScreen(
                 }
             }
         }
-        
+
         // Gallery Overlay
         AnimatedVisibility(
             visible = showGallery,
@@ -831,7 +831,7 @@ fun EnhancedImageGeneratorScreen(
                 }
             )
         }
-        
+
         // Image Detail Overlay
         if (showImageDetail && selectedImage != null) {
             val storagePermissionStateForDialog = rememberStoragePermissionState()
@@ -863,7 +863,7 @@ fun EnhancedImageGeneratorScreen(
         if (showReportDialog) {
             android.util.Log.d("ReportDialog", "Showing ReportImageDialog")
             ReportImageDialog(
-                onDismiss = { 
+                onDismiss = {
                     android.util.Log.d("ReportDialog", "Report dialog dismissed")
                     showReportDialog = false
                     reportReason = ""
@@ -913,7 +913,7 @@ private fun LoadingAnimation(
                     style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
                 )
             }
-            
+
             Icon(
                 imageVector = Icons.Outlined.AutoAwesome,
                 contentDescription = null,
@@ -921,18 +921,18 @@ private fun LoadingAnimation(
                 modifier = Modifier.size(48.dp)
             )
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Text(
             text = "Creating your masterpiece...",
             color = TextPrimary,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = formatSecondsToMMSS(elapsedTime),
             color = TextSecondary,
@@ -962,7 +962,7 @@ private fun GeneratedImageDisplay(
                 .clickable { onFullscreen() },
             contentScale = ContentScale.Fit
         )
-        
+
         // Action buttons overlay
         Row(
             modifier = Modifier
@@ -973,7 +973,7 @@ private fun GeneratedImageDisplay(
             // Report button (same as before)
             ActionButton(
                 icon = Icons.Filled.Report,
-                onClick = { 
+                onClick = {
                     // Show report dialog or handle report
                     onReport()
                 },
@@ -981,7 +981,7 @@ private fun GeneratedImageDisplay(
                 backgroundColor = Color(0xFFDC2626).copy(alpha = 0.8f),
                 buttonSize = 28.dp
             )
-            
+
             // Download button - styled like ImageToImage
             Surface(
                 modifier = Modifier.size(28.dp),
@@ -997,7 +997,7 @@ private fun GeneratedImageDisplay(
                     )
                 }
             }
-            
+
             // Share button - styled like ImageToImage
             Surface(
                 modifier = Modifier.size(28.dp),
@@ -1014,7 +1014,7 @@ private fun GeneratedImageDisplay(
                 }
             }
         }
-        
+
         // Prompt overlay
         Surface(
             modifier = Modifier
@@ -1091,18 +1091,18 @@ private fun EmptyStateDisplay() {
                 modifier = Modifier.size(64.dp)
             )
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Text(
             text = "Ready to create",
             color = TextPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Medium
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = "Enter a prompt below and watch AI bring your ideas to life",
             color = TextSecondary,
@@ -1132,7 +1132,7 @@ private fun RecentGenerationsPreview(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium
             )
-            
+
             TextButton(onClick = onViewAll) {
                 Text("View All", color = AccentPurple)
                 Icon(
@@ -1143,9 +1143,9 @@ private fun RecentGenerationsPreview(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -1184,13 +1184,13 @@ private fun ModelSelectionCard(
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "dropdown_rotation"
     )
-    
+
     val borderAlpha by animateFloatAsState(
         targetValue = if (expanded) 0.8f else 0.3f,
         animationSpec = tween(300),
         label = "border_alpha"
     )
-    
+
     // Premium Glass Card for Model Selection
     PremiumGlassCard(
         modifier = Modifier
@@ -1235,7 +1235,7 @@ private fun ModelSelectionCard(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
+
                 Column {
                     Text(
                         text = "AI Model",
@@ -1250,7 +1250,7 @@ private fun ModelSelectionCard(
                     )
                 }
             }
-            
+
             // Enhanced Dropdown Button
             Surface(
                 modifier = Modifier
@@ -1342,7 +1342,7 @@ private fun ModelSelectionCard(
                                 )
                             }
                         }
-                        
+
                         Column(
                             modifier = Modifier.weight(1f)
                         ) {
@@ -1359,10 +1359,11 @@ private fun ModelSelectionCard(
                                     currentModel.displayName.contains("Pro") -> "Professional • High Quality"
                                     currentModel.displayName.contains("Max") -> "Maximum • Best Performance"
                                     currentModel.displayName.contains("Dev") -> "Development • Fast Generation"
+                                    currentModel.displayName.contains("ImageGen-4 Premium") -> "Premium • Next-Gen Quality"
                                     else -> "Standard • Balanced"
                                 },
                                 color = when {
-                                    currentModel.displayName.contains("Ultra") || currentModel.displayName.contains("Pro") -> 
+                                    currentModel.displayName.contains("Ultra") || currentModel.displayName.contains("Pro") || currentModel.displayName.contains("ImageGen-4") ->
                                         GradientPink.copy(alpha = 0.9f)
                                     else -> TextSecondary.copy(alpha = 0.7f)
                                 },
@@ -1371,7 +1372,7 @@ private fun ModelSelectionCard(
                             )
                         }
                     }
-                    
+
                     // Animated Arrow Icon
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
@@ -1385,7 +1386,7 @@ private fun ModelSelectionCard(
                     )
                 }
             }
-            
+
             // Enhanced Dropdown Menu
             AnimatedVisibility(
                 visible = expanded,
@@ -1423,7 +1424,7 @@ private fun ModelSelectionCard(
                 ) {
                     modelChoices.forEachIndexed { index, model ->
                         val isSelected = model == currentModel
-                        
+
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1474,7 +1475,7 @@ private fun ModelSelectionCard(
                                         )
                                     }
                                 }
-                                
+
                                 // Model Icon
                                 Box(
                                     modifier = Modifier
@@ -1538,7 +1539,7 @@ private fun ModelSelectionCard(
                                         )
                                     }
                                 }
-                                
+
                                 // Model Info
                                 Column(
                                     modifier = Modifier.weight(1f),
@@ -1550,7 +1551,7 @@ private fun ModelSelectionCard(
                                         fontSize = 14.sp,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                                     )
-                                    
+
                                     // Model Features/Tags
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1562,11 +1563,14 @@ private fun ModelSelectionCard(
                                             model.displayName.contains("Pro") -> "Pro" to GradientPurple
                                             model.displayName.contains("Max") -> "Max" to GradientCyan
                                             model.displayName.contains("DALL") -> "Creative" to Color(0xFF06B6D4)
+                                            model.displayName.contains("ImageGen-4") -> "Realistic" to Color(
+                                                0xFFF50B4D
+                                            )
                                             model.displayName.contains("Shuttle") -> "Artistic" to Color(0xFFEC4899)
                                             model.displayName.contains("Dev") -> "Fast" to GradientGreen
                                             else -> "Realism" to GradientGreen
                                         }
-                                        
+
                                         Surface(
                                             shape = RoundedCornerShape(4.dp),
                                             color = badgeColor.copy(alpha = 0.15f)
@@ -1579,9 +1583,9 @@ private fun ModelSelectionCard(
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
                                         }
-                                        
+
                                         // Performance indicator
-                                        if (model.displayName.contains("Ultra") || model.displayName.contains("Pro")) {
+                                        if (model.displayName.contains("Ultra") || model.displayName.contains("Pro") || model.displayName.contains("ImageGen-4 Premium")) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -1601,7 +1605,7 @@ private fun ModelSelectionCard(
                                         }
                                     }
                                 }
-                                
+
                                 // Status indicator (if selected)
                                 if (isSelected) {
                                     Box(
@@ -1613,7 +1617,7 @@ private fun ModelSelectionCard(
                                 }
                             }
                         }
-                        
+
                         // Add divider except for last item
                         if (index < modelChoices.size - 1) {
                             Divider(
@@ -1623,7 +1627,7 @@ private fun ModelSelectionCard(
                             )
                         }
                     }
-                    
+
                     // Bottom padding
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -1665,9 +1669,9 @@ private fun PromptInputCard(
                     fontWeight = FontWeight.Medium
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             OutlinedTextField(
                 value = prompt,
                 onValueChange = onPromptChange,
@@ -1769,7 +1773,7 @@ private fun GalleryOverlay(
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
-                    
+
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -1779,7 +1783,7 @@ private fun GalleryOverlay(
                     }
                 }
             }
-            
+
             // Gallery Grid
             if (images.isEmpty()) {
                 Box(
@@ -1830,7 +1834,7 @@ private fun GalleryItem(
     onDelete: () -> Unit
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1846,7 +1850,7 @@ private fun GalleryItem(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
-            
+
             // Gradient overlay
             Box(
                 modifier = Modifier
@@ -1861,7 +1865,7 @@ private fun GalleryItem(
                         )
                     )
             )
-            
+
             // Image info
             Column(
                 modifier = Modifier
@@ -1883,7 +1887,7 @@ private fun GalleryItem(
                     fontSize = 10.sp
                 )
             }
-            
+
             // Delete button
             IconButton(
                 onClick = { showDeleteConfirm = true },
@@ -1905,7 +1909,7 @@ private fun GalleryItem(
             }
         }
     }
-    
+
     // Delete confirmation dialog
     if (showDeleteConfirm) {
         AlertDialog(
@@ -1942,7 +1946,7 @@ private fun ImageDetailDialog(
 ) {
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-    
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -1963,7 +1967,7 @@ private fun ImageDetailDialog(
                     scale = (scale * zoomChange).coerceIn(0.5f, 5f)
                     offset = offset + offsetChange
                 }
-                
+
                 AsyncImage(
                     model = image.imageData,
                     contentDescription = null,
@@ -1987,7 +1991,7 @@ private fun ImageDetailDialog(
                         },
                     contentScale = ContentScale.Fit
                 )
-                
+
                 // Top bar with actions
                 Surface(
                     modifier = Modifier
@@ -2009,7 +2013,7 @@ private fun ImageDetailDialog(
                                 tint = Color.White
                             )
                         }
-                        
+
 //                        Row {
 //                            IconButton(onClick = onShare) {
 //                                Icon(
@@ -2028,7 +2032,7 @@ private fun ImageDetailDialog(
 //                        }
                     }
                 }
-                
+
                 // Bottom info
                 Surface(
                     modifier = Modifier
@@ -2085,19 +2089,19 @@ private suspend fun downloadImage(
                 connection.connectTimeout = 30000
                 connection.readTimeout = 30000
                 connection.connect()
-                
+
                 val responseCode = connection.responseCode
                 Log.d("EnhancedImageDownload", "Response code: $responseCode")
-                
+
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     throw IOException("HTTP error code: $responseCode")
                 }
-                
+
                 val input = connection.inputStream
                 val bitmap = BitmapFactory.decodeStream(input)
                 input.close()
                 connection.disconnect()
-                
+
                 if (bitmap == null) {
                     throw IOException("Failed to decode bitmap from stream")
                 }
@@ -2112,11 +2116,11 @@ private suspend fun downloadImage(
                 null
             }
         }
-        
+
         bitmap?.let {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "AI_Art_${timeStamp}.png"
-            
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // For Android 10 and above, use MediaStore
                 Log.d("EnhancedImageDownload", "Using MediaStore for Android 10+")
@@ -2127,18 +2131,18 @@ private suspend fun downloadImage(
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                     put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
-                
+
                 val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
                 if (uri != null) {
                     resolver.openOutputStream(uri)?.use { output ->
                         bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
                     }
-                    
+
                     // Mark as completed
                     contentValues.clear()
                     contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
                     resolver.update(uri, contentValues, null, null)
-                    
+
                     Log.d("EnhancedImageDownload", "Image saved successfully to: $uri")
                 } else {
                     Log.e("EnhancedImageDownload", "Failed to create MediaStore entry")
@@ -2149,7 +2153,7 @@ private suspend fun downloadImage(
                 Log.d("EnhancedImageDownload", "Using legacy storage for Android 9 and below")
                 val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
                 if (!downloadsDir.exists()) downloadsDir.mkdirs()
-                
+
                 val imageFile = File(downloadsDir, fileName)
                 FileOutputStream(imageFile).use { output ->
                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
@@ -2190,22 +2194,22 @@ private suspend fun shareImage(
             }
             else -> null
         }
-        
+
         bitmap?.let {
             val cachePath = File(context.cacheDir, "images")
             cachePath.mkdirs()
-            
+
             val stream = FileOutputStream(File(cachePath, "shared_image.png"))
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
             stream.close()
-            
+
             val imagePath = File(context.cacheDir, "images/shared_image.png")
             val imageUri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
                 imagePath
             )
-            
+
             val shareIntent = Intent().apply {
                 action = Intent.ACTION_SEND
                 type = "image/png"
@@ -2213,7 +2217,7 @@ private suspend fun shareImage(
                 putExtra(Intent.EXTRA_TEXT, "Created with AI: $prompt")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            
+
             withContext(Dispatchers.Main) {
                 context.startActivity(Intent.createChooser(shareIntent, "Share Image"))
             }
@@ -2234,7 +2238,7 @@ private fun ReportImageDialog(
     var selectedReason by remember { mutableStateOf("") }
     var customReason by remember { mutableStateOf("") }
     var showCustomInput by remember { mutableStateOf(false) }
-    
+
     val reportReasons = listOf(
         "Inappropriate content",
         "Violence or harmful content",
@@ -2242,7 +2246,7 @@ private fun ReportImageDialog(
         "Spam or misleading content",
         "Other (specify)"
     )
-    
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -2295,7 +2299,7 @@ private fun ReportImageDialog(
                         ),
                         label = "orb_dialog_offset_y_$index"
                     )
-                    
+
                     Box(
                         modifier = Modifier
                             .offset(x = offsetX.dp, y = offsetY.dp)
@@ -2323,169 +2327,169 @@ private fun ReportImageDialog(
                     )
                 }
             }
-            
+
             // Card content with transparent background
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f))
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Report Image",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = TextSecondary
+                            )
+                        }
+                    }
+
                     Text(
-                        text = "Report Image",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        text = "Help us maintain a safe community by reporting inappropriate content.",
+                        color = TextSecondary,
+                        fontSize = 14.sp
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextSecondary
+
+                    // Report reasons
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Reason for reporting:",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        reportReasons.forEach { reason ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedReason = reason
+                                        showCustomInput = reason == "Other (specify)"
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedReason == reason,
+                                    onClick = {
+                                        selectedReason = reason
+                                        showCustomInput = reason == "Other (specify)"
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = AccentPurple,
+                                        unselectedColor = TextSecondary
+                                    )
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = reason,
+                                    color = TextPrimary,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Custom reason input
+                    AnimatedVisibility(visible = showCustomInput) {
+                        OutlinedTextField(
+                            value = customReason,
+                            onValueChange = { customReason = it },
+                            label = { Text("Please specify", color = TextSecondary) },
+                            placeholder = { Text("Describe the issue...", color = TextSecondary.copy(alpha = 0.7f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary,
+                                focusedBorderColor = AccentPurple,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                cursorColor = AccentPurple,
+                                focusedLabelColor = AccentPurple,
+                                unfocusedLabelColor = TextSecondary
+                            ),
+                            maxLines = 3,
+                            minLines = 2
                         )
                     }
-                }
-                
-                Text(
-                    text = "Help us maintain a safe community by reporting inappropriate content.",
-                    color = TextSecondary,
-                    fontSize = 14.sp
-                )
-                
-                // Report reasons
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Reason for reporting:",
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    reportReasons.forEach { reason ->
-                        Row(
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Action buttons
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedReason = reason
-                                    showCustomInput = reason == "Other (specify)"
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .weight(1f)
+                                .height(48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = TextSecondary
+                            ),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            RadioButton(
-                                selected = selectedReason == reason,
-                                onClick = {
-                                    selectedReason = reason
-                                    showCustomInput = reason == "Other (specify)"
-                                },
-                                colors = RadioButtonDefaults.colors(
-                                    selectedColor = AccentPurple,
-                                    unselectedColor = TextSecondary
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = reason,
-                                color = TextPrimary,
-                                fontSize = 12.sp
+                                text = "Cancel",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val finalReason = if (selectedReason == "Other (specify)") {
+                                    customReason.takeIf { it.isNotBlank() } ?: "Other"
+                                } else {
+                                    selectedReason
+                                }
+                                if (finalReason.isNotBlank()) {
+                                    onReport(finalReason)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            enabled = selectedReason.isNotBlank() &&
+                                    (selectedReason != "Other (specify)" || customReason.isNotBlank()),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFDC2626),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFDC2626).copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Report",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
                 }
-                
-                // Custom reason input
-                AnimatedVisibility(visible = showCustomInput) {
-                    OutlinedTextField(
-                        value = customReason,
-                        onValueChange = { customReason = it },
-                        label = { Text("Please specify", color = TextSecondary) },
-                        placeholder = { Text("Describe the issue...", color = TextSecondary.copy(alpha = 0.7f)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary,
-                            focusedBorderColor = AccentPurple,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                            cursorColor = AccentPurple,
-                            focusedLabelColor = AccentPurple,
-                            unfocusedLabelColor = TextSecondary
-                        ),
-                        maxLines = 3,
-                        minLines = 2
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Action buttons
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = TextSecondary
-                        ),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    
-                    Button(
-                        onClick = {
-                            val finalReason = if (selectedReason == "Other (specify)") {
-                                customReason.takeIf { it.isNotBlank() } ?: "Other"
-                            } else {
-                                selectedReason
-                            }
-                            if (finalReason.isNotBlank()) {
-                                onReport(finalReason)
-                            }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        enabled = selectedReason.isNotBlank() && 
-                                 (selectedReason != "Other (specify)" || customReason.isNotBlank()),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFDC2626),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFDC2626).copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "Report",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
             }
-        }
         }
     }
 }

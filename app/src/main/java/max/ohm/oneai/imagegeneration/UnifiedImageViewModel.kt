@@ -24,7 +24,7 @@ import max.ohm.oneai.imagetoimage.modelslabapikey.MODELSLAB_API_KEY
 import max.ohm.oneai.imagegeneration.NEBIUS_API_KEY
 
 class UnifiedImageViewModel : ViewModel() {
-    
+
     private val modelsLabService = ModelsLabTextToImageService()
 
     var prompt by mutableStateOf(TextFieldValue(""))
@@ -40,15 +40,15 @@ class UnifiedImageViewModel : ViewModel() {
         private set
 
     var errorMessage by mutableStateOf<String?>(null)
-    
+
     var nsfwContentDetected by mutableStateOf(false)
         private set
 
     // Function to convert technical error messages to user-friendly ones
     private fun getUserFriendlyErrorMessage(technicalError: String, modelName: String): String {
         return when {
-            technicalError.contains("500") || technicalError.contains("503") || 
-            technicalError.contains("Service Unavailable") || technicalError.contains("Internal Server Error") -> {
+            technicalError.contains("500") || technicalError.contains("503") ||
+                    technicalError.contains("Service Unavailable") || technicalError.contains("Internal Server Error") -> {
                 "$modelName is experiencing heavy traffic. Please try another model or wait a moment."
             }
             technicalError.contains("429") || technicalError.contains("Too Many Requests") -> {
@@ -85,8 +85,7 @@ class UnifiedImageViewModel : ViewModel() {
 
 
 
-    var selectedModel by mutableStateOf("provider-3/FLUX.1-dev") // Default model - FLUX Dev
-
+    var selectedModel by mutableStateOf("modelslab/nano-banana") // Default model - Nano Banana
 
 
 
@@ -110,7 +109,7 @@ class UnifiedImageViewModel : ViewModel() {
     // Initialize the ViewModel with default model
     init {
         // Ensure the default model is properly set
-        selectedModel = "provider-3/FLUX.1-dev"
+        selectedModel = "modelslab/nano-banana"
     }
 
     fun updatePrompt(newPrompt: TextFieldValue) {
@@ -156,11 +155,11 @@ class UnifiedImageViewModel : ViewModel() {
         if (ContentFilter.containsAdultContent(prompt.text)) {
             errorMessage = ContentFilter.getWarningMessage()
             Log.w("ContentFilter", "Adult content detected in prompt: ${ContentFilter.sanitizeForLogging(prompt.text)}")
-            
+
             // Replace the prompt with a safe alternative
             val safePrompt = ContentFilter.getSafePrompt(prompt.text)
             prompt = TextFieldValue(safePrompt)
-            
+
             // Show warning but continue with safe prompt
             viewModelScope.launch {
                 delay(3000) // Show warning for 3 seconds
@@ -177,13 +176,13 @@ class UnifiedImageViewModel : ViewModel() {
         // Ensure we have a valid model selected
         if (selectedModel.isBlank()) {
             // Set to default model if somehow blank
-            selectedModel = "provider-3/FLUX.1-dev"
+            selectedModel = "modelslab/nano-banana"
             Log.d("ImageGeneration", "Model was blank, set to default: $selectedModel")
         }
-        
+
         generateImageInternal(prompt.text)
     }
-    
+
     private fun generateImageInternal(promptText: String) {
 
         isLoading = true
@@ -198,11 +197,11 @@ class UnifiedImageViewModel : ViewModel() {
                 // Add safety negative prompts to all requests
                 val safePrompt = promptText
                 val negativePrompts = ContentFilter.getNegativePrompts()
-                
+
                 // Log the model being used for the API call
                 Log.d("ImageGeneration", "Using model for API call: $selectedModel")
                 Log.d("ImageGeneration", "Safe prompt: ${ContentFilter.sanitizeForLogging(safePrompt)}")
-                
+
                 when (selectedModel) {
                     "modelslab/epic-realism" -> {
                         if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY") {
@@ -210,20 +209,24 @@ class UnifiedImageViewModel : ViewModel() {
                             isLoading = false
                             return@launch
                         }
-                        
+
                         Log.d("ModelsLabGeneration", "Using ModelsLab API Key: ${MODELSLAB_API_KEY.take(10)}...")
-                        
+
                         // Comprehensive negative prompt for ModelsLab to prevent inappropriate content
                         val modelsLabNegativePrompt = "(nsfw, naked, nude, show breast, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation, $negativePrompts"
-                        
+
                         val request = ModelsLabTextToImageService.TextToImageRequest(
                             prompt = safePrompt,
                             negativePrompt = modelsLabNegativePrompt,
-                            modelId = "epic-realism-rc1",
+                            // modelId = "epic-realism-rc1",
+                            //  modelId = "coffeemix-sd1-5-americano-season-1",
+                            // modelId="real-dream-classic-sd1-5-1-sd1-5",
+                            modelId= "serenity-v2-1-safetensors",
+                            // modelId= "flux",
                             scheduler = "DPMSolverSinglestepScheduler",
                             width = 768,
                             height = 1024,
-                           // height = 1408,
+                            // height = 1408,
                             guidanceScale = 7.5,
                             numInferenceSteps = 31,
                             steps = 21,
@@ -236,12 +239,12 @@ class UnifiedImageViewModel : ViewModel() {
                             tomesd = true,
                             base64 = false  // Changed to false to get URL responses
                         )
-                        
+
                         val response = modelsLabService.generateImage(request)
-                        
+
                         // Set NSFW detection flag first
                         nsfwContentDetected = response.nsfwContentDetected
-                        
+
                         if (response.status == "success") {
                             if (nsfwContentDetected) {
                                 // NSFW content detected - no image data will be available
@@ -250,13 +253,13 @@ class UnifiedImageViewModel : ViewModel() {
                                 imageUrl = null
                                 generatedImageData = null
                                 // Set an error message to inform the user
-                               // errorMessage = "NSFW content detected. Image generation blocked for safety."
+                                // errorMessage = "NSFW content detected. Image generation blocked for safety."
                                 errorMessage = "Please provide safe prompt."
                             } else if (!response.output.isNullOrEmpty()) {
                                 // Normal image processing when no NSFW content
                                 val imageOutput = response.output!![0]
                                 Log.d("ModelsLabResponse", "Image output: ${imageOutput.take(100)}...") // Log first 100 chars
-                                
+
                                 // Check if it's a URL or base64 data
                                 if (imageOutput.startsWith("http://") || imageOutput.startsWith("https://")) {
                                     // It's a URL, use imageUrl instead of imageData
@@ -295,18 +298,21 @@ class UnifiedImageViewModel : ViewModel() {
                         }
                         isLoading = false
                     }
+
+
+
                     "modelslab/nano-banana" -> {
                         if (MODELSLAB_API_KEY.isBlank() || MODELSLAB_API_KEY == "YOUR_MODELSLAB_API_KEY") {
                             errorMessage = "Please configure ModelsLab API Key"
                             isLoading = false
                             return@launch
                         }
-                        
+
                         Log.d("ModelsLabGeneration", "Using ModelsLab API Key: ${MODELSLAB_API_KEY.take(10)}...")
-                        
+
                         // Comprehensive negative prompt for ModelsLab to prevent inappropriate content
                         val modelsLabNegativePrompt = "(nsfw, naked, nude, show breast, deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation, $negativePrompts"
-                        
+
                         val request = ModelsLabTextToImageService.TextToImageRequest(
                             prompt = safePrompt,
                             negativePrompt = modelsLabNegativePrompt,
@@ -329,12 +335,12 @@ class UnifiedImageViewModel : ViewModel() {
                             tomesd = true,
                             base64 = false  // Changed to false to get URL responses
                         )
-                        
+
                         val response = modelsLabService.generateImage(request)
-                        
+
                         // Set NSFW detection flag first
                         nsfwContentDetected = response.nsfwContentDetected
-                        
+
                         if (response.status == "success") {
                             if (nsfwContentDetected) {
                                 // NSFW content detected - no image data will be available
@@ -348,7 +354,7 @@ class UnifiedImageViewModel : ViewModel() {
                                 // Normal image processing when no NSFW content
                                 val imageOutput = response.output!![0]
                                 Log.d("ModelsLabResponse", "Image output: ${imageOutput.take(100)}...") // Log first 100 chars
-                                
+
                                 // Check if it's a URL or base64 data
                                 if (imageOutput.startsWith("http://") || imageOutput.startsWith("https://")) {
                                     // It's a URL, use imageUrl instead of imageData
@@ -423,7 +429,7 @@ class UnifiedImageViewModel : ViewModel() {
                             n = 1,
                             //size = "1024x1536"  //chatgpt app size
                             //size = "720x1280"
-                           // size = "1080x2340"
+                            // size = "1080x2340"
                             size = "1024x1024"
                         )
                         val response = FluxApiClient.apiService.generateImage(request)
@@ -452,7 +458,7 @@ class UnifiedImageViewModel : ViewModel() {
                             prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
-                           // size = "1024x1792"
+                            // size = "1024x1792"
                             //size = "720x1280"
                             // size = "1080x2340"
                             size = "1024x1024"
@@ -485,7 +491,7 @@ class UnifiedImageViewModel : ViewModel() {
                             prompt = "$safePrompt",
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
-                             size = "1024x1792"
+                            size = "1024x1792"
                             //size = "720x1280"
                             // size = "1080x2340"
                             //size = "1024x1024"
@@ -606,7 +612,7 @@ class UnifiedImageViewModel : ViewModel() {
                             model = "provider-4/imagen-3", // Use the pro model
                             prompt = "$safePrompt. Avoid: ${negativePrompts}",
                             n = 1,
-                          //  size = "1024x1536"  //chatgpt app size
+                            //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
                             //size = "720x1280"
                             // size = "1080x2340"
@@ -639,10 +645,10 @@ class UnifiedImageViewModel : ViewModel() {
                             n = 1,
                             //  size = "1024x1536"  //chatgpt app size
                             size = "1024x1792"
-                           // size="1080x2340"
+                            // size="1080x2340"
                             //size = "720x1280"
                             // size = "1080x2340"
-                           // size = "1024x1024"
+                            // size = "1024x1024"
                         )
                         val response = FluxApiClient.apiService.generateImage(request)
 
@@ -932,21 +938,21 @@ class UnifiedImageViewModel : ViewModel() {
                     else -> {
                         // Log the invalid model for debugging
                         Log.e("ImageGeneration", "Invalid model selected: '$selectedModel'")
-                        
+
                         // Try to use the default model as a fallback
-                        if (selectedModel != "provider-3/FLUX.1-dev") {
-                            Log.d("ImageGeneration", "Falling back to provider-3/FLUX.1-dev model")
-                            selectedModel = "provider-3/FLUX.1-dev"
-                            
-                            // Retry with the default model (FLUX Dev)
+                        if (selectedModel != "provider-3/dall-e-3") {
+                            Log.d("ImageGeneration", "Falling back to provider-3/dall-e-3 model")
+                            selectedModel = "provider-3/dall-e-3"
+
+                            // Retry with the default model (DALL-E 3)
                             if (A4F_API_KEY == "YOUR_A4F_API_KEY_HERE" || A4F_API_KEY.isBlank()) {
                                 errorMessage = "Please set your A4F API Key in A4FClient"
                                 isLoading = false
                                 return@launch
                             }
-                            
+
                             val request = FluxImageGenerationRequest(
-                                model = "provider-3/FLUX.1-dev",
+                                model = "provider-3/dall-e-3",
                                 prompt = "$safePrompt, safe for work, family-friendly",
                                 n = 1,
                                 size = "1024x1024"
@@ -958,8 +964,8 @@ class UnifiedImageViewModel : ViewModel() {
                                 imageUrl = generatedFluxImage?.url
                             } else {
                                 val errorBody = response.errorBody()?.string() ?: "Unknown API error"
-                                val technicalError = "Flux Dev API Error: ${response.code()} - ${errorBody}"
-                                errorMessage = getUserFriendlyErrorMessage(technicalError, "Flux Dev")
+                                val technicalError = "DALL-E 3 API Error: ${response.code()} - ${errorBody}"
+                                errorMessage = getUserFriendlyErrorMessage(technicalError, "DALL-E 3")
                             }
                             isLoading = false
                         } else {
