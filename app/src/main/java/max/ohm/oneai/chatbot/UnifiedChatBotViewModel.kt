@@ -544,11 +544,18 @@ class UnifiedChatBotViewModel : ViewModel() {
                 "provider-3/kimi-k2",
                 "provider-1/deepseek-r1-0528",
                 "provider-6/r1-1776",
+                "provider-3/qwen-2.5-72b",
+                "provider-3/llama-3.2-3b",
+                "provider-3/llama-4-maverick",
+                "provider-3/llama-4-scout",
+                "provider-3/mistral-small-latest",
+                "provider-3/llama-3.3-70b",
                 "provider-2/qwen-3-235b",
                 "provider-6/horizon-beta",
                 "provider-3/gpt-5-nano",
                 "provider-6/gpt-4o",
                 "provider-6/gemini-2.5-flash",
+                "provider-3/deepseek-v3",
                 "provider-2/gemini-2.5-flash-lite",
                 "provider-2/codestral-latest" -> {
                     Log.d(TAG, "Generating response with A4F model: $selectedModel")

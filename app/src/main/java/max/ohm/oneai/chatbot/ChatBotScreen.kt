@@ -222,15 +222,19 @@ fun ChatBotScreen(
     // Available model options - Gemini 2.0 Flash is first (default)
     val modelOptions = listOf(
         "models/gemini-2.0-flash" to "Gemini 2.0 Flash",
-        "provider-3/gpt-4.1-nano" to "GPT-4.1 Nano",
-        "provider-6/gemini-2.5-flash" to "Gemini 2.5 Flash",
-        "provider-3/kimi-k2" to "Kimi K2",
-        "provider-1/deepseek-r1-0528" to "DeepSeek R1",
-      //  "provider-6/r1-1776" to "Perplexity-R1",
-      //  "provider-2/qwen-3-235b" to "Qwen 3b",
-      //  "provider-6/horizon-beta" to "GPT-Horizon Beta",
-        "provider-3/gpt-5-nano" to "GPT-5 Nano",
-        "provider-6/gpt-4o" to "GPT-4o"
+
+        "provider-3/deepseek-v3" to "DeepSeek V3",
+        "provider-3/qwen-2.5-72b" to "GPT-4.1 Nano",
+        //  "provider-6/gemini-2.5-flash" to "Gemini 2.5 Flash",
+        "provider-3/llama-3.3-70b" to "Gemini 2.5 Flash",
+        "provider-3/mistral-small-latest" to "Kimi K2",
+
+        "provider-3/llama-4-scout" to "DeepSeek R1",
+        //  "provider-6/r1-1776" to "Perplexity-R1",
+        //  "provider-2/qwen-3-235b" to "Qwen 3b",
+        //  "provider-6/horizon-beta" to "GPT-Horizon Beta",
+        "provider-3/llama-4-maverick" to "GPT-5 Nano",
+        "provider-3/llama-3.2-3b" to "GPT-4o"
         //"provider-2/codestral-latest" to "Codestral Latest"
     )
 
